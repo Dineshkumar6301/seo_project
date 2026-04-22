@@ -1,0 +1,215 @@
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<style>
+.card-ui {
+    border-radius:14px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.05);
+    border:none;
+}
+.select-box {
+    border:1px solid #e2e8f0;
+    padding:8px;
+    border-radius:10px;
+}
+.tag {
+    background:#0d6efd;
+    color:white;
+    padding:4px 10px;
+    border-radius:20px;
+    margin:2px;
+    display:inline-block;
+    font-size:12px;
+}
+.tag span {
+    margin-left:6px;
+    cursor:pointer;
+}
+</style>
+
+<div class="container-fluid">
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold">⚙️ Assign Team → {{ project.name }}</h4>
+</div>
+
+<!-- FORM -->
+<div class="card card-ui p-3 mb-3">
+
+<form method="POST" id="assignForm">
+{% csrf_token %}
+
+<div class="row">
+
+<!-- EMPLOYEE -->
+<div class="col-md-4">
+<label class="form-label">Employee</label>
+<select name="user" id="userSelect" class="form-control">
+    <option value="">Select Employee</option>
+    {% for u in users %}
+    <option value="{{ u.id }}">{{ u.email }}</option>
+    {% endfor %}
+</select>
+</div>
+
+<!-- SERVICE MULTI -->
+<div class="col-md-6">
+<label class="form-label">Services</label>
+
+<div class="select-box">
+    <select id="serviceSelect" class="form-control">
+        <option value="">Select Service</option>
+        {% for s in services %}
+        <option value="{{ s.id }}">{{ s.name }}</option>
+        {% endfor %}
+    </select>
+
+    <div id="selectedServices" class="mt-2"></div>
+</div>
+
+<!-- hidden inputs -->
+<div id="hiddenInputs"></div>
+
+</div>
+
+<!-- BUTTON -->
+<div class="col-md-2 d-flex align-items-end">
+<button class="btn btn-primary w-100">Assign</button>
+</div>
+
+</div>
+
+</form>
+
+</div>
+
+<!-- SEARCH -->
+<input id="search" class="form-control mb-2" placeholder="🔍 Search employee or service">
+
+<!-- TABLE -->
+<div class="card card-ui p-3">
+
+<h6>Assigned Team</h6>
+
+<table class="table table-hover" id="assignTable">
+
+<thead>
+<tr>
+    <th>Employee</th>
+    <th>Service</th>
+    <th class="text-end">Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for a in assignments %}
+<tr>
+    <td>{{ a.user.email }}</td>
+    <td>{{ a.service.name }}</td>
+    <td class="text-end">
+       
+        <button class="btn btn-sm btn-danger deleteBtn">Delete</button>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="3">No assignments</td></tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+// 🔥 MULTI SERVICE SELECT
+let selected = [];
+
+document.getElementById("serviceSelect").addEventListener("change", function(){
+
+    let id = this.value;
+    let text = this.options[this.selectedIndex].text;
+
+    if(!id || selected.includes(id)) return;
+
+    selected.push(id);
+
+    renderTags();
+    renderHiddenInputs();
+});
+
+function renderTags(){
+    let container = document.getElementById("selectedServices");
+    container.innerHTML = "";
+
+    selected.forEach((id, i)=>{
+        let tag = document.createElement("span");
+        tag.className = "tag";
+        tag.innerHTML = `${getServiceName(id)} <span onclick="removeTag(${i})">✕</span>`;
+        container.appendChild(tag);
+    });
+}
+
+function renderHiddenInputs(){
+    let container = document.getElementById("hiddenInputs");
+    container.innerHTML = "";
+
+    selected.forEach(id=>{
+        container.innerHTML += `<input type="hidden" name="service" value="${id}">`;
+    });
+}
+
+function removeTag(index){
+    selected.splice(index,1);
+    renderTags();
+    renderHiddenInputs();
+}
+
+function getServiceName(id){
+    let options = document.querySelectorAll("#serviceSelect option");
+    for(let o of options){
+        if(o.value == id) return o.text;
+    }
+}
+
+// 🔥 SEARCH FILTER
+document.getElementById("search").addEventListener("keyup", function(){
+
+    let value = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#assignTable tbody tr");
+
+    rows.forEach(row=>{
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(value) ? "" : "none";
+    });
+});
+
+// 🔥 DELETE (UI only)
+document.querySelectorAll(".deleteBtn").forEach(btn=>{
+    btn.addEventListener("click", function(){
+        if(confirm("Remove this assignment?")){
+            this.closest("tr").remove();
+        }
+    });
+});
+
+// 🔥 EDIT (UI only)
+document.querySelectorAll(".editBtn").forEach(btn=>{
+    btn.addEventListener("click", function(){
+
+        let row = this.closest("tr");
+        let emp = row.children[0].innerText;
+        let service = row.children[1].innerText;
+
+        alert("Edit (frontend only demo):\n" + emp + " - " + service);
+    });
+});
+
+</script>
+
+{% endblock %}

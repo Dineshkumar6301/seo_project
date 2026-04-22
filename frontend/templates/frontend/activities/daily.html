@@ -1,0 +1,379 @@
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<style>
+
+/* ===== GLOBAL ===== */
+:root {
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #6366f1;
+    --success: #22c55e;
+    --text: #1e293b;
+    --muted: #64748b;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* ===== CARD ===== */
+.card-ui {
+    background: var(--card);
+    border-radius:16px;
+    border:1px solid var(--border);
+    box-shadow:0 8px 25px rgba(0,0,0,0.05);
+}
+
+/* ===== HEADER ===== */
+.page-title {
+    font-weight:700;
+    color:var(--accent);
+}
+
+/* ===== ASSIGNED WORK ===== */
+.assigned-box {
+    background: #f9fafb;
+    border-radius:12px;
+    padding:15px;
+}
+
+/* ===== BUTTONS ===== */
+.btn-custom {
+    border-radius:10px;
+}
+
+/* ===== TABLE ===== */
+.table thead th {
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+}
+
+.table tbody tr:hover {
+    background:#f9fafb;
+}
+
+/* ===== INPUT ===== */
+.form-control, select {
+    border-radius:8px;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:768px){
+
+    .table thead { display:none; }
+
+    .table tbody tr {
+        display:block;
+        margin-bottom:12px;
+        border:1px solid var(--border);
+        border-radius:12px;
+        padding:10px;
+    }
+
+    .table tbody td {
+        display:block;
+    }
+
+    .table tbody td::before {
+        content: attr(data-label);
+        font-size:12px;
+        color:var(--muted);
+        font-weight:600;
+        display:block;
+    }
+}
+
+</style>
+
+<div class="container-fluid">
+
+<div class="card-ui p-4">
+
+<!-- 🔥 ASSIGNED WORK -->
+<div class="card-ui mb-3 p-3">
+    <h6 class="fw-bold mb-2">📌 Your Assigned Work</h6>
+    <div id="assignedWork" class="assigned-box"></div>
+</div>
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+
+<h5 class="page-title">Daily Activity Sheet</h5>
+
+<div class="d-flex gap-2 flex-wrap">
+<input type="date" id="date" class="form-control">
+
+<button class="btn btn-primary btn-custom" onclick="downloadExcel()">
+Excel
+</button>
+
+<button class="btn btn-dark btn-custom" onclick="addRow()">
++ Add
+</button>
+</div>
+
+</div>
+
+<!-- TABLE -->
+<div class="table-responsive">
+<table class="table align-middle">
+
+<thead class="table-light">
+<tr>
+<th>Project</th>
+<th>Service</th>
+<th>Task</th>
+<th>Planned</th>
+<th>Completed</th>
+<th>Proof</th>
+<th>Remarks</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+</div>
+
+</div>
+</div>
+
+<script>
+
+// ⚠️ ALL YOUR ORIGINAL JS BELOW (UNCHANGED)
+
+// ==============================
+const API = "/activities/api/";
+const csrf = document.cookie.split('; ').find(r=>r.startsWith('csrftoken')).split('=')[1];
+
+// ==============================
+function createRow(data = {}) {
+
+return `
+<tr>
+
+<td data-label="Project">
+<select class="project" onchange="loadServices(this)">
+<option value="">Select</option>
+{% for p in projects %}
+<option value="{{p.id}}" ${data.project == {{p.id}} ? 'selected':''}>
+{{p.name}}
+</option>
+{% endfor %}
+</select>
+</td>
+
+<td data-label="Service">
+<select class="service"></select>
+</td>
+
+<td data-label="Task"><input class="task_title form-control" value="${data.task_title || ''}"></td>
+<td data-label="Planned"><input class="planned form-control" value="${data.planned_work || ''}"></td>
+<td data-label="Completed"><input class="completed form-control" value="${data.completed_work || ''}"></td>
+<td data-label="Proof"><input class="proof form-control" value="${data.proof_link || ''}"></td>
+<td data-label="Remarks"><input class="remarks form-control" value="${data.remarks || ''}"></td>
+
+<td>
+<button class="btn btn-success btn-sm" onclick="saveRow(this)">💾</button>
+</td>
+
+</tr>
+`;
+}
+
+// ==============================
+async function loadData() {
+
+let date = document.getElementById("date").value;
+
+let res = await fetch(`${API}today/?date=${date}`);
+let data = await res.json();
+
+let body = document.getElementById("tableBody");
+
+body.innerHTML = "";
+
+if (data.length === 0) {
+    addRow();
+} else {
+
+    data.forEach(d => {
+
+        let row = document.createElement("tr");
+
+        row.dataset.id = d.id;
+        row.dataset.service = d.service;
+
+        row.innerHTML = createRow(d);
+
+        body.appendChild(row);
+    });
+
+    document.querySelectorAll(".project").forEach(el => loadServices(el));
+}
+
+}
+
+// ==============================
+async function loadServices(select) {
+
+let projectId = select.value;
+let row = select.closest("tr");
+let dropdown = row.querySelector(".service");
+
+let selectedService = row.dataset.service;
+
+let res = await fetch(`/activities/api/project-services/${projectId}/`);
+let data = await res.json();
+
+dropdown.innerHTML = '<option value="">Select</option>';
+
+data.forEach(s => {
+    let selected = (selectedService == s.id) ? "selected" : "";
+    dropdown.innerHTML += `<option value="${s.id}" ${selected}>${s.name}</option>`;
+});
+
+}
+
+// ==============================
+function addRow() {
+
+let body = document.getElementById("tableBody");
+
+let row = document.createElement("tr");
+row.innerHTML = createRow();
+
+body.appendChild(row);
+
+}
+
+// ==============================
+async function saveRow(btn) {
+
+let row = btn.closest("tr");
+
+let project = row.querySelector(".project").value;
+let service = row.querySelector(".service").value;
+
+if (!project) return alert("Select Project");
+if (!service) return alert("Select Service");
+
+let payload = {
+    id: row.dataset.id || null,
+    date: document.getElementById("date").value,
+    project: project,
+    service: service,
+    task_title: row.querySelector(".task_title").value,
+    planned_work: row.querySelector(".planned").value,
+    completed_work: row.querySelector(".completed").value,
+    proof_link: row.querySelector(".proof").value,
+    remarks: row.querySelector(".remarks").value
+};
+
+let res = await fetch(`${API}upsert/`, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf
+    },
+    body: JSON.stringify(payload)
+});
+
+let result = await res.json();
+
+row.dataset.id = result.id;
+row.dataset.service = payload.service;
+
+btn.innerText = "✔";
+btn.classList.remove("btn-success");
+btn.classList.add("btn-primary");
+
+}
+
+// ==============================
+function downloadExcel() {
+let date = document.getElementById("date").value;
+window.location.href = `${API}export/?date=${date}`;
+}
+
+// ==============================
+document.addEventListener("DOMContentLoaded", () => {
+
+let today = new Date().toISOString().split("T")[0];
+document.getElementById("date").value = today;
+
+loadData();
+
+});
+
+document.getElementById("date").addEventListener("change", loadData);
+
+// ==============================
+const projectMap = {
+    {% for p in projects %}
+        "{{ p.id }}": "{{ p.name }}",
+    {% endfor %}
+};
+
+// ==============================
+async function loadAssignedWork(){
+
+    let date = document.getElementById("date").value;
+
+    let res = await fetch(`/activities/api/today/?date=${date}`);
+    let data = await res.json();
+
+    let projectServicesMap = {};
+
+    data.forEach(a => {
+        if(a.project){
+            projectServicesMap[a.project] = [];
+        }
+    });
+
+    for (let projectId in projectServicesMap){
+
+        let res = await fetch(`/activities/api/project-services/${projectId}/`);
+        let services = await res.json();
+
+        projectServicesMap[projectId] = services.map(s => s.name);
+    }
+
+    let container = document.getElementById("assignedWork");
+    container.innerHTML = "";
+
+    if(Object.keys(projectServicesMap).length === 0){
+        container.innerHTML = `<span class="text-muted">No assigned work</span>`;
+        return;
+    }
+
+    for (let projectId in projectServicesMap){
+
+        let services = projectServicesMap[projectId];
+
+        let div = document.createElement("div");
+
+        let badges = services.map(s =>
+            `<span class="badge bg-success me-1">${s}</span>`
+        ).join("");
+
+        div.innerHTML = `
+            <strong>${projectMap[projectId] || 'Project'}</strong><br>
+            ${badges}
+        `;
+
+        container.appendChild(div);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(loadAssignedWork, 500);
+});
+
+</script>
+
+{% endblock %}

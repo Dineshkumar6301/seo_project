@@ -1,0 +1,801 @@
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --surface: #ffffff;
+    --surface2: #e8edf8;
+    --border: #dde3f0;
+    --accent: #4f46e5;
+    --accent-light: #eef2ff;
+    --accent2: #0ea5e9;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --text: #1e293b;
+    --muted: #94a3b8;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+
+
+  .dash {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* ── HEADER ── */
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dash-title {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .dash-title span {
+    display: block;
+    font-size: 12px;
+    
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ── DATE FILTER PILLS ── */
+  .filter-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.18s ease;
+  }
+
+  .pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(79,70,229,0.25);
+  }
+
+  /* ── STATUS CARDS ── */
+  .status-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    text-decoration: none;
+    transition: transform 0.18s, box-shadow 0.18s;
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .stat-card.pending::after  { background: var(--warning); }
+  .stat-card.approved::after { background: var(--success); }
+  .stat-card.rejected::after { background: var(--danger); }
+
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(79,70,229,0.1);
+  }
+
+  .stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .stat-card.pending  .stat-icon { background: #fef3c7; }
+  .stat-card.approved .stat-icon { background: #d1fae5; }
+  .stat-card.rejected .stat-icon { background: #fee2e2; }
+
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+
+  .stat-num {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px 10px 40px;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+  }
+
+  .select-input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    padding: 10px 36px 10px 14px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: border-color 0.18s;
+    flex: 1;
+    min-width: 180px;
+    max-width: 260px;
+  }
+
+  .select-input:focus { border-color: var(--accent); }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    text-decoration: none;
+    transition: all 0.18s;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(79,70,229,0.25);
+  }
+
+  .export-btn:hover {
+    background: #4338ca;
+    box-shadow: 0 6px 20px rgba(79,70,229,0.35);
+    color: #fff;
+  }
+
+  /* ── TABLE ── */
+  .table-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 24px rgba(79,70,229,0.05);
+  }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+  }
+
+  thead {
+    background: var(--surface2);
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  thead th {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 14px 20px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th:last-child { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8f9ff; }
+
+  tbody td {
+    padding: 16px 20px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  .user-name { font-weight: 600; color: var(--text); font-size: 14px; }
+  .user-role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .project-tag {
+    display: inline-block;
+    background: #ede9fe;
+    color: #6d28d9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+  }
+
+  .task-text { color: var(--text); font-size: 13px; }
+
+  .proof-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(14,165,233,0.25);
+    background: #f0f9ff;
+    transition: all 0.15s;
+  }
+
+  .proof-link:hover { background: #e0f2fe; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .badge-pending  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-pending::before { background: var(--warning); animation: pulse 2s infinite; }
+  .badge-approved { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-approved::before { background: var(--success); }
+  .badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .badge-rejected::before { background: var(--danger); }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ── ACTION BUTTONS ── */
+  .action-cell { text-align: right; white-space: nowrap; }
+
+  .btn-approve, .btn-reject {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.18s;
+    margin-left: 6px;
+  }
+
+  .btn-approve {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  .btn-approve:hover {
+    background: #6ee7b7;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+    transform: scale(1.07);
+  }
+
+  .btn-reject {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  .btn-reject:hover {
+    background: #fca5a5;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.25);
+    transform: scale(1.07);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-row td {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .empty-icon {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 10px;
+    opacity: 0.5;
+  }
+
+  /* ── CHART CARD ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: 0 4px 24px rgba(79,70,229,0.05);
+  }
+
+  .chart-title {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  /* ── MOBILE ── */
+  .mobile-cards { display: none; }
+
+  @media (max-width: 640px) {
+    .dash { padding: 20px 16px; }
+
+    .status-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-num { font-size: 22px; }
+    .stat-icon { display: none; }
+
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .search-wrap, .select-input { max-width: 100%; }
+    .export-btn { justify-content: center; }
+
+    .table-card { display: none; }
+    .mobile-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+    .m-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      position: relative;
+      box-shadow: 0 2px 12px rgba(79,70,229,0.05);
+    }
+
+    .m-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .m-card-body { display: flex; flex-direction: column; gap: 8px; }
+
+    .m-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .m-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .m-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+    .m-actions .btn-approve,
+    .m-actions .btn-reject {
+      flex: 1;
+      width: auto;
+      height: 40px;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    .filter-group { gap: 6px; }
+    .pill { padding: 6px 13px; font-size: 12px; }
+  }
+
+  @media (max-width: 400px) {
+    .status-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="dash">
+
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div class="dash-title">
+      <span>Manager View</span>
+      Approval Dashboard
+    </div>
+  </div>
+
+  <!-- DATE FILTER -->
+  <div class="filter-group">
+    <a href="?date=today" class="pill {% if date_filter == 'today' %}active{% endif %}">Today</a>
+    <a href="?date=week"  class="pill {% if date_filter == 'week'  %}active{% endif %}">Week</a>
+    <a href="?date=month" class="pill {% if date_filter == 'month' %}active{% endif %}">Month</a>
+    <a href="?date=year"  class="pill {% if date_filter == 'year'  %}active{% endif %}">Year</a>
+    <a href="?date=all"   class="pill {% if date_filter == 'all'   %}active{% endif %}">All</a>
+  </div>
+
+  <!-- STATUS STAT CARDS -->
+  <div class="status-row">
+    <a href="?status=pending&date={{date_filter}}" class="stat-card pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-num">{{ pending_count }}</div>
+    </a>
+    <a href="?status=approved&date={{date_filter}}" class="stat-card approved">
+      <div class="stat-icon">✅</div>
+      <div class="stat-label">Approved</div>
+      <div class="stat-num">{{ approved_count }}</div>
+    </a>
+    <a href="?status=rejected&date={{date_filter}}" class="stat-card rejected">
+      <div class="stat-icon">❌</div>
+      <div class="stat-label">Rejected</div>
+      <div class="stat-num">{{ rejected_count }}</div>
+    </a>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="searchInput"
+             placeholder="Search employee…"
+             value="{{ search }}"
+             class="search-input"
+             onkeyup="applyFilters()">
+    </div>
+
+    <select id="projectFilter" class="select-input" onchange="applyFilters()">
+      <option value="">All Projects</option>
+      {% for p in projects %}
+      <option value="{{p.id}}" {% if selected_project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+
+    <a href="?export=excel&date={{date_filter}}&status={{current_status}}" class="export-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Excel
+    </a>
+  </div>
+
+  <!-- DESKTOP TABLE -->
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Project</th>
+            <th>Task</th>
+            <th>Proof</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activities %}
+          <tr id="row-{{a.id}}">
+            <td>
+              <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
+              <div class="user-role">{{ a.user.role }}</div>
+            </td>
+            <td><span class="project-tag">{{ a.project.name }}</span></td>
+            <td><span class="task-text">{{ a.task_title }}</span></td>
+            <td>
+              {% if a.proof_link %}
+              <a href="{{ a.proof_link }}" target="_blank" class="proof-link">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                View
+              </a>
+              {% else %}<span style="color:var(--muted)">—</span>{% endif %}
+            </td>
+            <td>
+              {% if a.status == 'pending' %}
+                <span class="badge badge-pending">Pending</span>
+              {% elif a.status == 'approved' %}
+                <span class="badge badge-approved">Approved</span>
+              {% elif a.status == 'rejected' %}
+                <span class="badge badge-rejected">Rejected</span>
+              {% endif %}
+            </td>
+            <td class="action-cell">
+              {% if a.status == 'pending' %}
+              <button onclick="updateStatus({{ a.id }}, 'approved')" class="btn-approve" title="Approve">✔</button>
+              <button onclick="updateStatus({{ a.id }}, 'rejected')" class="btn-reject"  title="Reject">✖</button>
+              {% else %}
+              <span style="color:var(--muted);font-size:13px">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+            <td colspan="6">
+              <span class="empty-icon">📋</span>
+              No records found
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MOBILE CARDS -->
+  <div class="mobile-cards">
+    {% for a in activities %}
+    <div class="m-card" id="mrow-{{a.id}}">
+      <div class="m-card-header">
+        <div>
+          <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
+          <div class="user-role">{{ a.user.role }}</div>
+        </div>
+        {% if a.status == 'pending' %}
+          <span class="badge badge-pending">Pending</span>
+        {% elif a.status == 'approved' %}
+          <span class="badge badge-approved">Approved</span>
+        {% elif a.status == 'rejected' %}
+          <span class="badge badge-rejected">Rejected</span>
+        {% endif %}
+      </div>
+      <div class="m-card-body">
+        <div class="m-row">
+          <span class="m-label">Project</span>
+          <span class="project-tag">{{ a.project.name }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-label">Task</span>
+          <span class="task-text" style="text-align:right;max-width:60%">{{ a.task_title }}</span>
+        </div>
+        {% if a.proof_link %}
+        <div class="m-row">
+          <span class="m-label">Proof</span>
+          <a href="{{ a.proof_link }}" target="_blank" class="proof-link">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            View
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      {% if a.status == 'pending' %}
+      <div class="m-actions">
+        <button onclick="updateStatus({{ a.id }}, 'approved')" class="btn-approve">✔</button>
+        <button onclick="updateStatus({{ a.id }}, 'rejected')" class="btn-reject">✖</button>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:48px 0;color:var(--muted);">
+      <span style="font-size:36px;display:block;margin-bottom:10px;opacity:.5">📋</span>
+      No records found
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-title">Activity Overview</div>
+    <canvas id="chart"></canvas>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// FILTER APPLY — unchanged logic
+function applyFilters(){
+    let search  = document.getElementById("searchInput").value;
+    let project = document.getElementById("projectFilter").value;
+    let url = `?status={{current_status}}&date={{date_filter}}`;
+    if(search)   url += `&search=${search}`;
+    if(project)  url += `&project=${project}`;
+    window.location.href = url;
+}
+
+// APPROVE / REJECT — unchanged logic
+function updateStatus(id, status){
+    fetch(`/activities/api/approve/${id}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            if("{{ current_status }}" === "pending"){
+                let row  = document.getElementById("row-"  + id);
+                let mrow = document.getElementById("mrow-" + id);
+                if(row)  row.remove();
+                if(mrow) mrow.remove();
+            } else {
+                location.reload();
+            }
+        }
+    });
+}
+
+// CSRF — unchanged logic
+function getCookie(name){
+    let value = null;
+    document.cookie.split(';').forEach(c=>{
+        c = c.trim();
+        if(c.startsWith(name + '=')){
+            value = decodeURIComponent(c.substring(name.length + 1));
+        }
+    });
+    return value;
+}
+
+// CHART — light theme styled
+new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+        labels: ['Pending', 'Approved', 'Rejected'],
+        datasets: [{
+            label: 'Tasks',
+            data: [
+                {{ pending_count }},
+                {{ approved_count }},
+                {{ rejected_count }}
+            ],
+            backgroundColor: [
+                'rgba(245,158,11,0.18)',
+                'rgba(16,185,129,0.18)',
+                'rgba(239,68,68,0.18)'
+            ],
+            borderColor: [
+                'rgba(245,158,11,0.9)',
+                'rgba(16,185,129,0.9)',
+                'rgba(239,68,68,0.9)'
+            ],
+            borderWidth: 2,
+            borderRadius: 10,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#ffffff',
+                borderColor: '#dde3f0',
+                borderWidth: 1,
+                titleColor: '#1e293b',
+                bodyColor: '#64748b',
+                padding: 12,
+                cornerRadius: 10
+            }
+        },
+        scales: {
+            x: {
+                grid: { color: 'rgba(0,0,0,0.04)' },
+                ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 13 } }
+            },
+            y: {
+                grid: { color: 'rgba(0,0,0,0.04)' },
+                ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 13 } },
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

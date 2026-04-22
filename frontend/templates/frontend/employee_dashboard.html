@@ -1,0 +1,267 @@
+{% extends 'frontend/base.html' %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body { background:#f1f5f9; }
+
+/* KPI */
+.kpi-card {
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+.kpi-value { font-size:26px; font-weight:700; }
+.kpi-label { color:#64748b; }
+
+/* Table */
+.table-box {
+    background:white;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+/* Status */
+.status {
+    padding:6px 12px;
+    border-radius:50px;
+    font-size:12px;
+}
+
+.pending { background:#facc15; }
+.approved { background:#22c55e; color:white; }
+.rejected { background:#ef4444; color:white; }
+
+/* Filters */
+.filter-btn {
+    border:none;
+    padding:8px 12px;
+    margin-right:5px;
+    border-radius:8px;
+    background:#e2e8f0;
+}
+
+.filter-btn.active {
+    background:#0ea5e9;
+    color:white;
+}
+</style>
+
+<div class="container-fluid">
+
+<h4 class="mb-4 fw-bold">👨‍💻 Employee Analytics Dashboard</h4>
+<div class="kpi-card mb-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">📌Focus on Daily Tasks</h6>
+  </div>
+  <div id="focusWork" class="mt-2"></div>
+</div>
+<!-- KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="kpi-card text-center"><div id="total">{{ total }}</div><small>Total</small></div></div>
+    <div class="col-md-3"><div class="kpi-card text-center text-warning"><div id="pending">{{ pending }}</div><small>Pending</small></div></div>
+    <div class="col-md-3"><div class="kpi-card text-center text-success"><div id="approved">{{ approved }}</div><small>Approved</small></div></div>
+    <div class="col-md-3"><div class="kpi-card text-center text-danger"><div id="rejected">{{ rejected }}</div><small>Rejected</small></div></div>
+</div>
+
+<!-- CHART -->
+<div class="kpi-card mb-4">
+    <h6>📈 Last 7 Days Performance</h6>
+    <canvas id="chart"></canvas>
+</div>
+
+<!-- FILTER -->
+<div class="mb-3">
+    <button class="filter-btn active" onclick="filterData('all', this)">All</button>
+    <button class="filter-btn" onclick="filterData('today', this)">Today</button>
+    <button class="filter-btn" onclick="filterData('week', this)">Week</button>
+</div>
+
+<!-- TABLE -->
+<div class="table-box">
+
+<table class="table align-middle">
+<thead>
+<tr>
+    <th>Project</th>
+    <th>Status</th>
+    <th>Date</th>
+</tr>
+</thead>
+
+<tbody id="taskTable">
+
+{% for a in activities %}
+<tr data-date="{{ a.date }}" data-status="{{ a.status }}" data-project="{{ a.project.id }}">
+    <td><strong>{{ a.project.name }}</strong></td>
+    <td><span class="status {{ a.status }}">{{ a.status }}</span></td>
+    <td>{{ a.date }}</td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+// FILTER
+function filterData(type, btn){
+
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+
+    let today = new Date();
+
+    let total=0,pending=0,approved=0,rejected=0;
+
+    document.querySelectorAll("#taskTable tr").forEach(row=>{
+
+        let d = new Date(row.dataset.date);
+        let status = row.dataset.status;
+
+        let show=true;
+
+        if(type==='today'){
+            show = d.toDateString()===today.toDateString();
+        }
+
+        if(type==='week'){
+            let diff=(today-d)/(1000*60*60*24);
+            show=diff>=0 && diff<=7;
+        }
+
+        row.style.display = show ? "" : "none";
+
+        if(show){
+            total++;
+            if(status==='pending') pending++;
+            if(status==='approved') approved++;
+            if(status==='rejected') rejected++;
+        }
+    });
+
+    document.getElementById("total").innerText=total;
+    document.getElementById("pending").innerText=pending;
+    document.getElementById("approved").innerText=approved;
+    document.getElementById("rejected").innerText=rejected;
+}
+
+// CHART (REAL DATA)
+new Chart(document.getElementById("chart"), {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: "Tasks",
+            data: {{ chart_data|safe }},
+            borderWidth: 2,
+            tension: 0.4,
+            fill:true
+        }]
+    }
+});
+
+// LOAD
+filterData('all', document.querySelector('.filter-btn'));
+</script>
+<script>
+
+// 🔥 PROJECT MAP (Django)
+const projectMap = {
+    {% for p in projects %}
+        "{{ p.id }}": "{{ p.name|escapejs }}",
+    {% endfor %}
+};
+
+
+// 🔥 EXTRA SAFETY: GET PROJECT NAME FROM TABLE
+function getProjectNameFromTable(pid){
+
+    let rows = document.querySelectorAll("#taskTable tr");
+
+    for(let row of rows){
+        if(row.dataset.project == pid){
+            return row.querySelector("td strong")?.innerText;
+        }
+    }
+
+    return null;
+}
+
+
+// 🔥 DATE
+function getTodayDate(){
+    let d = new Date();
+    return d.toISOString().slice(0,10);
+}
+
+
+// 🔥 MAIN FUNCTION
+async function loadFocusWork(){
+
+    const container = document.getElementById('focusWork');
+    container.innerHTML = '<span class="text-muted">Loading...</span>';
+
+    try{
+
+        const date = getTodayDate();
+
+        const res = await fetch(`/activities/api/today/?date=${date}`);
+        const data = await res.json();
+
+        container.innerHTML = '';
+
+        if(!data || data.length === 0){
+            container.innerHTML = '<span class="text-muted">No assigned work today</span>';
+            return;
+        }
+
+        const pids = [...new Set(data.map(a => a.project).filter(Boolean))];
+
+        for(const pid of pids){
+
+            const sres = await fetch(`/activities/api/project-services/${pid}/`);
+            const services = await sres.json();
+
+            const badges = (services || []).map(s =>
+                `<span class="badge bg-success rounded-pill px-3 me-1 mb-1">${s.name}</span>`
+            ).join('');
+
+            // 🔥 3 LEVEL FALLBACK (PERFECT)
+            let name =
+                projectMap[String(pid)] ||
+                getProjectNameFromTable(pid) ||
+                `Project ${pid}`;
+
+            const block = document.createElement('div');
+            block.className = 'mb-2';
+
+            block.innerHTML = `
+                <strong>${name}</strong><br>
+                ${badges || '<span class="text-muted">No services</span>'}
+            `;
+
+            container.appendChild(block);
+        }
+
+    }catch(error){
+        console.error(error);
+        container.innerHTML = '<span class="text-danger">Error loading data</span>';
+    }
+}
+
+
+// 🔥 LOAD
+document.addEventListener('DOMContentLoaded', loadFocusWork);
+
+</script>
+
+{% endblock %}

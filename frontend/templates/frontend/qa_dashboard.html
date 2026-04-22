@@ -1,0 +1,248 @@
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<style>
+body {
+    background: linear-gradient(135deg,#eef2ff,#f8fafc);
+}
+
+/* ===== CARD ===== */
+.card-ui {
+    border-radius:18px;
+    background:white;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+    transition:0.3s;
+}
+.card-ui:hover {
+    transform:translateY(-3px);
+}
+
+/* ===== KPI ===== */
+.kpi {
+    font-size:28px;
+    font-weight:800;
+}
+.kpi-box {
+    background:linear-gradient(135deg,#fef9c3,#fde68a);
+}
+
+/* ===== TABLE ===== */
+.table thead th {
+    font-size:12px;
+    text-transform:uppercase;
+    color:#64748b;
+    letter-spacing:0.5px;
+}
+
+.table tbody tr {
+    transition:0.2s;
+}
+.table tbody tr:hover {
+    background:#f1f5f9;
+    transform:scale(1.01);
+}
+
+/* ===== STATUS ===== */
+.badge-pending {
+    background:linear-gradient(135deg,#fde68a,#facc15);
+    color:black;
+}
+.badge-approved {
+    background:linear-gradient(135deg,#34d399,#22c55e);
+}
+.badge-rejected {
+    background:linear-gradient(135deg,#f87171,#ef4444);
+}
+
+/* ===== SERVICE BADGE ===== */
+.badge-service {
+    background:linear-gradient(135deg,#60a5fa,#3b82f6);
+    color:white;
+    border-radius:10px;
+    padding:5px 10px;
+}
+
+/* ===== BUTTONS ===== */
+.btn-action {
+    border-radius:10px;
+    padding:5px 10px;
+    transition:0.3s;
+}
+.btn-action:hover {
+    transform:scale(1.1);
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:768px){
+
+    .table thead {
+        display:none;
+    }
+
+    .table tbody tr {
+        display:block;
+        margin-bottom:12px;
+        border:1px solid #e2e8f0;
+        border-radius:12px;
+        padding:10px;
+        background:white;
+    }
+
+    .table tbody td {
+        display:block;
+        text-align:left;
+        padding:6px 10px;
+    }
+
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight:600;
+        display:block;
+        color:#64748b;
+        font-size:12px;
+    }
+
+}
+</style>
+
+<div class="container-fluid">
+
+<h4 class="mb-4 fw-bold">🧪 QA Approval Dashboard</h4>
+
+<!-- KPI -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+        <div class="card card-ui kpi-box p-3 text-center">
+            <div class="kpi text-warning">{{ activities|length }}</div>
+            <small class="fw-semibold">Pending Tasks</small>
+        </div>
+    </div>
+
+</div>
+
+<!-- TABLE -->
+<div class="card card-ui">
+<div class="card-body p-0">
+
+<table class="table align-middle mb-0">
+
+<thead class="table-light">
+<tr>
+    <th>Employee</th>
+    <th>Client</th>
+    <th>Project</th>
+    <th>Service</th>
+    <th>Task</th>
+    <th>Proof</th>
+    <th>Status</th>
+    <th class="text-end">Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for a in activities %}
+<tr>
+
+<td data-label="Employee">
+    <strong>{{ a.user.email }}</strong>
+</td>
+
+<td data-label="Client">
+    {{ a.project.client.name }}
+</td>
+
+<td data-label="Project">
+    {{ a.project.name }}
+</td>
+
+<td data-label="Service">
+    <span class="badge-service">
+        {{ a.service.name }}
+    </span>
+</td>
+
+<td data-label="Task">{{ a.task_title }}</td>
+
+<td data-label="Proof">
+    {% if a.proof_link %}
+    <a href="{{ a.proof_link }}" target="_blank" class="text-primary">View</a>
+    {% else %}
+    -
+    {% endif %}
+</td>
+
+<td data-label="Status">
+    <span class="badge badge-pending">{{ a.status }}</span>
+</td>
+
+<td data-label="Action" class="text-end">
+
+<button onclick="updateStatus({{ a.id }}, 'approved')" 
+class="btn btn-success btn-sm btn-action">
+✔
+</button>
+
+<button onclick="updateStatus({{ a.id }}, 'rejected')" 
+class="btn btn-danger btn-sm btn-action">
+✖
+</button>
+
+</td>
+
+</tr>
+
+{% empty %}
+<tr>
+<td colspan="8" class="text-center p-4">No pending tasks</td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// 🔥 STATUS UPDATE
+function updateStatus(id, status){
+
+    fetch(`/activities/api/approve/${id}/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            location.reload();
+        } else {
+            alert("Error updating status");
+        }
+    });
+}
+
+// 🔥 CSRF
+function getCookie(name){
+    let v=null;
+    document.cookie.split(';').forEach(c=>{
+        c=c.trim();
+        if(c.startsWith(name+'=')){
+            v=decodeURIComponent(c.substring(name.length+1));
+        }
+    });
+    return v;
+}
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "frontend/base.html" %}
+
+{% block content %}
+
+<h2>Clients</h2>
+
+<a href="/clients/create/" class="btn btn-primary mb-3">➕ Add Client</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Company</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for client in clients %}
+        <tr>
+            <td>{{ client.name }}</td>
+            <td>{{ client.email }}</td>
+            <td>{{ client.company_name }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No Clients</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

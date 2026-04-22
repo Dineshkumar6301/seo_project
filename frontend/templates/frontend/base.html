@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DMOS Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg,#eef2ff,#f8fafc);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            height:100vh;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(10px);
+            color:white;
+            position:fixed;
+            width:240px;
+            top:0;
+            left:0;
+            overflow-y:auto;
+            transition:0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .sidebar h4 {
+            letter-spacing:1px;
+            font-weight:700;
+        }
+
+        .sidebar a {
+            color:#cbd5e1;
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px 16px;
+            text-decoration:none;
+            border-radius:10px;
+            margin:6px 10px;
+            transition:0.3s;
+        }
+
+        .sidebar a:hover {
+            background: linear-gradient(135deg,#3b82f6,#6366f1);
+            color:white;
+            transform: translateX(5px);
+        }
+
+        .sidebar a.active {
+            background: linear-gradient(135deg,#6366f1,#3b82f6);
+            color:white;
+        }
+
+        /* ===== MAIN ===== */
+        .main {
+            margin-left:240px;
+            padding:20px;
+            transition:0.3s;
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            margin-left:240px;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.7);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .role-badge {
+            font-size:12px;
+            padding:4px 10px;
+            border-radius:20px;
+            background: linear-gradient(135deg,#e0e7ff,#c7d2fe);
+            color:#3730a3;
+        }
+
+        /* ===== SUBMENU ===== */
+        .submenu {
+            padding-left:30px;
+            font-size:14px;
+        }
+
+        /* ===== MOBILE ===== */
+        @media(max-width:768px){
+            .sidebar {
+                left:-240px;
+            }
+            .sidebar.show {
+                left:0;
+            }
+            .main, .navbar {
+                margin-left:0;
+            }
+        }
+
+        /* ===== ANIMATION ===== */
+        @keyframes fadeIn {
+            from { opacity:0; transform:translateY(10px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h4 class="text-center py-3">🚀 DMOS</h4>
+
+    {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+    <a href="{% url 'dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'employee' %}
+    <a href="{% url 'employee_dashboard' %}">
+        <i class="bi bi-person-workspace"></i> My Tasks
+    </a>
+    <a href="{% url 'activity_daily' %}">
+        <i class="bi bi-calendar"></i> Daily Sheet
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'client' %}
+    <a href="{% url 'client_dashboard' %}">
+        <i class="bi bi-briefcase"></i> Client Dashboard
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'qa' %}
+    <a href="{% url 'qa_dashboard' %}">
+        <i class="bi bi-check2-square"></i> QA Approval
+    </a>
+    <a href="{% url 'activity_daily' %}">
+        <i class="bi bi-calendar"></i> Daily Sheet
+    </a>
+    {% endif %}
+
+    {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+
+    <a href="{% url 'project_dashboard' %}">
+        <i class="bi bi-folder"></i> Projects
+    </a>
+
+    <a href="javascript:void(0);" onclick="toggleMenu()" 
+       class="d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-task"></i> Activities</span>
+        <span id="arrow">▼</span>
+    </a>
+
+    <div id="activityMenu" style="display:none; padding-left:10px;">
+        <a href="{% url 'activity_daily' %}" class="submenu">Daily Sheet</a>
+        <a href="{% url 'activity_approval' %}" class="submenu">Approval</a>
+    </div>
+
+    <a href="{% url 'project_create' %}">
+        <i class="bi bi-folder-plus"></i> Add Project
+    </a>
+
+    {% endif %}
+
+    <a href="{% url 'profile_view' %}">
+        <i class="bi bi-person"></i> My Profile
+    </a>
+
+    <a href="{% url 'logout' %}">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar px-3">
+    <div class="d-flex justify-content-between w-100">
+
+        <button class="btn btn-light d-md-none shadow-sm" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <div>
+            Welcome, <strong>{{ request.user.first_name }}</strong>
+            <span class="role-badge">{{ request.user.role }}</span>
+        </div>
+
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+    {% block content %}{% endblock %}
+</div>
+
+<script>
+
+// Sidebar toggle
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("show");
+}
+
+// Dropdown
+function toggleMenu() {
+    let menu = document.getElementById("activityMenu");
+    let arrow = document.getElementById("arrow");
+
+    if (menu.style.display === "none" || menu.style.display === "") {
+        menu.style.display = "block";
+        arrow.innerText = "▲";
+        localStorage.setItem("menuOpen", "true");
+    } else {
+        menu.style.display = "none";
+        arrow.innerText = "▼";
+        localStorage.setItem("menuOpen", "false");
+    }
+}
+
+// Restore state
+window.onload = function(){
+    if(localStorage.getItem("menuOpen") === "true"){
+        document.getElementById("activityMenu").style.display = "block";
+        document.getElementById("arrow").innerText = "▲";
+    }
+}
+
+</script>
+
+</body>
+</html>
+

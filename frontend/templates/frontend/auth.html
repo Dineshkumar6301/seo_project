@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMOS Auth</title>
+
+<style>
+  :root {
+    --accent:    #4f46e5;
+    --accent-dk: #4338ca;
+    --accent-lt: #eef2ff;
+    --success:   #10b981;
+    --success-dk:#059669;
+    --border:    rgba(255,255,255,0.18);
+    --input-bg:  rgba(255,255,255,0.10);
+    --text:      #ffffff;
+    --muted:     rgba(255,255,255,0.55);
+    --radius:    18px;
+    --radius-sm: 11px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e3a8a 100%);
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* Subtle background orbs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 420px; height: 420px;
+    background: rgba(79,70,229,0.25);
+    top: -100px; left: -80px;
+  }
+  body::after {
+    width: 320px; height: 320px;
+    background: rgba(16,185,129,0.15);
+    bottom: -80px; right: 30%;
+  }
+
+  /* ── LAYOUT ── */
+  .container-main {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    flex: 1;
+    padding: 64px 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: var(--text);
+  }
+
+  .brand-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 28px;
+    width: fit-content;
+  }
+
+  .brand-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: glow 2s infinite;
+  }
+
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+    50%      { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+  }
+
+  .left-panel h1 {
+    font-size: clamp(30px, 3.5vw, 48px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+  }
+
+  .left-panel h1 span {
+    background: linear-gradient(135deg, #a5b4fc, #67e8f9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .left-panel p {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 380px;
+    margin-bottom: 40px;
+  }
+
+  /* Feature chips */
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .feature-icon {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px 24px;
+  }
+
+  /* ── GLASS CARD ── */
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 36px 32px;
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+
+  .auth-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .auth-card-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  /* ── TABS ── */
+  .tab-row {
+    display: flex;
+    background: rgba(0,0,0,0.2);
+    border-radius: 100px;
+    padding: 4px;
+    margin-bottom: 26px;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+  }
+
+  /* ── INPUTS ── */
+  .field {
+    margin-bottom: 13px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 6px;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .form-control::placeholder { color: rgba(255,255,255,0.3); }
+
+  .form-control:focus {
+    border-color: rgba(99,102,241,0.7);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
+  }
+
+  select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  select.form-control option { background: #1e1b4b; color: #fff; }
+
+  /* ── BUTTONS ── */
+  .btn-primary, .btn-success {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.18s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.35);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-dk);
+    box-shadow: 0 6px 22px rgba(79,70,229,0.5);
+    transform: translateY(-1px);
+  }
+
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.35);
+  }
+
+  .btn-success:hover {
+    background: var(--success-dk);
+    box-shadow: 0 6px 22px rgba(16,185,129,0.45);
+    transform: translateY(-1px);
+  }
+
+  /* ── DIVIDER ── */
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* ── TOAST ── */
+  .toast-bar {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1e293b;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 100px;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .toast-bar.show { transform: translateX(-50%) translateY(0); }
+  .toast-bar.error { border-color: rgba(239,68,68,0.4); background: #450a0a; }
+  .toast-bar.success { border-color: rgba(16,185,129,0.4); background: #022c22; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    body { overflow: auto; }
+    .container-main { flex-direction: column; }
+    .left-panel {
+      padding: 40px 28px 28px;
+      flex: none;
+    }
+    .left-panel h1 { font-size: 26px; }
+    .left-panel p { font-size: 14px; margin-bottom: 20px; }
+    .feature-list { display: none; }
+    .right-panel { padding: 16px 20px 48px; align-items: flex-start; }
+    .auth-card { padding: 28px 22px; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container-main">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="brand-chip"><span class="brand-dot"></span> Live Platform</div>
+    <h1>Welcome to<br><span>DMOS Platform</span> 🚀</h1>
+    <p>AI-powered Digital Marketing Operations System — manage teams, projects, and approvals in one place.</p>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        Real-time analytics & reporting
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">✅</div>
+        Smart approval workflows
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">👥</div>
+        Role-based team management
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🤖</div>
+        AI-driven insights & SLA alerts
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="auth-card">
+
+      <div class="auth-card-title" id="cardTitle">Welcome back</div>
+      <div class="auth-card-sub" id="cardSub">Sign in to your account to continue</div>
+
+      <!-- TABS -->
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="showLogin(this)">Login</button>
+        <button class="tab-btn" onclick="showRegister(this)">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginBox">
+        <form id="loginForm">
+          <div class="field">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+          </div>
+          <button class="btn-primary" type="submit">Sign In →</button>
+        </form>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="registerBox" style="display:none;">
+        <form id="registerForm">
+          <div class="form-row-2">
+            <div class="field">
+              <label>First Name</label>
+              <input name="first_name" class="form-control" placeholder="John" required>
+            </div>
+            <div class="field">
+              <label>Last Name</label>
+              <input name="last_name" class="form-control" placeholder="Doe" required>
+            </div>
+          </div>
+          <div class="field">
+            <label>Mobile</label>
+            <input name="mobile" class="form-control" placeholder="+91 9000000000" required>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input name="email" class="form-control" placeholder="you@example.com" required>
+          </div>
+          <div class="form-row-2">
+            <div class="field">
+              <label>Password</label>
+              <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="field">
+              <label>Confirm</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+            </div>
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <select name="role" class="form-control">
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
+              <option value="qa">QA</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+          <button class="btn-success" type="submit">Create Account →</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-bar" id="toast"></div>
+
+<script>
+  // ── TAB SWITCH ──
+  function showLogin(btn){
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("registerBox").style.display = "none";
+    document.getElementById("cardTitle").innerText = "Welcome back";
+    document.getElementById("cardSub").innerText = "Sign in to your account to continue";
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function showRegister(btn){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("registerBox").style.display = "block";
+    document.getElementById("cardTitle").innerText = "Create account";
+    document.getElementById("cardSub").innerText = "Fill in your details to get started";
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // ── TOAST ──
+  function showToast(msg, type=""){
+    const t = document.getElementById("toast");
+    t.innerText = msg;
+    t.className = "toast-bar " + type + " show";
+    setTimeout(() => { t.classList.remove("show"); }, 3200);
+  }
+
+  // ── REGISTER ──
+  document.getElementById("registerForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    const password = this.password.value;
+    const confirm  = this.confirm_password.value;
+
+    if(password !== confirm){
+      showToast("⚠️ Passwords do not match", "error");
+      return;
+    }
+
+    const res = await fetch("/api/accounts/register/", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        first_name: this.first_name.value,
+        last_name:  this.last_name.value,
+        mobile:     this.mobile.value,
+        email:      this.email.value,
+        password:   password,
+        role:       this.role.value
+      })
+    });
+
+    const data = await res.json();
+
+    if(res.status === 201){
+      showToast("✅ Registered successfully!", "success");
+      setTimeout(() => showLogin(document.querySelectorAll('.tab-btn')[0]), 1200);
+    } else {
+      showToast("❌ " + JSON.stringify(data), "error");
+    }
+  });
+
+  // ── LOGIN ──
+  document.getElementById("loginForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const res = await fetch("/api/accounts/login/", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        email:    this.email.value,
+        password: this.password.value
+      })
+    });
+
+    const data = await res.json();
+
+    if(res.status === 200){
+      localStorage.setItem("user", JSON.stringify(data));
+      window.location.href = "/dashboard/";
+    } else {
+      showToast("❌ Login failed. Check your credentials.", "error");
+    }
+  });
+</script>
+
+</body>
+</html>

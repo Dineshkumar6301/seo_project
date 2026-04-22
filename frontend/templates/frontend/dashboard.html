@@ -1,0 +1,535 @@
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root {
+    --bg:        #f0f4ff;
+    --surface:   #ffffff;
+    --surface2:  #e8edf8;
+    --border:    #dde3f0;
+    --accent:    #4f46e5;
+    --accent-lt: #eef2ff;
+    --success:   #10b981;
+    --warning:   #f59e0b;
+    --danger:    #ef4444;
+    --info:      #0ea5e9;
+    --text:      #1e293b;
+    --muted:     #94a3b8;
+    --radius:    16px;
+    --radius-sm: 10px;
+    --shadow:    0 4px 24px rgba(79,70,229,0.07);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── LAYOUT ── */
+  .dash {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* ── HEADER ── */
+  .dash-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .dash-title {
+    font-size: clamp(20px, 3.5vw, 28px);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    line-height: 1.15;
+  }
+
+  .dash-title small {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(79,70,229,0.28);
+    transition: background 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+  }
+
+  .export-btn:hover {
+    background: #4338ca;
+    box-shadow: 0 6px 20px rgba(79,70,229,0.38);
+    color: #fff;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    margin-top: 4px;
+  }
+
+  /* ── GRID ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 14px; }
+  .grid-84 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  /* ── KPI CARDS ── */
+  .kpi-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(79,70,229,0.12);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .kpi-card.warn::before  { background: var(--warning); }
+  .kpi-card.ok::before    { background: var(--success); }
+  .kpi-card.bad::before   { background: var(--danger); }
+  .kpi-card.info::before  { background: var(--info); }
+
+  .kpi-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    margin-bottom: 14px;
+  }
+
+  .kpi-card        .kpi-icon { background: var(--accent-lt); }
+  .kpi-card.warn   .kpi-icon { background: #fef3c7; }
+  .kpi-card.ok     .kpi-icon { background: #d1fae5; }
+  .kpi-card.bad    .kpi-icon { background: #fee2e2; }
+  .kpi-card.info   .kpi-icon { background: #e0f2fe; }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-card        .kpi-value { color: var(--accent); }
+  .kpi-card.warn   .kpi-value { color: #92400e; }
+  .kpi-card.ok     .kpi-value { color: #065f46; }
+  .kpi-card.bad    .kpi-value { color: #991b1b; }
+  .kpi-card.info   .kpi-value { color: #0369a1; }
+
+  .kpi-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  /* ── CHART CARD ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-heading {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .chart-heading .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  /* ── TABLE CARD ── */
+  .table-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .table-card-header h5 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 500px;
+  }
+
+  thead th {
+    background: var(--surface2);
+    border-bottom: 1.5px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 13px 20px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.13s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8f9ff; }
+
+  tbody td {
+    padding: 14px 20px;
+    font-size: 13.5px;
+    vertical-align: middle;
+    color: var(--text);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+  }
+
+  .badge-approved { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-approved::before { background: var(--success); }
+  .badge-pending  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-pending::before  { background: var(--warning); animation: blink 2s infinite; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .badge-rejected::before { background: var(--danger); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── EMPTY ── */
+  .empty-cell { padding: 48px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .dash { padding: 18px 14px; }
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .grid-3 { grid-template-columns: repeat(1,1fr); }
+    .grid-84 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 420px) {
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .kpi-value { font-size: 22px; }
+  }
+</style>
+
+<div class="dash">
+
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div class="dash-title">
+      <small>Workspace</small>
+      Analytics Dashboard
+    </div>
+    <a href="{% url 'export_report' %}" class="export-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Monthly Report
+    </a>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="section-label">Overview</div>
+  <div class="grid-4">
+    <div class="kpi-card">
+      <div class="kpi-icon">📁</div>
+      <div class="kpi-value">{{ total_projects }}</div>
+      <div class="kpi-label">Projects</div>
+    </div>
+    <div class="kpi-card info">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-value">{{ total_activities }}</div>
+      <div class="kpi-label">Activities</div>
+    </div>
+    <div class="kpi-card ok">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-value">{{ team_members }}</div>
+      <div class="kpi-label">Team</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-value">{{ performance }}%</div>
+      <div class="kpi-label">Performance</div>
+    </div>
+  </div>
+
+  <!-- STATUS ROW -->
+  <div class="section-label" style="margin-top:10px;">Approval Status</div>
+  <div class="grid-3">
+    <div class="kpi-card warn">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-value">{{ pending|default:0 }}</div>
+      <div class="kpi-label">Pending</div>
+    </div>
+    <div class="kpi-card ok">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-value">{{ approved|default:0 }}</div>
+      <div class="kpi-label">Approved</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="kpi-icon">❌</div>
+      <div class="kpi-value">{{ rejected|default:0 }}</div>
+      <div class="kpi-label">Rejected</div>
+    </div>
+  </div>
+
+  <!-- AI INSIGHTS -->
+  <div class="section-label" style="margin-top:10px;">AI Insights</div>
+  <div class="grid-4">
+    <div class="kpi-card {% if trend_direction == 'up' %}ok{% elif trend_direction == 'down' %}bad{% else %}info{% endif %}">
+      <div class="kpi-icon">
+        {% if trend_direction == 'up' %}📈{% elif trend_direction == 'down' %}📉{% else %}➡️{% endif %}
+      </div>
+      <div class="kpi-value">
+        {{ trend_pct }}%
+        {% if trend_direction == 'up' %}↑{% elif trend_direction == 'down' %}↓{% else %}→{% endif %}
+      </div>
+      <div class="kpi-label">7-Day Trend</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🏆</div>
+      <div class="kpi-value" style="font-size:18px;">{{ top_project }}</div>
+      <div class="kpi-label">Top Project</div>
+    </div>
+    <div class="kpi-card info">
+      <div class="kpi-icon">⭐</div>
+      <div class="kpi-value" style="font-size:18px;">{{ top_employee }}</div>
+      <div class="kpi-label">Top Employee</div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-value" style="font-size:18px;">{{ risk_label }} ({{ risk_count }})</div>
+      <div class="kpi-label">SLA Risk</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-label" style="margin-top:10px;">Charts</div>
+  <div class="grid-84">
+    <div class="chart-card">
+      <div class="chart-heading">
+        <span class="dot"></span>
+        Last 7 Days Activity
+      </div>
+      <canvas id="trendChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-heading">
+        <span class="dot" style="background:var(--info)"></span>
+        Weekly Distribution
+      </div>
+      <canvas id="weekdayChart"></canvas>
+    </div>
+  </div>
+
+  <!-- RECENT ACTIVITIES TABLE -->
+  <div class="section-label" style="margin-top:10px;">Recent Activities</div>
+  <div class="table-card">
+    <div class="table-card-header">
+      <h5>Activity Log</h5>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Employee</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activities %}
+          <tr>
+            <td><strong>{{ a.project.name }}</strong></td>
+            <td>{{ a.user.first_name }} {{ a.user.last_name }}</td>
+            <td>
+              {% if a.status == 'approved' %}
+                <span class="badge badge-approved">Approved</span>
+              {% elif a.status == 'pending' %}
+                <span class="badge badge-pending">Pending</span>
+              {% else %}
+                <span class="badge badge-rejected">Rejected</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--muted)">{{ a.created_at|date:"d M Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="empty-cell">📋 No activity data</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHARTS JS — logic unchanged -->
+<script>
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: {{ spark_labels|safe }},
+        datasets: [{
+            label: 'Activities',
+            data: {{ spark_data|safe }},
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.08)',
+            borderWidth: 2.5,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#4f46e5',
+            pointRadius: 4,
+            pointHoverRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#fff',
+                borderColor: '#dde3f0',
+                borderWidth: 1,
+                titleColor: '#1e293b',
+                bodyColor: '#64748b',
+                padding: 12,
+                cornerRadius: 10
+            }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } }, beginAtZero: true }
+        }
+    }
+});
+
+new Chart(document.getElementById('weekdayChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ weekday_labels|safe }},
+        datasets: [{
+            label: 'Tasks',
+            data: {{ weekday_data|safe }},
+            backgroundColor: 'rgba(14,165,233,0.18)',
+            borderColor: 'rgba(14,165,233,0.9)',
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#fff',
+                borderColor: '#dde3f0',
+                borderWidth: 1,
+                titleColor: '#1e293b',
+                bodyColor: '#64748b',
+                padding: 12,
+                cornerRadius: 10
+            }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } }, beginAtZero: true }
+        }
+    }
+});
+</script>
+
+{% endblock %}
