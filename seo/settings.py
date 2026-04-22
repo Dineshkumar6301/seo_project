@@ -41,9 +41,7 @@ INSTALLED_APPS = [
     'projects.apps.ProjectsConfig',
     'rest_framework',
     'corsheaders',
-  
     'clients',
-
     'activities',
     'frontend',
 ]
