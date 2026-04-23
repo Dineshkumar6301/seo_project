@@ -3,9 +3,6 @@ from django.conf import settings
 from projects.models import Project, Service
 
 
-# ==========================================
-# CHECKLIST MODEL (Planned Work / Template)
-# ==========================================
 class Checklist(models.Model):
 
     STATUS_CHOICES = [
@@ -55,9 +52,6 @@ class Checklist(models.Model):
         return f"{self.project.name} - {self.service.name} - {self.item}"
 
 
-# ==========================================
-# ACTIVITY MODEL (Daily Work)
-# ==========================================
 class Activity(models.Model):
 
     STATUS_CHOICES = [
@@ -71,7 +65,7 @@ class Activity(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='activities'   # 🔥 ADD THIS
+        related_name='activities' 
     )
     project = models.ForeignKey(
         Project,
@@ -83,8 +77,6 @@ class Activity(models.Model):
         Service,
         on_delete=models.CASCADE
     )
-
-    # 🔥 Link to checklist (optional but powerful)
     checklist_item = models.ForeignKey(
         Checklist,
         on_delete=models.SET_NULL,
@@ -92,7 +84,6 @@ class Activity(models.Model):
         blank=True
     )
 
-    # 🔥 Critical for date-based UI
     date = models.DateField()
 
     task_title = models.CharField(max_length=255)
@@ -114,7 +105,6 @@ class Activity(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-        # 🔥 Prevent duplicate same-day entries
         unique_together = ['user', 'project', 'service', 'date', 'task_title']
 
     def __str__(self):

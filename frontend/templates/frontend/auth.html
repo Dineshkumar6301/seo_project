@@ -396,6 +396,11 @@
             <label>Password</label>
             <input type="password" name="password" class="form-control" placeholder="••••••••" required>
           </div>
+          <div style="text-align:right; margin-bottom:10px;">
+           <a href="#" onclick="openForgotModal(); return false;" style="color:#a5b4fc; font-size:12px;">
+              Forgot Password?
+            </a>
+          </div>
           <button class="btn-primary" type="submit">Sign In →</button>
         </form>
       </div>
@@ -450,7 +455,44 @@
 
 <!-- TOAST -->
 <div class="toast-bar" id="toast"></div>
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
 
+  <div style="background:#1e1b4b; padding:30px; border-radius:14px; width:100%; max-width:400px;">
+
+    <h3 style="color:white; margin-bottom:10px;">Reset Password</h3>
+
+    <!-- STEP 1 -->
+    <div id="forgotStep1">
+      <p style="color:#aaa; font-size:13px; margin-bottom:15px;">
+        Enter your email to receive reset link
+      </p>
+
+      <input id="forgotEmail" class="form-control" placeholder="Enter email">
+
+      <button onclick="sendResetLink()" class="btn-primary" style="margin-top:15px;">
+        Send Reset Link
+      </button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="forgotStep2" style="display:none;">
+      <p style="color:#aaa; font-size:13px;">Enter new password</p>
+
+      <input id="newPassword" type="password" class="form-control" placeholder="New Password">
+      <input id="confirmPassword" type="password" class="form-control" placeholder="Confirm Password" style="margin-top:10px;">
+
+      <button onclick="resetPassword()" class="btn-success" style="margin-top:15px;">
+        Save Password
+      </button>
+    </div>
+
+    <div style="text-align:right; margin-top:15px;">
+      <button onclick="closeForgotModal()" style="background:none; border:none; color:#aaa;">Close</button>
+    </div>
+
+  </div>
+</div>
 <script>
   // ── TAB SWITCH ──
   function showLogin(btn){
@@ -535,7 +577,182 @@
       showToast("❌ Login failed. Check your credentials.", "error");
     }
   });
-</script>
+function openForgotModal(){
+  document.getElementById("forgotModal").style.display = "flex";
+}
 
+function closeForgotModal(){
+  document.getElementById("forgotModal").style.display = "none";
+}
+/* CSRF */
+function getCSRFToken() {
+  const match = document.cookie.match(/(^| )csrftoken=([^;]+)/);
+  return match ? match[2] : "";
+}
+
+/* STATE */
+let lastRequestTime = 0;
+let isSending = false;
+
+/* SEND RESET LINK */
+async function sendResetLink(){
+
+  console.log("SEND CLICKED"); // debug
+
+  const now = Date.now();
+
+  // 🚫 BLOCK FRONTEND SPAM (1 min)
+  if (now - lastRequestTime < 60000) {
+    showToast("⏳ Already sent. Check your email.", "success");
+    return;
+  }
+
+  if(isSending){
+    return; // prevent double click instantly
+  }
+
+  const email = document.getElementById("forgotEmail").value.trim();
+
+  if(!email){
+    showToast("⚠️ Enter email", "error");
+    return;
+  }
+
+  isSending = true;
+  lastRequestTime = now;
+
+  try {
+    showToast("⏳ Sending reset link...");
+
+    const res = await fetch("/activities/forget_password/", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken()
+      },
+      body: JSON.stringify({ email })
+    });
+
+    let data = {};
+    try {
+      data = await res.json(); // safe parse
+    } catch(e){
+      console.warn("Invalid JSON response");
+    }
+
+    if(res.status === 200){
+      showToast("📩 Reset link sent. Check your email.", "success");
+
+      // delay close for UX
+      setTimeout(() => {
+        closeForgotModal();
+      }, 1200);
+
+    } else {
+      showToast("❌ " + (data.error || "Failed to send"), "error");
+      lastRequestTime = 0; // allow retry if failed
+    }
+
+  } catch (err){
+    console.error(err);
+    showToast("❌ Network error", "error");
+    lastRequestTime = 0; // allow retry
+  }
+
+  isSending = false;
+}
+
+/* AUTO OPEN FROM LINK */
+window.addEventListener("load", function () {
+  const params = new URLSearchParams(window.location.search);
+
+  const email = params.get("email");
+  const token = params.get("token");
+
+  if (email && token) {
+
+    localStorage.setItem("reset_email", email);
+    localStorage.setItem("reset_token", token);
+
+    openForgotModal();
+
+    document.getElementById("forgotStep1").style.display = "none";
+    document.getElementById("forgotStep2").style.display = "block";
+
+    window.history.replaceState({}, document.title, "/");
+  }
+});
+
+/* RESET PASSWORD */
+async function resetPassword(){
+
+  const password = document.getElementById("newPassword").value;
+  const confirm  = document.getElementById("confirmPassword").value;
+
+  if(!password || !confirm){
+    showToast("⚠️ Fill all fields", "error");
+    return;
+  }
+
+  if(password !== confirm){
+    showToast("⚠️ Password mismatch", "error");
+    return;
+  }
+
+  const email = localStorage.getItem("reset_email");
+  const token = localStorage.getItem("reset_token");
+
+  if(!email || !token){
+    showToast("❌ Session expired. Try again.", "error");
+    return;
+  }
+
+  try {
+    showToast("⏳ Updating password...");
+
+    const res = await fetch("/activities/reset_password/", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken()
+      },
+      body: JSON.stringify({
+        email: email,
+        token: token,
+        password: password
+      })
+    });
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch(e){
+      console.warn("Invalid JSON response");
+    }
+
+    if(res.status === 200){
+      showToast("✅ Password updated", "success");
+
+      localStorage.removeItem("reset_email");
+      localStorage.removeItem("reset_token");
+
+      setTimeout(() => {
+        closeForgotModal();
+        showLogin(document.querySelectorAll('.tab-btn')[0]);
+      }, 1000);
+
+    } else {
+      showToast("❌ " + (data.error || "Invalid or expired link"), "error");
+    }
+
+  } catch (err){
+    console.error(err);
+    showToast("❌ Network error", "error");
+  }
+}
+
+</script>
 </body>
 </html>

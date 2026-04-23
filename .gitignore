@@ -1,0 +1,45 @@
+
+# 🔐 ENV FILES (VERY IMPORTANT)
+.env
+
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 🔧 Virtual Environment
+venv/
+env/
+ENV/
+
+# 📦 Packages
+*.egg-info/
+*.egg
+
+# 🧪 Django stuff
+*.log
+db.sqlite3
+media/
+
+# 📁 Static files (optional)
+staticfiles/
+
+# 🔐 Secrets
+*.key
+*.pem
+
+# 🧠 IDE / Editor
+.vscode/
+.idea/
+
+# 🖥 OS files
+.DS_Store
+Thumbs.db
+
+# 📊 Coverage / Testing
+.coverage
+htmlcov/
+
+# 🧾 Migrations (optional keep or ignore carefully)
+# */migrations/*
+# !*/migrations/__init__.py

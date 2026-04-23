@@ -3,17 +3,22 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from accounts.models import User
 from activities.models import Activity
-from projects.models import Project
+from .models import Project, Service, ProjectServiceAssignment
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from datetime import date, timedelta
+from django.utils import timezone
+from django.db.models import Count, Q
 
 
-# 🔴 HOME
+
 def home(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')   # ✅ CORRECT
+        return redirect('dashboard')  
     return render(request, 'frontend/auth.html')
 
 
-# 🔐 LOGIN
+
 def login_view(request):
     if request.method == "POST":
         email = request.POST.get('email')
@@ -32,7 +37,7 @@ def login_view(request):
     return redirect('home')
 
 
-# 📝 REGISTER
+
 def register_view(request):
     if request.method == "POST":
         email = request.POST.get('email')
@@ -72,40 +77,6 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
-from accounts.models import User
-from django.db.models import Count
-from django.db.models.functions import TruncDate
-
-from django.db.models import Count
-from django.db.models.functions import TruncDate
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-
-from django.db.models import Count
-from django.db.models.functions import TruncDate
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from projects.models import Project
-from activities.models import Activity
-from accounts.models import User
-
-
-from datetime import timedelta
-from django.utils import timezone
-from django.db.models import Count, Q
-from django.db.models.functions import TruncDate, ExtractWeekDay
-
-from datetime import timedelta
-from django.utils import timezone
-from django.db.models import Count
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-from projects.models import Project
-from activities.models import Activity
-from accounts.models import User
-
 
 @login_required(login_url='home')
 def dashboard(request):
@@ -121,10 +92,9 @@ def dashboard(request):
 
     today = timezone.now().date()
 
-    # Base queryset (safe)
+
     base_qs = Activity.objects.filter(project__owner=user).select_related('project', 'user')
 
-    # ---------- KPI ----------
     total_projects = Project.objects.filter(owner=user).count()
     total_activities = base_qs.count()
     team_members = User.objects.exclude(role='client').count()
@@ -135,8 +105,6 @@ def dashboard(request):
 
     performance = int((approved / total_activities) * 100) if total_activities else 0
 
-    # ---------- AI INSIGHTS ----------
-    # Last 7 vs previous 7 days (use Activity.date, not created_at)
     last_7_start = today - timedelta(days=6)
     prev_7_start = today - timedelta(days=13)
     prev_7_end = today - timedelta(days=7)
@@ -151,7 +119,7 @@ def dashboard(request):
 
     trend_direction = "up" if trend_pct > 0 else ("down" if trend_pct < 0 else "flat")
 
-    # Top project / employee
+   
     tp = (
         base_qs.values('project__name')
         .annotate(c=Count('id'))
@@ -168,12 +136,11 @@ def dashboard(request):
     )
     top_employee = te['user__email'] if te else "—"
 
-    # SLA risk: pending older than 2 days
+    
     risk_count = base_qs.filter(status='pending', date__lt=today - timedelta(days=2)).count()
     risk_label = "High" if risk_count >= 10 else ("Medium" if risk_count >= 3 else "Low")
 
-    # ---------- CHARTS (SAFE FOR SQLITE) ----------
-    # 7-day sparkline using Activity.date (no TruncDate)
+
     spark_labels = []
     spark_data = []
     for i in range(7):
@@ -181,30 +148,27 @@ def dashboard(request):
         spark_labels.append(d.strftime('%d %b'))
         spark_data.append(base_qs.filter(date=d).count())
 
-    # Weekday distribution (Mon–Sun) using Python (no DB functions)
     weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     weekday_data = [0] * 7
     for a in base_qs.filter(date__isnull=False):
-        # Python weekday(): Mon=0 ... Sun=6
+        
         weekday_data[a.date.weekday()] += 1
 
-    # Recent activities
+    
     activities = base_qs.order_by('-created_at')[:5]
     
     context = {
-        # KPI
+        
         'total_projects': total_projects,
         'total_activities': total_activities,
         'team_members': team_members,
         'performance': performance,
 
-        # Status
+    
         'pending': pending,
         'approved': approved,
         'rejected': rejected,
         
-
-        # AI
         'trend_pct': trend_pct,
         'trend_direction': trend_direction,
         'top_project': top_project,
@@ -212,33 +176,15 @@ def dashboard(request):
         'risk_label': risk_label,
         'risk_count': risk_count,
 
-        # Charts
         'spark_labels': spark_labels,
         'spark_data': spark_data,
         'weekday_labels': weekday_labels,
         'weekday_data': weekday_data,
-
-        # Table
         'activities': activities,
     }
 
     return render(request, 'frontend/dashboard.html', context)
 
-@login_required(login_url='home')
-def projects(request):
-    return render(request, 'frontend/projects.html')
-
-
-@login_required(login_url='home')
-def activities(request):
-    return render(request, 'frontend/activities.html')
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count
-from django.db.models.functions import TruncDate
-from activities.models import Activity
-from datetime import date, timedelta
 
 
 @login_required
@@ -247,14 +193,11 @@ def employee_dashboard(request):
     user = request.user
 
     activities = Activity.objects.filter(user=user).order_by('-date')
-
-    # KPI COUNTS
     total = activities.count()
     pending = activities.filter(status='pending').count()
     approved = activities.filter(status='approved').count()
     rejected = activities.filter(status='rejected').count()
 
-    # 🔥 LAST 7 DAYS CHART (SAFE SQLITE)
     today = date.today()
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
 
@@ -294,10 +237,6 @@ def qa_dashboard(request):
         'activities': activities
     })
 
-
-from django.db.models import Count
-from django.db.models.functions import TruncDate
-
 @login_required
 def client_dashboard(request):
 
@@ -306,8 +245,6 @@ def client_dashboard(request):
     activities = Activity.objects.filter(
         project__client=client
     )
-
-    # 🔥 SAFE CHART QUERY
     chart_qs = (
         activities
         .annotate(day=TruncDate('created_at'))
@@ -326,12 +263,6 @@ def client_dashboard(request):
     })
 
 
-# projects/views.py
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse, HttpResponseBadRequest
-from .models import Project, Service, ProjectServiceAssignment
 
 @login_required
 def assign_services(request, project_id):

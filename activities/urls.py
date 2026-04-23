@@ -18,6 +18,8 @@ from activities.api.today import TodayActivityAPI
 from activities.api.upsert import ActivityUpsertAPI
 from activities.api.export import ExportExcelAPI
 from activities.api.project_services import ProjectServiceAPI
+from activities.api.forget_password import ForgotPasswordAPI
+from activities.api.reset_password import ResetPasswordAPI
 
 urlpatterns = [
 
@@ -45,4 +47,6 @@ urlpatterns = [
     path('api/assignment/delete/<int:id>/', DeleteAssignmentAPI.as_view()),
     path('export-report/', views.export_report, name='export_report'),
 
+    path('forget_password/', ForgotPasswordAPI.as_view()),
+    path('reset_password/', ResetPasswordAPI.as_view()),
 ]

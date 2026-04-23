@@ -70,3 +70,17 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.email
+    
+
+
+from django.db import models
+from django.db import models
+
+class PasswordResetToken(models.Model):
+    email = models.EmailField()
+    token = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class PasswordResetRequestLog(models.Model):
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)

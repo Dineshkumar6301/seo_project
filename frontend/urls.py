@@ -11,8 +11,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('projects/', views.projects, name='projects'),
-    path('activities/', views.activities, name='activities'),
     path('dashboard/employee/', views.employee_dashboard, name='employee_dashboard'),
     path('dashboard/qa/', views.qa_dashboard, name='qa_dashboard'),
     path('dashboard/client/', views.client_dashboard, name='client_dashboard'),

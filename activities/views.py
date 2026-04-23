@@ -1,7 +1,17 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db.models import Count
+from django.http import HttpResponse
+
+from datetime import timedelta, datetime
+
 from projects.models import Project
 from activities.models import Activity
+from accounts.models import User, Profile
+
+from openpyxl import Workbook
+import openpyxl
 
 
 @login_required
@@ -13,7 +23,7 @@ def activity_daily(request):
 
         rows = zip(
             request.POST.getlist('project'),
-            request.POST.getlist('service'),   # 🔥 REQUIRED
+            request.POST.getlist('service'),
             request.POST.getlist('task_title'),
             request.POST.getlist('planned'),
             request.POST.getlist('completed'),
@@ -50,19 +60,6 @@ def activity_daily(request):
     })
 
 
-from django.utils import timezone
-from datetime import timedelta
-from django.db.models import Count
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-from accounts.models import User,Profile
-
-from django.utils import timezone
-from datetime import timedelta
-from django.db.models import Count
-from django.http import HttpResponse
-import openpyxl
 
 
 @login_required
@@ -168,17 +165,6 @@ def activity_reports(request):
 
 
 
-from django.http import HttpResponse
-from openpyxl import Workbook
-from activities.models import Activity
-from datetime import datetime
-
-
-from django.http import HttpResponse
-from openpyxl import Workbook
-from activities.models import Activity
-from datetime import datetime
-
 def export_report(request):
 
     now = datetime.now()
@@ -190,9 +176,7 @@ def export_report(request):
 
     wb = Workbook()
 
-    # -------------------------
-    # 📊 SHEET 1: DATA
-    # -------------------------
+
     ws = wb.active
     ws.title = "Activities"
 
@@ -208,9 +192,7 @@ def export_report(request):
             str(a.date)
         ])
 
-    # -------------------------
-    # 📈 SHEET 2: SUMMARY
-    # -------------------------
+
     summary = wb.create_sheet("Summary")
 
     total = activities.count()
@@ -227,9 +209,6 @@ def export_report(request):
     summary.append(["Rejected", rejected])
     summary.append(["Performance %", performance])
 
-    # -------------------------
-    # 📊 TOP PROJECT
-    # -------------------------
     top_project = (
         activities.values('project__name')
         .annotate(c=Count('id'))
@@ -240,9 +219,6 @@ def export_report(request):
     summary.append([])
     summary.append(["Top Project", top_project['project__name'] if top_project else "—"])
 
-    # -------------------------
-    # 📊 TOP EMPLOYEE
-    # -------------------------
     top_emp = (
         activities.values('user__email')
         .annotate(c=Count('id'))
@@ -252,7 +228,6 @@ def export_report(request):
 
     summary.append(["Top Employee", top_emp['user__email'] if top_emp else "—"])
 
-    # -------------------------
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
