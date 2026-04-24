@@ -78,9 +78,24 @@ def logout_view(request):
     return redirect('home')
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count
+from activities.models import Activity
+from projects.models import Project
+
+
+
 @login_required(login_url='home')
 def dashboard(request):
+
     user = request.user
+
+    # =========================
+    # 🔥 ROLE REDIRECTION
+    # =========================
     if user.role == "employee":
         return redirect("employee_dashboard")
 
@@ -92,11 +107,21 @@ def dashboard(request):
 
     today = timezone.now().date()
 
+    # =========================
+    # 🔥 ROLE-BASED DATA (MAIN FIX)
+    # =========================
+    if user.role in ["admin", "manager"]:
+        base_qs = Activity.objects.all().select_related('project', 'user')
+    else:
+        base_qs = Activity.objects.filter(user=user).select_related('project', 'user')
 
-    base_qs = Activity.objects.filter(project__owner=user).select_related('project', 'user')
+    # =========================
+    # 🔥 KPI COUNTS
+    # =========================
+    total_projects = Project.objects.count() if user.role in ["admin", "manager"] else Project.objects.filter(owner=user).count()
 
-    total_projects = Project.objects.filter(owner=user).count()
     total_activities = base_qs.count()
+
     team_members = User.objects.exclude(role='client').count()
 
     pending = base_qs.filter(status='pending').count()
@@ -105,6 +130,9 @@ def dashboard(request):
 
     performance = int((approved / total_activities) * 100) if total_activities else 0
 
+    # =========================
+    # 🔥 TREND CALCULATION
+    # =========================
     last_7_start = today - timedelta(days=6)
     prev_7_start = today - timedelta(days=13)
     prev_7_end = today - timedelta(days=7)
@@ -119,7 +147,9 @@ def dashboard(request):
 
     trend_direction = "up" if trend_pct > 0 else ("down" if trend_pct < 0 else "flat")
 
-   
+    # =========================
+    # 🔥 TOP PROJECT
+    # =========================
     tp = (
         base_qs.values('project__name')
         .annotate(c=Count('id'))
@@ -128,6 +158,9 @@ def dashboard(request):
     )
     top_project = tp['project__name'] if tp else "—"
 
+    # =========================
+    # 🔥 TOP EMPLOYEE
+    # =========================
     te = (
         base_qs.values('user__email')
         .annotate(c=Count('id'))
@@ -136,39 +169,55 @@ def dashboard(request):
     )
     top_employee = te['user__email'] if te else "—"
 
-    
-    risk_count = base_qs.filter(status='pending', date__lt=today - timedelta(days=2)).count()
+    # =========================
+    # 🔥 SLA RISK
+    # =========================
+    risk_count = base_qs.filter(
+        status='pending',
+        date__lt=today - timedelta(days=2)
+    ).count()
+
     risk_label = "High" if risk_count >= 10 else ("Medium" if risk_count >= 3 else "Low")
 
-
+    # =========================
+    # 🔥 SPARKLINE (LAST 7 DAYS)
+    # =========================
     spark_labels = []
     spark_data = []
+
     for i in range(7):
         d = last_7_start + timedelta(days=i)
         spark_labels.append(d.strftime('%d %b'))
         spark_data.append(base_qs.filter(date=d).count())
 
+    # =========================
+    # 🔥 WEEKDAY DISTRIBUTION
+    # =========================
     weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     weekday_data = [0] * 7
+
     for a in base_qs.filter(date__isnull=False):
-        
         weekday_data[a.date.weekday()] += 1
 
-    
+    # =========================
+    # 🔥 RECENT ACTIVITIES
+    # =========================
     activities = base_qs.order_by('-created_at')[:5]
-    
+
+    # =========================
+    # 🔥 CONTEXT
+    # =========================
     context = {
-        
+
         'total_projects': total_projects,
         'total_activities': total_activities,
         'team_members': team_members,
         'performance': performance,
 
-    
         'pending': pending,
         'approved': approved,
         'rejected': rejected,
-        
+
         'trend_pct': trend_pct,
         'trend_direction': trend_direction,
         'top_project': top_project,
@@ -180,11 +229,11 @@ def dashboard(request):
         'spark_data': spark_data,
         'weekday_labels': weekday_labels,
         'weekday_data': weekday_data,
+
         'activities': activities,
     }
 
     return render(request, 'frontend/dashboard.html', context)
-
 
 
 @login_required
