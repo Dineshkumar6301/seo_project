@@ -18,10 +18,6 @@ from activities.models import Checklist
 
 import json
 
-
-# ==============================
-# 🔷 API VIEW (CREATE PROJECT)
-# ==============================
 class ProjectCreateAPI(APIView):
     permission_classes = [IsAdminOrManager]
 
@@ -37,10 +33,6 @@ class ProjectCreateAPI(APIView):
 
         return Response(serializer.errors, status=400)
 
-
-# ==============================
-# 🔷 PROJECT LIST (UI)
-# ==============================
 @login_required(login_url='home')
 def project_list(request):
 
@@ -58,9 +50,6 @@ def project_list(request):
     })
 
 
-# ==============================
-# 🔷 PROJECT CREATE (UI)
-# ==============================
 @login_required(login_url='home')
 def project_create(request):
 
@@ -90,10 +79,6 @@ def project_create(request):
         'clients': clients
     })
 
-
-# ==============================
-# 🔷 PROJECT DASHBOARD
-# ==============================
 @login_required(login_url='home')
 def project_dashboard(request):
 
@@ -109,22 +94,18 @@ def project_dashboard(request):
 
     if selected_project:
 
-    # 🔥 GET ALL SERVICES IN PROJECT
         project_services = selected_project.services.all()
 
-        # 🔥 GET ASSIGNMENTS
         assignments = ProjectServiceAssignment.objects.filter(
             project_id=selected_project.id
         ).select_related('user', 'service')
 
-        # 🔥 INIT ALL SERVICES (IMPORTANT)
         for s in project_services:
             service_team[s.id] = {
                 "name": s.name,
                 "users": []
             }
 
-        # 🔥 MAP USERS TO SERVICES
         for a in assignments:
             sid = a.service_id
 
@@ -141,14 +122,8 @@ def project_dashboard(request):
 
         try:
             with transaction.atomic():
-
-                # ✅ Assign services
                 project.services.set(selected_services)
-
-                # ✅ Remove old checklist
                 Checklist.objects.filter(project=project).delete()
-
-                # ✅ Create new checklist
                 services_qs = Service.objects.filter(id__in=selected_services)
 
                 checklist_items = [
@@ -176,9 +151,6 @@ def project_dashboard(request):
     })
 
 
-# ==============================
-# 🔥 ADD SERVICE API (SECURE)
-# ==============================
 @login_required(login_url='home')
 @require_POST
 def add_service(request):
@@ -190,7 +162,6 @@ def add_service(request):
         if not name:
             return JsonResponse({"error": "Service name required"}, status=400)
 
-        # Prevent duplicate services
         service, created = Service.objects.get_or_create(name=name)
 
         return JsonResponse({

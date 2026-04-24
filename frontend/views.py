@@ -71,8 +71,6 @@ def register_view(request):
 
     return redirect('home')
 
-
-# 🚪 LOGOUT
 def logout_view(request):
     logout(request)
     return redirect('home')
@@ -93,9 +91,6 @@ def dashboard(request):
 
     user = request.user
 
-    # =========================
-    # 🔥 ROLE REDIRECTION
-    # =========================
     if user.role == "employee":
         return redirect("employee_dashboard")
 
@@ -107,17 +102,11 @@ def dashboard(request):
 
     today = timezone.now().date()
 
-    # =========================
-    # 🔥 ROLE-BASED DATA (MAIN FIX)
-    # =========================
     if user.role in ["admin", "manager"]:
         base_qs = Activity.objects.all().select_related('project', 'user')
     else:
         base_qs = Activity.objects.filter(user=user).select_related('project', 'user')
 
-    # =========================
-    # 🔥 KPI COUNTS
-    # =========================
     total_projects = Project.objects.count() if user.role in ["admin", "manager"] else Project.objects.filter(owner=user).count()
 
     total_activities = base_qs.count()
@@ -129,10 +118,6 @@ def dashboard(request):
     rejected = base_qs.filter(status='rejected').count()
 
     performance = int((approved / total_activities) * 100) if total_activities else 0
-
-    # =========================
-    # 🔥 TREND CALCULATION
-    # =========================
     last_7_start = today - timedelta(days=6)
     prev_7_start = today - timedelta(days=13)
     prev_7_end = today - timedelta(days=7)
@@ -146,10 +131,6 @@ def dashboard(request):
         trend_pct = int(((last_7 - prev_7) / prev_7) * 100)
 
     trend_direction = "up" if trend_pct > 0 else ("down" if trend_pct < 0 else "flat")
-
-    # =========================
-    # 🔥 TOP PROJECT
-    # =========================
     tp = (
         base_qs.values('project__name')
         .annotate(c=Count('id'))
@@ -158,9 +139,6 @@ def dashboard(request):
     )
     top_project = tp['project__name'] if tp else "—"
 
-    # =========================
-    # 🔥 TOP EMPLOYEE
-    # =========================
     te = (
         base_qs.values('user__email')
         .annotate(c=Count('id'))
@@ -169,9 +147,6 @@ def dashboard(request):
     )
     top_employee = te['user__email'] if te else "—"
 
-    # =========================
-    # 🔥 SLA RISK
-    # =========================
     risk_count = base_qs.filter(
         status='pending',
         date__lt=today - timedelta(days=2)
@@ -179,9 +154,6 @@ def dashboard(request):
 
     risk_label = "High" if risk_count >= 10 else ("Medium" if risk_count >= 3 else "Low")
 
-    # =========================
-    # 🔥 SPARKLINE (LAST 7 DAYS)
-    # =========================
     spark_labels = []
     spark_data = []
 
@@ -189,24 +161,15 @@ def dashboard(request):
         d = last_7_start + timedelta(days=i)
         spark_labels.append(d.strftime('%d %b'))
         spark_data.append(base_qs.filter(date=d).count())
-
-    # =========================
-    # 🔥 WEEKDAY DISTRIBUTION
-    # =========================
     weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     weekday_data = [0] * 7
 
     for a in base_qs.filter(date__isnull=False):
         weekday_data[a.date.weekday()] += 1
 
-    # =========================
-    # 🔥 RECENT ACTIVITIES
-    # =========================
+
     activities = base_qs.order_by('-created_at')[:5]
 
-    # =========================
-    # 🔥 CONTEXT
-    # =========================
     context = {
 
         'total_projects': total_projects,
