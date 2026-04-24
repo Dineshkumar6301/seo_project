@@ -4,113 +4,161 @@
     <title>DMOS Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
         body {
-            background: linear-gradient(135deg,#eef2ff,#f8fafc);
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
             font-family: 'Segoe UI', sans-serif;
         }
 
         /* ===== SIDEBAR ===== */
         .sidebar {
-            height:100vh;
-            background: rgba(15,23,42,0.95);
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(10px);
-            color:white;
-            position:fixed;
-            width:240px;
-            top:0;
-            left:0;
-            overflow-y:auto;
-            transition:0.3s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            color: white;
+            position: fixed;
+            width: 240px;
+            top: 0;
+            left: 0;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            overflow-y: auto;
         }
 
         .sidebar h4 {
-            letter-spacing:1px;
-            font-weight:700;
+            letter-spacing: 1px;
+            font-weight: 700;
         }
 
         .sidebar a {
-            color:#cbd5e1;
-            display:flex;
-            align-items:center;
-            gap:12px;
-            padding:12px 16px;
-            text-decoration:none;
-            border-radius:10px;
-            margin:6px 10px;
-            transition:0.3s;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            border-radius: 10px;
+            margin: 6px 10px;
+            transition: 0.3s;
+            cursor: pointer;
         }
 
         .sidebar a:hover {
-            background: linear-gradient(135deg,#3b82f6,#6366f1);
-            color:white;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
             transform: translateX(5px);
         }
 
         .sidebar a.active {
-            background: linear-gradient(135deg,#6366f1,#3b82f6);
-            color:white;
+            background: linear-gradient(135deg, #6366f1, #3b82f6);
+            color: white;
+        }
+
+        /* ===== DROPDOWN TOGGLE ===== */
+        .sidebar .dropdown-toggle-link {
+            justify-content: space-between;
+        }
+
+        .sidebar .dropdown-toggle-link .arrow {
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .sidebar .dropdown-toggle-link.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* ===== SUBMENU ===== */
+        .submenu-wrapper {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+
+        .submenu-wrapper.open {
+            max-height: 200px;
+        }
+
+        .submenu-wrapper a {
+            font-size: 14px;
+            padding: 10px 16px 10px 44px;
+            margin: 2px 10px;
         }
 
         /* ===== MAIN ===== */
+        .main, .navbar {
+            margin-left: 240px;
+            transition: margin 0.3s ease;
+        }
+
         .main {
-            margin-left:240px;
-            padding:20px;
-            transition:0.3s;
+            padding: 20px;
             animation: fadeIn 0.6s ease-in-out;
         }
 
         /* ===== NAVBAR ===== */
         .navbar {
-            margin-left:240px;
             backdrop-filter: blur(10px);
-            background: rgba(255,255,255,0.7);
+            background: rgba(255, 255, 255, 0.7);
             border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 900;
         }
 
         .role-badge {
-            font-size:12px;
-            padding:4px 10px;
-            border-radius:20px;
-            background: linear-gradient(135deg,#e0e7ff,#c7d2fe);
-            color:#3730a3;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #3730a3;
         }
 
-        /* ===== SUBMENU ===== */
-        .submenu {
-            padding-left:30px;
-            font-size:14px;
+        /* ===== OVERLAY ===== */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 999;
         }
 
         /* ===== MOBILE ===== */
-        @media(max-width:768px){
+        @media (max-width: 768px) {
             .sidebar {
-                left:-240px;
+                transform: translateX(-100%);
             }
+
             .sidebar.show {
-                left:0;
+                transform: translateX(0);
             }
+
             .main, .navbar {
-                margin-left:0;
+                margin-left: 0;
             }
         }
 
         /* ===== ANIMATION ===== */
         @keyframes fadeIn {
-            from { opacity:0; transform:translateY(10px); }
-            to { opacity:1; transform:translateY(0); }
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-
     </style>
 </head>
 
 <body>
+
+<!-- OVERLAY -->
+<div id="overlay"></div>
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
@@ -152,15 +200,19 @@
         <i class="bi bi-folder"></i> Projects
     </a>
 
-    <a href="javascript:void(0);" onclick="toggleMenu()" 
-       class="d-flex justify-content-between align-items-center">
+    <!-- ACTIVITIES DROPDOWN -->
+    <a class="dropdown-toggle-link" id="activityToggle">
         <span><i class="bi bi-list-task"></i> Activities</span>
-        <span id="arrow">▼</span>
+        <span class="arrow">▼</span>
     </a>
 
-    <div id="activityMenu" style="display:none; padding-left:10px;">
-        <a href="{% url 'activity_daily' %}" class="submenu">Daily Sheet</a>
-        <a href="{% url 'activity_approval' %}" class="submenu">Approval</a>
+    <div class="submenu-wrapper" id="activityMenu">
+        <a href="{% url 'activity_daily' %}">
+            <i class="bi bi-calendar-day"></i> Daily Sheet
+        </a>
+        <a href="{% url 'activity_approval' %}">
+            <i class="bi bi-check-circle"></i> Approval
+        </a>
     </div>
 
     <a href="{% url 'project_create' %}">
@@ -181,16 +233,13 @@
 <!-- NAVBAR -->
 <nav class="navbar px-3">
     <div class="d-flex justify-content-between w-100">
-
-        <button class="btn btn-light d-md-none shadow-sm" onclick="toggleSidebar()">
+        <button class="btn btn-light d-md-none shadow-sm" id="sidebarToggleBtn">
             <i class="bi bi-list"></i>
         </button>
-
         <div>
             Welcome, <strong>{{ request.user.first_name }}</strong>
             <span class="role-badge">{{ request.user.role }}</span>
         </div>
-
     </div>
 </nav>
 
@@ -200,38 +249,50 @@
 </div>
 
 <script>
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('overlay');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
 
-// Sidebar toggle
-function toggleSidebar(){
-    document.getElementById("sidebar").classList.toggle("show");
-}
-
-// Dropdown
-function toggleMenu() {
-    let menu = document.getElementById("activityMenu");
-    let arrow = document.getElementById("arrow");
-
-    if (menu.style.display === "none" || menu.style.display === "") {
-        menu.style.display = "block";
-        arrow.innerText = "▲";
-        localStorage.setItem("menuOpen", "true");
-    } else {
-        menu.style.display = "none";
-        arrow.innerText = "▼";
-        localStorage.setItem("menuOpen", "false");
+    // ── SIDEBAR TOGGLE (mobile) ──────────────────────────────────────
+    function openSidebar() {
+        sidebar.classList.add('show');
+        overlay.style.display = 'block';
     }
-}
 
-// Restore state
-window.onload = function(){
-    if(localStorage.getItem("menuOpen") === "true"){
-        document.getElementById("activityMenu").style.display = "block";
-        document.getElementById("arrow").innerText = "▲";
+    function closeSidebar() {
+        sidebar.classList.remove('show');
+        overlay.style.display = 'none';
     }
-}
 
+    toggleBtn.addEventListener('click', function () {
+        sidebar.classList.contains('show') ? closeSidebar() : openSidebar();
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    // ── ACTIVITIES DROPDOWN ──────────────────────────────────────────
+    const activityToggle = document.getElementById('activityToggle');
+    const activityMenu   = document.getElementById('activityMenu');
+
+    if (activityToggle && activityMenu) {
+        activityToggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            const isOpen = activityMenu.classList.contains('open');
+            activityMenu.classList.toggle('open', !isOpen);
+            activityToggle.classList.toggle('open', !isOpen);
+        });
+    }
+
+    // ── CLOSE SIDEBAR ON REAL LINK CLICK (mobile) ───────────────────
+    sidebar.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            const href = this.getAttribute('href');
+            // skip dropdown toggle (no href) and fake links
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (window.innerWidth < 768) closeSidebar();
+        });
+    });
 </script>
 
 </body>
 </html>
-
