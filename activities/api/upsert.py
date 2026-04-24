@@ -6,13 +6,15 @@ from activities.models import Activity
 
 class ActivityUpsertAPI(APIView):
 
-    permission_classes = [IsAuthenticated]   # 🔥 FIX 1
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
 
         data = request.data
 
+        # =========================
         # 🔥 VALIDATION
+        # =========================
         if not data.get("project"):
             return Response({"error": "Project required"}, status=400)
 
@@ -22,17 +24,24 @@ class ActivityUpsertAPI(APIView):
         if not data.get("date"):
             return Response({"error": "Date required"}, status=400)
 
-        # 🔥 UPDATE OR CREATE
-        if data.get("id"):
-            obj = Activity.objects.filter(id=data.get("id")).first()
+        # =========================
+        # 🔥 SAFE ID HANDLING (MAIN FIX)
+        # =========================
+        id_value = data.get("id")
+        obj = None
+
+        if id_value and str(id_value).isdigit():
+            obj = Activity.objects.filter(id=int(id_value)).first()
 
             if not obj:
                 return Response({"error": "Invalid ID"}, status=404)
         else:
             obj = Activity()
 
-        # 🔥 SAVE (SAFE USER)
-        obj.user = request.user if request.user.is_authenticated else None
+        # =========================
+        # 🔥 ASSIGN DATA
+        # =========================
+        obj.user = request.user
 
         obj.project_id = data.get("project")
         obj.service_id = data.get("service")
@@ -43,13 +52,18 @@ class ActivityUpsertAPI(APIView):
         obj.proof_link = data.get("proof_link", "")
         obj.remarks = data.get("remarks", "")
 
-        # 🔥 RESET STATUS ON EDIT
+        # =========================
+        # 🔥 BUSINESS RULE
+        # =========================
         obj.status = "pending"
 
         obj.save()
 
+        # =========================
+        # 🔥 RESPONSE
+        # =========================
         return Response({
             "id": obj.id,
-            "user": request.user.username,   # 🔥 RETURN USER
-            "message": "Saved"
+            "user": request.user.username,
+            "message": "Saved successfully"
         })
