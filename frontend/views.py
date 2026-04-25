@@ -86,6 +86,10 @@ from projects.models import Project
 
 
 
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+
 @login_required(login_url='home')
 def dashboard(request):
 
@@ -118,6 +122,10 @@ def dashboard(request):
     rejected = base_qs.filter(status='rejected').count()
 
     performance = int((approved / total_activities) * 100) if total_activities else 0
+
+    # =========================
+    # 🔥 TREND
+    # =========================
     last_7_start = today - timedelta(days=6)
     prev_7_start = today - timedelta(days=13)
     prev_7_end = today - timedelta(days=7)
@@ -131,6 +139,10 @@ def dashboard(request):
         trend_pct = int(((last_7 - prev_7) / prev_7) * 100)
 
     trend_direction = "up" if trend_pct > 0 else ("down" if trend_pct < 0 else "flat")
+
+    # =========================
+    # 🔥 TOP PROJECT
+    # =========================
     tp = (
         base_qs.values('project__name')
         .annotate(c=Count('id'))
@@ -139,6 +151,9 @@ def dashboard(request):
     )
     top_project = tp['project__name'] if tp else "—"
 
+    # =========================
+    # 🔥 TOP EMPLOYEE
+    # =========================
     te = (
         base_qs.values('user__email')
         .annotate(c=Count('id'))
@@ -147,6 +162,9 @@ def dashboard(request):
     )
     top_employee = te['user__email'] if te else "—"
 
+    # =========================
+    # 🔥 RISK
+    # =========================
     risk_count = base_qs.filter(
         status='pending',
         date__lt=today - timedelta(days=2)
@@ -154,6 +172,9 @@ def dashboard(request):
 
     risk_label = "High" if risk_count >= 10 else ("Medium" if risk_count >= 3 else "Low")
 
+    # =========================
+    # 🔥 SPARK DATA
+    # =========================
     spark_labels = []
     spark_data = []
 
@@ -161,15 +182,56 @@ def dashboard(request):
         d = last_7_start + timedelta(days=i)
         spark_labels.append(d.strftime('%d %b'))
         spark_data.append(base_qs.filter(date=d).count())
+
+    # =========================
+    # 🔥 WEEKDAY DATA
+    # =========================
     weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     weekday_data = [0] * 7
 
     for a in base_qs.filter(date__isnull=False):
         weekday_data[a.date.weekday()] += 1
 
-
+    # =========================
+    # 🔥 OLD LOGIC (KEPT)
+    # =========================
     activities = base_qs.order_by('-created_at')[:5]
 
+    # =========================
+    # 🔥 NEW ADVANCED PAGINATION
+    # =========================
+    activities_qs = base_qs.order_by('-created_at')
+
+    page_number = request.GET.get('page', 1)
+    per_page = request.GET.get('per_page', 5)
+
+    paginator = Paginator(activities_qs, per_page)
+    page_obj = paginator.get_page(page_number)
+
+    activities_paginated = page_obj.object_list
+
+    # =========================
+    # 🔥 AJAX SUPPORT
+    # =========================
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+
+        html = render_to_string(
+            'frontend/partials/activity_table.html',
+            {'activities': activities_paginated},
+            request=request
+        )
+
+        return JsonResponse({
+            'html': html,
+            'page': page_obj.number,
+            'total_pages': paginator.num_pages,
+            'has_next': page_obj.has_next(),
+            'has_prev': page_obj.has_previous(),
+        })
+
+    # =========================
+    # 🔥 CONTEXT
+    # =========================
     context = {
 
         'total_projects': total_projects,
@@ -193,11 +255,16 @@ def dashboard(request):
         'weekday_labels': weekday_labels,
         'weekday_data': weekday_data,
 
+        # 🔥 KEEP OLD
         'activities': activities,
+
+        # 🔥 NEW PAGINATION DATA
+        'activities_paginated': activities_paginated,
+        'page_obj': page_obj,
+        'paginator': paginator,
     }
 
     return render(request, 'frontend/dashboard.html', context)
-
 
 @login_required
 def employee_dashboard(request):

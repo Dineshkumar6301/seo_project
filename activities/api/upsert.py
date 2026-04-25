@@ -49,8 +49,15 @@ class ActivityUpsertAPI(APIView):
         obj.task_title = data.get("task_title", "")
         obj.planned_work = data.get("planned_work", "")
         obj.completed_work = data.get("completed_work", "")
-        obj.proof_link = data.get("proof_link", "")
+        
         obj.remarks = data.get("remarks", "")
+
+        proof_links = data.get("proof_links", [])
+
+        if isinstance(proof_links, list):
+            obj.proof_link = "\n".join(proof_links)
+        else:
+            obj.proof_link = proof_links or ""
 
         # =========================
         # 🔥 BUSINESS RULE

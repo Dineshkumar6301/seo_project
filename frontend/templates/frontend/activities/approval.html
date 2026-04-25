@@ -522,14 +522,22 @@
 
   <!-- DATE FILTER -->
   <div class="filter-group">
-    <a href="?date=today" class="pill {% if date_filter == 'today' %}active{% endif %}">Today</a>
-    <a href="?date=week"  class="pill {% if date_filter == 'week'  %}active{% endif %}">Week</a>
-    <a href="?date=month" class="pill {% if date_filter == 'month' %}active{% endif %}">Month</a>
-    <a href="?date=year"  class="pill {% if date_filter == 'year'  %}active{% endif %}">Year</a>
-    <a href="?date=all"   class="pill {% if date_filter == 'all'   %}active{% endif %}">All</a>
+    <a href="?date=today&status={{current_status}}" class="pill {% if date_filter == 'today' %}active{% endif %}">Today</a>
+    <a href="?date=week&status={{current_status}}"  class="pill {% if date_filter == 'week'  %}active{% endif %}">Week</a>
+    <a href="?date=month&status={{current_status}}" class="pill {% if date_filter == 'month' %}active{% endif %}">Month</a>
+    <a href="?date=year&status={{current_status}}"  class="pill {% if date_filter == 'year'  %}active{% endif %}">Year</a>
+    <a href="?date=all&status={{current_status}}"   class="pill {% if date_filter == 'all'   %}active{% endif %}">All</a>
   </div>
 
-  <!-- STATUS STAT CARDS -->
+  <!-- 🔥 CUSTOM DATE FILTER -->
+  <div class="filter-group mt-2">
+    <input type="date" id="customDate" class="form-control form-control-sm" style="max-width:180px;display:inline-block;">
+    <button class="pill" onclick="applyCustomDate()" style="border:none;cursor:pointer;">
+      Custom Date
+    </button>
+  </div>
+
+  <!-- STATUS CARDS -->
   <div class="status-row">
     <a href="?status=pending&date={{date_filter}}" class="stat-card pending">
       <div class="stat-icon">⏳</div>
@@ -550,162 +558,120 @@
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div class="search-wrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="searchInput"
-             placeholder="Search employee…"
-             value="{{ search }}"
-             class="search-input"
-             onkeyup="applyFilters()">
-    </div>
+    <input type="text" id="searchInput" placeholder="Search employee…" value="{{ search }}" onkeyup="applyFilters()">
 
-    <select id="projectFilter" class="select-input" onchange="applyFilters()">
+    <select id="projectFilter" onchange="applyFilters()">
       <option value="">All Projects</option>
       {% for p in projects %}
       <option value="{{p.id}}" {% if selected_project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
       {% endfor %}
     </select>
 
-    <a href="?export=excel&date={{date_filter}}&status={{current_status}}" class="export-btn">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <a href="?export=excel&date={{date_filter}}&selected_date={{request.GET.selected_date}}&status={{current_status}}" class="export-btn">
       Export Excel
     </a>
   </div>
 
-  <!-- DESKTOP TABLE -->
-  <div class="table-card">
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Project</th>
-            <th>Task</th>
-            <th>Proof</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in activities %}
-          <tr id="row-{{a.id}}">
-            <td>
-              <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
-              <div class="user-role">{{ a.user.role }}</div>
-            </td>
-            <td><span class="project-tag">{{ a.project.name }}</span></td>
-            <td><span class="task-text">{{ a.task_title }}</span></td>
-            <td>
-              {% if a.proof_link %}
-              <a href="{{ a.proof_link }}" target="_blank" class="proof-link">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                View
-              </a>
-              {% else %}<span style="color:var(--muted)">—</span>{% endif %}
-            </td>
-            <td>
-              {% if a.status == 'pending' %}
-                <span class="badge badge-pending">Pending</span>
-              {% elif a.status == 'approved' %}
-                <span class="badge badge-approved">Approved</span>
-              {% elif a.status == 'rejected' %}
-                <span class="badge badge-rejected">Rejected</span>
-              {% endif %}
-            </td>
-            <td class="action-cell">
-              {% if a.status == 'pending' %}
-              <button onclick="updateStatus({{ a.id }}, 'approved')" class="btn-approve" title="Approve">✔</button>
-              <button onclick="updateStatus({{ a.id }}, 'rejected')" class="btn-reject"  title="Reject">✖</button>
-              {% else %}
-              <span style="color:var(--muted);font-size:13px">—</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr class="empty-row">
-            <td colspan="6">
-              <span class="empty-icon">📋</span>
-              No records found
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <!-- TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Project</th>
+        <th>Task</th>
+        <th>Proof</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
 
-  <!-- MOBILE CARDS -->
-  <div class="mobile-cards">
-    {% for a in activities %}
-    <div class="m-card" id="mrow-{{a.id}}">
-      <div class="m-card-header">
-        <div>
-          <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
-          <div class="user-role">{{ a.user.role }}</div>
-        </div>
-        {% if a.status == 'pending' %}
-          <span class="badge badge-pending">Pending</span>
-        {% elif a.status == 'approved' %}
-          <span class="badge badge-approved">Approved</span>
-        {% elif a.status == 'rejected' %}
-          <span class="badge badge-rejected">Rejected</span>
-        {% endif %}
-      </div>
-      <div class="m-card-body">
-        <div class="m-row">
-          <span class="m-label">Project</span>
-          <span class="project-tag">{{ a.project.name }}</span>
-        </div>
-        <div class="m-row">
-          <span class="m-label">Task</span>
-          <span class="task-text" style="text-align:right;max-width:60%">{{ a.task_title }}</span>
-        </div>
-        {% if a.proof_link %}
-        <div class="m-row">
-          <span class="m-label">Proof</span>
-          <a href="{{ a.proof_link }}" target="_blank" class="proof-link">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            View
-          </a>
-        </div>
-        {% endif %}
-      </div>
-      {% if a.status == 'pending' %}
-      <div class="m-actions">
-        <button onclick="updateStatus({{ a.id }}, 'approved')" class="btn-approve">✔</button>
-        <button onclick="updateStatus({{ a.id }}, 'rejected')" class="btn-reject">✖</button>
-      </div>
-      {% endif %}
-    </div>
-    {% empty %}
-    <div style="text-align:center;padding:48px 0;color:var(--muted);">
-      <span style="font-size:36px;display:block;margin-bottom:10px;opacity:.5">📋</span>
-      No records found
-    </div>
-    {% endfor %}
-  </div>
+    <tbody>
+      {% for a in activities %}
+      <tr id="row-{{a.id}}">
+        <td>{{ a.user.first_name }} {{ a.user.last_name }}</td>
+        <td>{{ a.project.name }}</td>
+        <td>{{ a.task_title }}</td>
 
-  <!-- CHART -->
-  <div class="chart-card">
-    <div class="chart-title">Activity Overview</div>
-    <canvas id="chart"></canvas>
-  </div>
+        <!-- 🔥 MULTIPLE PROOF LINKS -->
+        <td>
+          {% if a.proof_link %}
+            {% for link in a.proof_link.splitlines %}
+              {% if link %}
+                <a href="{{ link }}" target="_blank">🔗 View {{ forloop.counter }}</a><br>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            No Proof
+          {% endif %}
+        </td>
+
+        <td>{{ a.status }}</td>
+
+        <td>
+          {% if a.status == 'pending' %}
+            <button onclick="updateStatus({{a.id}}, 'approved')">✔</button>
+            <button onclick="updateStatus({{a.id}}, 'rejected')">✖</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">No records found</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// FILTER APPLY — unchanged logic
+
+// 🔥 APPLY FILTERS
 function applyFilters(){
     let search  = document.getElementById("searchInput").value;
     let project = document.getElementById("projectFilter").value;
-    let url = `?status={{current_status}}&date={{date_filter}}`;
-    if(search)   url += `&search=${search}`;
-    if(project)  url += `&project=${project}`;
-    window.location.href = url;
+
+    let params = new URLSearchParams();
+    params.set("status", "{{current_status}}");
+    params.set("date", "{{date_filter}}");
+
+    let selectedDate = new URLSearchParams(window.location.search).get("selected_date");
+    if(selectedDate){
+        params.set("selected_date", selectedDate);
+    }
+
+    if(search) params.set("search", search);
+    if(project) params.set("project", project);
+
+    window.location.href = "?" + params.toString();
 }
 
-// APPROVE / REJECT — unchanged logic
+// 🔥 CUSTOM DATE
+function applyCustomDate() {
+    let date = document.getElementById("customDate").value;
+
+    if (!date) {
+        alert("Select date");
+        return;
+    }
+
+    let params = new URLSearchParams();
+    params.set("date", "custom");
+    params.set("selected_date", date);
+    params.set("status", "{{current_status}}");
+
+    window.location.href = "?" + params.toString();
+}
+
+// 🔥 AUTO SET DATE
+document.addEventListener("DOMContentLoaded", function () {
+    let params = new URLSearchParams(window.location.search);
+    let selected = params.get("selected_date");
+
+    if (selected) {
+        document.getElementById("customDate").value = selected;
+    }
+});
+
+// 🔥 APPROVAL API
 function updateStatus(id, status){
     fetch(`/activities/api/approve/${id}/`, {
         method: "POST",
@@ -718,19 +684,12 @@ function updateStatus(id, status){
     .then(res => res.json())
     .then(data => {
         if(data.success){
-            if("{{ current_status }}" === "pending"){
-                let row  = document.getElementById("row-"  + id);
-                let mrow = document.getElementById("mrow-" + id);
-                if(row)  row.remove();
-                if(mrow) mrow.remove();
-            } else {
-                location.reload();
-            }
+            location.reload();
         }
     });
 }
 
-// CSRF — unchanged logic
+// 🔥 CSRF
 function getCookie(name){
     let value = null;
     document.cookie.split(';').forEach(c=>{
@@ -742,60 +701,6 @@ function getCookie(name){
     return value;
 }
 
-// CHART — light theme styled
-new Chart(document.getElementById('chart'), {
-    type: 'bar',
-    data: {
-        labels: ['Pending', 'Approved', 'Rejected'],
-        datasets: [{
-            label: 'Tasks',
-            data: [
-                {{ pending_count }},
-                {{ approved_count }},
-                {{ rejected_count }}
-            ],
-            backgroundColor: [
-                'rgba(245,158,11,0.18)',
-                'rgba(16,185,129,0.18)',
-                'rgba(239,68,68,0.18)'
-            ],
-            borderColor: [
-                'rgba(245,158,11,0.9)',
-                'rgba(16,185,129,0.9)',
-                'rgba(239,68,68,0.9)'
-            ],
-            borderWidth: 2,
-            borderRadius: 10,
-            borderSkipped: false
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: '#ffffff',
-                borderColor: '#dde3f0',
-                borderWidth: 1,
-                titleColor: '#1e293b',
-                bodyColor: '#64748b',
-                padding: 12,
-                cornerRadius: 10
-            }
-        },
-        scales: {
-            x: {
-                grid: { color: 'rgba(0,0,0,0.04)' },
-                ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 13 } }
-            },
-            y: {
-                grid: { color: 'rgba(0,0,0,0.04)' },
-                ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 13 } },
-                beginAtZero: true
-            }
-        }
-    }
-});
 </script>
 
 {% endblock %}

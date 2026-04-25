@@ -4,14 +4,12 @@
 <div class="container-fluid">
 
 <div class="card p-4 shadow-sm">
-    <!-- 🔥 ASSIGNED WORK SUMMARY -->
+
+<!-- ASSIGNED WORK -->
 <div class="card mb-3 shadow-sm">
     <div class="card-body">
-
         <h6 class="fw-bold mb-3">📌 Your Assigned Work</h6>
-
         <div id="assignedWork"></div>
-
     </div>
 </div>
 
@@ -31,10 +29,10 @@
 <tr>
     <th>Project</th>
     <th>Service</th>
-    <th>Task</th>
-    <th>Planned</th>
-    <th>Completed</th>
-    <th>Proof</th>
+    <th>Task_Title</th>
+    <th>Planned Work</th>
+    <th>Completed Work</th>
+    <th>Proof Link</th>
     <th>Remarks</th>
     <th></th>
 </tr>
@@ -79,7 +77,28 @@ return `
 <td><input class="task_title form-control" value="${data.task_title || ''}"></td>
 <td><input class="planned form-control" value="${data.planned_work || ''}"></td>
 <td><input class="completed form-control" value="${data.completed_work || ''}"></td>
-<td><input class="proof form-control" value="${data.proof_link || ''}"></td>
+
+<td>
+    <div class="proof-container">
+        ${
+            data.proof_links?.length
+            ? data.proof_links.map(link => `
+                <div class="d-flex mb-1">
+                    <input class="proof form-control me-1" value="${link}">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProof(this)">✕</button>
+                </div>
+            `).join("")
+            : `
+                <div class="d-flex mb-1">
+                    <input class="proof form-control me-1">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProof(this)">✕</button>
+                </div>
+            `
+        }
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addProof(this)">+ Add</button>
+</td>
+
 <td><input class="remarks form-control" value="${data.remarks || ''}"></td>
 
 <td>
@@ -92,7 +111,33 @@ return `
 
 
 // ==============================
-// LOAD DATA (DATE BASED)
+// ADD PROOF
+// ==============================
+function addProof(btn){
+    let container = btn.closest("td").querySelector(".proof-container");
+
+    let div = document.createElement("div");
+    div.className = "d-flex mb-1";
+
+    div.innerHTML = `
+        <input class="proof form-control me-1">
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeProof(this)">✕</button>
+    `;
+
+    container.appendChild(div);
+}
+
+
+// ==============================
+// REMOVE PROOF
+// ==============================
+function removeProof(btn){
+    btn.parentElement.remove();
+}
+
+
+// ==============================
+// LOAD DATA
 // ==============================
 async function loadData() {
 
@@ -102,7 +147,6 @@ let res = await fetch(`${API}today/?date=${date}`);
 let data = await res.json();
 
 let body = document.getElementById("tableBody");
-
 body.innerHTML = "";
 
 if (data.length === 0) {
@@ -113,7 +157,6 @@ if (data.length === 0) {
 
         let row = document.createElement("tr");
 
-        // 🔥 FIX: PRESERVE DATA
         row.dataset.id = d.id;
         row.dataset.service = d.service;
 
@@ -124,7 +167,6 @@ if (data.length === 0) {
 
     document.querySelectorAll(".project").forEach(el => loadServices(el));
 }
-
 }
 
 
@@ -148,7 +190,6 @@ data.forEach(s => {
     let selected = (selectedService == s.id) ? "selected" : "";
     dropdown.innerHTML += `<option value="${s.id}" ${selected}>${s.name}</option>`;
 });
-
 }
 
 
@@ -163,7 +204,6 @@ let row = document.createElement("tr");
 row.innerHTML = createRow();
 
 body.appendChild(row);
-
 }
 
 
@@ -180,6 +220,11 @@ let service = row.querySelector(".service").value;
 if (!project) return alert("Select Project");
 if (!service) return alert("Select Service");
 
+// 🔥 MULTIPLE PROOF LINKS
+let proofs = Array.from(row.querySelectorAll(".proof"))
+    .map(p => p.value)
+    .filter(v => v.trim() !== "");
+
 let payload = {
     id: row.dataset.id || null,
     date: document.getElementById("date").value,
@@ -188,7 +233,7 @@ let payload = {
     task_title: row.querySelector(".task_title").value,
     planned_work: row.querySelector(".planned").value,
     completed_work: row.querySelector(".completed").value,
-    proof_link: row.querySelector(".proof").value,
+    proof_links: proofs,
     remarks: row.querySelector(".remarks").value
 };
 
@@ -203,15 +248,12 @@ let res = await fetch(`${API}upsert/`, {
 
 let result = await res.json();
 
-// 🔥 UPDATE ROW DATA
 row.dataset.id = result.id;
 row.dataset.service = payload.service;
 
-// UI FEEDBACK
 btn.innerText = "✔";
 btn.classList.remove("btn-success");
 btn.classList.add("btn-primary");
-
 }
 
 
@@ -233,78 +275,45 @@ let today = new Date().toISOString().split("T")[0];
 document.getElementById("date").value = today;
 
 loadData();
+loadAssignedWork();
 
 });
 
 document.getElementById("date").addEventListener("change", loadData);
 
-const projectMap = {
-    {% for p in projects %}
-        "{{ p.id }}": "{{ p.name }}",
-    {% endfor %}
-};
-// 🔥 BUILD ASSIGNED PROJECT + SERVICES
+
 async function loadAssignedWork(){
 
-    let date = document.getElementById("date").value;
-
-    let res = await fetch(`/activities/api/today/?date=${date}`);
+    let res = await fetch(`/activities/api/assigned_work/`);
     let data = await res.json();
 
-    // 🔥 We will also call service API per project
-    let projectMap = {};
-
-    // Loop activities → get projects
-    data.forEach(a => {
-        if(a.project){
-            projectMap[a.project] = [];
-        }
-    });
-
-    // 🔥 Fetch services per project
-    for (let projectId in projectMap){
-
-        let res = await fetch(`/activities/api/project-services/${projectId}/`);
-        let services = await res.json();
-
-        projectMap[projectId] = services.map(s => s.name);
-    }
-
-    // 🔥 RENDER
     let container = document.getElementById("assignedWork");
     container.innerHTML = "";
 
-    if(Object.keys(projectMap).length === 0){
+    if(Object.keys(data).length === 0){
         container.innerHTML = `<span class="text-muted">No assigned work</span>`;
         return;
     }
 
-    for (let projectId in projectMap){
+    for (let projectId in data){
 
-        let services = projectMap[projectId];
+        let project = data[projectId];
 
         let div = document.createElement("div");
         div.className = "mb-2";
 
-        let badges = services.map(s =>
-            `<span class="badge bg-success me-1">${s}</span>`
+        let badges = project.services.map(s =>
+            `<span class="badge bg-success me-1">${s.name}</span>`
         ).join("");
 
         div.innerHTML = `
-            <strong>Project ${projectId}</strong><br>
+            <strong>${project.project_name}</strong><br>
             ${badges}
         `;
 
         container.appendChild(div);
     }
 }
-
-// 🔥 CALL AFTER PAGE LOAD
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(loadAssignedWork, 500);
-});
-
-
 </script>
 
 {% endblock %}

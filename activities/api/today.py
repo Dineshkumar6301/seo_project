@@ -40,15 +40,15 @@ class TodayActivityAPI(APIView):
         # =========================
         data = [
             {
-                "id": a.id,  # ✅ REQUIRED for update
-                "project": a.project_id,  # ✅ REQUIRED for dropdown
+                "id": a.id,
+                "project": a.project_id,
                 "project_name": a.project.name,
-                "service": a.service_id,  # ✅ REQUIRED for dropdown
+                "service": a.service_id,
                 "service_name": a.service.name,
                 "task_title": a.task_title,
                 "planned_work": a.planned_work,
                 "completed_work": a.completed_work,
-                "proof_link": a.proof_link,
+                "proof_links": a.proof_link.split("\n") if a.proof_link else [],
                 "remarks": a.remarks,
                 "status": a.status,
             }

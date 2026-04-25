@@ -21,35 +21,37 @@ def activity_daily(request):
 
     if request.method == "POST":
 
-        rows = zip(
-            request.POST.getlist('project'),
-            request.POST.getlist('service'),
-            request.POST.getlist('task_title'),
-            request.POST.getlist('planned'),
-            request.POST.getlist('completed'),
-            request.POST.getlist('link'),
-            request.POST.getlist('remarks')
-        )
+        projects_list = request.POST.getlist('project')
+        services_list = request.POST.getlist('service')
+        task_titles = request.POST.getlist('task_title')
+        planned_list = request.POST.getlist('planned')
+        completed_list = request.POST.getlist('completed')
+        remarks_list = request.POST.getlist('remarks')
 
-        for row in rows:
+        total_rows = len(projects_list)
 
-            project_id = row[0]
-            service_id = row[1]
+        for i in range(total_rows):
 
-            # 🔥 VALIDATION
+            project_id = projects_list[i]
+            service_id = services_list[i]
+
             if not project_id or not service_id:
                 continue
+
+            # 🔥 GET MULTIPLE LINKS PER ROW
+            links = request.POST.getlist(f'link_{i}')
+            proof_text = "\n".join([l for l in links if l.strip()])
 
             Activity.objects.create(
                 user=request.user,
                 project_id=project_id,
                 service_id=service_id,
                 date=request.POST.get('date'),
-                task_title=row[2],
-                planned_work=row[3],
-                completed_work=row[4],
-                proof_link=row[5],
-                remarks=row[6],
+                task_title=task_titles[i],
+                planned_work=planned_list[i],
+                completed_work=completed_list[i],
+                proof_link=proof_text,
+                remarks=remarks_list[i],
                 status='pending'
             )
 
@@ -59,14 +61,39 @@ def activity_daily(request):
         'projects': projects
     })
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Count
+from django.http import HttpResponse
 
+import openpyxl
+
+from activities.models import Activity
+from projects.models import Project
+from accounts.models import Profile
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta, datetime
+from django.db.models import Count
+from django.http import HttpResponse
+
+import openpyxl
+
+from activities.models import Activity
+from projects.models import Project
+from accounts.models import Profile
 
 
 @login_required
 def activity_approval(request):
 
     status = request.GET.get('status', 'pending')
-    date_filter = request.GET.get('date', 'today')
+    date_filter = request.GET.get('date', 'all')  # ✅ default = all
     search = request.GET.get('search', '')
     project_id = request.GET.get('project', '')
 
@@ -76,28 +103,52 @@ def activity_approval(request):
         'user', 'project', 'service'
     )
 
+    # =========================
     # 🔥 DATE FILTER
+    # =========================
     if date_filter == "today":
         queryset = queryset.filter(date=today)
 
     elif date_filter == "week":
-        queryset = queryset.filter(date__gte=today - timedelta(days=7))
+        queryset = queryset.filter(date__gte=today - timedelta(days=6))
 
     elif date_filter == "month":
-        queryset = queryset.filter(date__month=today.month)
+        queryset = queryset.filter(
+            date__month=today.month,
+            date__year=today.year
+        )
 
     elif date_filter == "year":
         queryset = queryset.filter(date__year=today.year)
 
-    # 🔥 SEARCH (EMPLOYEE EMAIL)
+    elif date_filter == "custom":
+        selected_date = request.GET.get("selected_date")
+
+        if selected_date:
+            try:
+                selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+                queryset = queryset.filter(date=selected_date)
+            except:
+                pass  # ignore invalid date
+
+    elif date_filter == "all":
+        pass
+
+    # =========================
+    # 🔥 SEARCH (EMAIL)
+    # =========================
     if search:
         queryset = queryset.filter(user__email__icontains=search)
 
+    # =========================
     # 🔥 PROJECT FILTER
+    # =========================
     if project_id:
         queryset = queryset.filter(project_id=project_id)
 
-    # 🔥 COUNTS
+    # =========================
+    # 🔥 COUNTS (BEFORE STATUS FILTER)
+    # =========================
     counts = queryset.values('status').annotate(count=Count('id'))
     count_map = {i['status']: i['count'] for i in counts}
 
@@ -105,20 +156,36 @@ def activity_approval(request):
     approved_count = count_map.get('approved', 0)
     rejected_count = count_map.get('rejected', 0)
 
+    # =========================
     # 🔥 EXPORT EXCEL
+    # =========================
     if request.GET.get('export') == "excel":
 
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Activity Report"
 
-        ws.append(["User", "Project", "Task", "Status", "Date"])
+        ws.append([
+            "User",
+            "Project",
+            "Service",
+            "Task",
+            "Planned",
+            "Completed",
+            "Proof Links",
+            "Status",
+            "Date"
+        ])
 
         for a in queryset:
             ws.append([
                 a.user.email,
                 a.project.name,
+                a.service.name if a.service else "",
                 a.task_title,
+                a.planned_work,
+                a.completed_work,
+                a.proof_link or "",
                 a.status,
                 str(a.date)
             ])
@@ -126,15 +193,21 @@ def activity_approval(request):
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = 'attachment; filename=report.xlsx'
+        response['Content-Disposition'] = 'attachment; filename=activity_report.xlsx'
 
         wb.save(response)
         return response
 
+    # =========================
+    # 🔥 STATUS FILTER
+    # =========================
     activities = queryset.filter(status=status).order_by('-created_at')
 
+    # =========================
+    # 🔥 EXTRA DATA
+    # =========================
     projects = Project.objects.all()
-    profile =Profile.objects.filter(user=request.user).first()
+    profile = Profile.objects.filter(user=request.user).first()
 
     return render(request, 'frontend/activities/approval.html', {
         'activities': activities,
@@ -151,7 +224,6 @@ def activity_approval(request):
         'selected_project': project_id,
         'profile': profile
     })
-
 @login_required
 def activity_reports(request):
 

@@ -1,5 +1,7 @@
 from django.urls import path
 
+from activities.api.assignedwork import AssignedWorkAPI
+
 from . import views
 from activities.api.assignment import DeleteAssignmentAPI   
 
@@ -49,4 +51,5 @@ urlpatterns = [
 
     path('forget_password/', ForgotPasswordAPI.as_view()),
     path('reset_password/', ResetPasswordAPI.as_view()),
+    path('api/assigned_work/', AssignedWorkAPI.as_view(), name='assigned_work'),
 ]
