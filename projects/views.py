@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from frontend.models import ProjectServiceAssignment
 
-from .models import Project, Service
+from .models import Project, Service, ServiceCategory
 from .serializers import ProjectSerializer
 from clients.models import Client
 from accounts.permissions import IsAdminOrManager
@@ -78,12 +78,23 @@ def project_create(request):
     return render(request, 'frontend/projects/create.html', {
         'clients': clients
     })
+from collections import defaultdict
+from accounts.models import User
+
+
 
 @login_required(login_url='home')
 def project_dashboard(request):
-
+    users = User.objects.filter(is_active=True).exclude(role='client')
     projects = Project.objects.select_related('client').all()
-    services = Service.objects.all()
+   
+    services_qs = Service.objects.select_related('category').all()
+
+    services_grouped = defaultdict(list)
+
+    for s in services_qs:
+        category_name = s.category.name if s.category else "Other"
+        services_grouped[category_name].append(s)
 
     project_id = request.GET.get('project')
     selected_project = None
@@ -97,9 +108,10 @@ def project_dashboard(request):
         project_services = selected_project.services.all()
 
         assignments = ProjectServiceAssignment.objects.filter(
-            project_id=selected_project.id
+            project=selected_project
         ).select_related('user', 'service')
 
+        # 🔥 initialize all services
         for s in project_services:
             service_team[s.id] = {
                 "name": s.name,
@@ -107,12 +119,11 @@ def project_dashboard(request):
             }
 
         for a in assignments:
-            sid = a.service_id
-
-            if sid in service_team:
-                service_team[sid]["users"].append(
-                    a.user.email or a.user.first_name or "User"
-                )
+            if a.service_id in service_team:
+                service_team[a.service_id]["users"].append({
+                    "id": a.user.id,
+                    "name": a.user.first_name or a.user.email or "User"
+                })
     if request.method == "POST":
 
         project_id = request.POST.get('project_id')
@@ -145,39 +156,35 @@ def project_dashboard(request):
 
     return render(request, 'frontend/projects/dashboard.html', {
         'projects': projects,
-        'services': services,
+        'services_grouped': dict(services_grouped),
         'selected_project': selected_project,
-        'service_team': service_team
+        'service_team': service_team,
+        'users':users
     })
 
+from .models import ServiceCategory
 
 @login_required(login_url='home')
 @require_POST
 def add_service(request):
 
-    try:
-        data = json.loads(request.body)
-        name = data.get("name", "").strip()
+    data = json.loads(request.body)
+    name = data.get("name")
+    category_name = data.get("category")
 
-        if not name:
-            return JsonResponse({"error": "Service name required"}, status=400)
+    category, _ = ServiceCategory.objects.get_or_create(name=category_name)
 
-        service, created = Service.objects.get_or_create(name=name)
+    service, created = Service.objects.get_or_create(
+        name=name,
+        category=category
+    )
 
-        return JsonResponse({
-            "success": True,
-            "id": service.id,
-            "name": service.name,
-            "created": created
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-    
-
+    return JsonResponse({
+        "success": True,
+        "id": service.id,
+        "name": service.name,
+        "category": category.name
+    })
 import json
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -201,3 +208,58 @@ def project_update(request, pk):
         return JsonResponse({"success": True})
     
 
+from django.http import JsonResponse
+from django.views import View
+import json
+from frontend.models import ProjectServiceAssignment
+import json
+from django.http import JsonResponse
+from django.views import View
+from frontend.models import ProjectServiceAssignment
+
+
+import json
+from django.http import JsonResponse
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from frontend.models import ProjectServiceAssignment
+
+
+class RemoveUserFromService(LoginRequiredMixin, View):
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+
+            service_id = data.get('service_id')
+            user_id = data.get('user_id')
+
+            print("DEBUG:", service_id, user_id)  # 🔥 debug log
+
+            if not service_id or not user_id:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Missing service_id or user_id'
+                }, status=400)
+
+            deleted_count, _ = ProjectServiceAssignment.objects.filter(
+                service_id=service_id,
+                user_id=user_id
+            ).delete()
+
+            if deleted_count == 0:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Assignment not found'
+                }, status=404)
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'User removed successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)

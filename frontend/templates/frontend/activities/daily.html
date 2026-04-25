@@ -279,25 +279,28 @@ loadAssignedWork();
 
 });
 
-document.getElementById("date").addEventListener("change", loadData);
-
+document.getElementById("date").addEventListener("change", loadData)
 
 async function loadAssignedWork(){
 
     let res = await fetch(`/activities/api/assigned_work/`);
     let data = await res.json();
 
+    console.log("Assigned Work:", data);
+
     let container = document.getElementById("assignedWork");
     container.innerHTML = "";
 
-    if(Object.keys(data).length === 0){
+    // 🔥 HANDLE BOTH ARRAY & OBJECT
+    if(!data || (Array.isArray(data) && data.length === 0) || Object.keys(data).length === 0){
         container.innerHTML = `<span class="text-muted">No assigned work</span>`;
         return;
     }
 
-    for (let projectId in data){
+    // 🔥 CONVERT TO ARRAY SAFELY
+    let projects = Array.isArray(data) ? data : Object.values(data);
 
-        let project = data[projectId];
+    projects.forEach(project => {
 
         let div = document.createElement("div");
         div.className = "mb-2";
@@ -312,8 +315,9 @@ async function loadAssignedWork(){
         `;
 
         container.appendChild(div);
-    }
+    });
 }
+
 </script>
 
 {% endblock %}

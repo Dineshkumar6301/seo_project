@@ -5,18 +5,18 @@
 
 <style>
   :root {
-    --bg: #f0f4ff;
-    --surface: #ffffff;
-    --surface2: #e8edf8;
-    --border: #dde3f0;
+    --bg: var(--color-background-tertiary, #f0f4ff);
+    --surface: var(--color-background-primary, #ffffff);
+    --surface2: var(--color-background-secondary, #e8edf8);
+    --border: var(--color-border-tertiary, #dde3f0);
     --accent: #4f46e5;
     --accent-light: #eef2ff;
     --accent2: #0ea5e9;
     --danger: #ef4444;
     --warning: #f59e0b;
     --success: #10b981;
-    --text: #1e293b;
-    --muted: #94a3b8;
+    --text: var(--color-text-primary, #1e293b);
+    --muted: var(--color-text-secondary, #64748b);
     --radius: 16px;
     --radius-sm: 10px;
   }
@@ -29,7 +29,6 @@
     font-family: 'Segoe UI', sans-serif;
     min-height: 100vh;
   }
-
 
   .dash {
     max-width: 1280px;
@@ -58,8 +57,7 @@
   .dash-title span {
     display: block;
     font-size: 12px;
-    
-    font-weight: 500;
+    font-weight: 600;
     color: var(--muted);
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -72,6 +70,7 @@
     gap: 6px;
     flex-wrap: wrap;
     margin-bottom: 20px;
+    align-items: center;
   }
 
   .pill {
@@ -86,6 +85,7 @@
     color: var(--muted);
     text-decoration: none;
     transition: all 0.18s ease;
+    cursor: pointer;
   }
 
   .pill:hover {
@@ -97,7 +97,7 @@
   .pill.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: #fff !important;
     box-shadow: 0 4px 14px rgba(79,70,229,0.25);
   }
 
@@ -109,12 +109,21 @@
     margin-bottom: 24px;
   }
 
+  /* Reset ALL link styles on stat cards */
+  .stat-card,
+  .stat-card:link,
+  .stat-card:visited,
+  .stat-card:hover,
+  .stat-card:active {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
   .stat-card {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     padding: 20px 22px;
-    text-decoration: none;
     transition: transform 0.18s, box-shadow 0.18s;
     display: block;
     position: relative;
@@ -125,7 +134,7 @@
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 3px;
+    height: 4px;
   }
 
   .stat-card.pending::after  { background: var(--warning); }
@@ -138,13 +147,13 @@
   }
 
   .stat-icon {
-    width: 36px; height: 36px;
+    width: 40px; height: 40px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 18px;
+    margin-bottom: 14px;
   }
 
   .stat-card.pending  .stat-icon { background: #fef3c7; }
@@ -154,18 +163,24 @@
   .stat-label {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: var(--muted);
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    margin-bottom: 6px;
   }
+
+  .stat-card.pending  .stat-label { color: #b45309; }
+  .stat-card.approved .stat-label { color: #047857; }
+  .stat-card.rejected .stat-label { color: #b91c1c; }
 
   .stat-num {
     font-family: 'Segoe UI', sans-serif;
-    font-size: 30px;
+    font-size: 34px;
     font-weight: 800;
-    color: var(--text);
   }
+
+  .stat-card.pending  .stat-num { color: #92400e; }
+  .stat-card.approved .stat-num { color: #065f46; }
+  .stat-card.rejected .stat-num { color: #991b1b; }
 
   /* ── TOOLBAR ── */
   .toolbar {
@@ -234,28 +249,30 @@
 
   .select-input:focus { border-color: var(--accent); }
 
-  .export-btn {
+  .export-btn,
+  .export-btn:link,
+  .export-btn:visited {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     background: var(--accent);
     border: none;
     border-radius: var(--radius-sm);
-    color: #fff;
+    color: #fff !important;
     font-family: 'Segoe UI', sans-serif;
     font-size: 13px;
     font-weight: 600;
     padding: 10px 18px;
-    text-decoration: none;
+    text-decoration: none !important;
     transition: all 0.18s;
     white-space: nowrap;
     box-shadow: 0 4px 14px rgba(79,70,229,0.25);
+    cursor: pointer;
   }
 
   .export-btn:hover {
     background: #4338ca;
     box-shadow: 0 6px 20px rgba(79,70,229,0.35);
-    color: #fff;
   }
 
   /* ── TABLE ── */
@@ -282,7 +299,6 @@
   }
 
   thead th {
-    font-family: 'Segoe UI', sans-serif;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -301,16 +317,17 @@
   }
 
   tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #f8f9ff; }
+  tbody tr:hover { background: var(--surface2); }
 
   tbody td {
     padding: 16px 20px;
     font-size: 14px;
     vertical-align: middle;
+    color: var(--text);
   }
 
   .user-name { font-weight: 600; color: var(--text); font-size: 14px; }
-  .user-role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .user-role  { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
   .project-tag {
     display: inline-block;
@@ -324,12 +341,14 @@
 
   .task-text { color: var(--text); font-size: 13px; }
 
-  .proof-link {
+  .proof-link,
+  .proof-link:link,
+  .proof-link:visited {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    color: var(--accent2);
-    text-decoration: none;
+    color: var(--accent2) !important;
+    text-decoration: none !important;
     font-size: 13px;
     font-weight: 500;
     padding: 4px 10px;
@@ -337,6 +356,8 @@
     border: 1px solid rgba(14,165,233,0.25);
     background: #f0f9ff;
     transition: all 0.15s;
+    margin-bottom: 4px;
+    display: inline-flex;
   }
 
   .proof-link:hover { background: #e0f2fe; }
@@ -387,29 +408,10 @@
     margin-left: 6px;
   }
 
-  .btn-approve {
-    background: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-  }
-
-  .btn-approve:hover {
-    background: #6ee7b7;
-    box-shadow: 0 4px 12px rgba(16,185,129,0.25);
-    transform: scale(1.07);
-  }
-
-  .btn-reject {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-  }
-
-  .btn-reject:hover {
-    background: #fca5a5;
-    box-shadow: 0 4px 12px rgba(239,68,68,0.25);
-    transform: scale(1.07);
-  }
+  .btn-approve { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .btn-approve:hover { background: #6ee7b7; box-shadow: 0 4px 12px rgba(16,185,129,0.25); transform: scale(1.07); }
+  .btn-reject  { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .btn-reject:hover  { background: #fca5a5; box-shadow: 0 4px 12px rgba(239,68,68,0.25); transform: scale(1.07); }
 
   /* ── EMPTY STATE ── */
   .empty-row td {
@@ -419,88 +421,34 @@
     font-size: 14px;
   }
 
-  .empty-icon {
-    font-size: 36px;
-    display: block;
-    margin-bottom: 10px;
-    opacity: 0.5;
-  }
-
-  /* ── CHART CARD ── */
-  .chart-card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 28px;
-    box-shadow: 0 4px 24px rgba(79,70,229,0.05);
-  }
-
-  .chart-title {
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 20px;
-  }
+  .empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.5; }
 
   /* ── MOBILE ── */
   .mobile-cards { display: none; }
 
   @media (max-width: 640px) {
     .dash { padding: 20px 16px; }
-
     .status-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .stat-num { font-size: 22px; }
     .stat-icon { display: none; }
-
     .toolbar { flex-direction: column; align-items: stretch; }
     .search-wrap, .select-input { max-width: 100%; }
     .export-btn { justify-content: center; }
-
     .table-card { display: none; }
     .mobile-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-
     .m-card {
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       padding: 18px;
       position: relative;
-      box-shadow: 0 2px 12px rgba(79,70,229,0.05);
     }
-
-    .m-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      gap: 8px;
-    }
-
+    .m-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
     .m-card-body { display: flex; flex-direction: column; gap: 8px; }
-
-    .m-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-    }
-
+    .m-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .m-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-
     .m-actions { display: flex; gap: 8px; margin-top: 14px; }
-
-    .m-actions .btn-approve,
-    .m-actions .btn-reject {
-      flex: 1;
-      width: auto;
-      height: 40px;
-      border-radius: 10px;
-      font-size: 18px;
-    }
-
+    .m-actions .btn-approve, .m-actions .btn-reject { flex: 1; width: auto; height: 40px; border-radius: 10px; font-size: 18px; }
     .filter-group { gap: 6px; }
     .pill { padding: 6px 13px; font-size: 12px; }
   }
@@ -529,12 +477,10 @@
     <a href="?date=all&status={{current_status}}"   class="pill {% if date_filter == 'all'   %}active{% endif %}">All</a>
   </div>
 
-  <!-- 🔥 CUSTOM DATE FILTER -->
+  <!-- CUSTOM DATE FILTER -->
   <div class="filter-group mt-2">
-    <input type="date" id="customDate" class="form-control form-control-sm" style="max-width:180px;display:inline-block;">
-    <button class="pill" onclick="applyCustomDate()" style="border:none;cursor:pointer;">
-      Custom Date
-    </button>
+    <input type="date" id="customDate" style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;outline:none;max-width:180px;">
+    <button class="pill" onclick="applyCustomDate()">Custom Date</button>
   </div>
 
   <!-- STATUS CARDS -->
@@ -558,9 +504,14 @@
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Search employee…" value="{{ search }}" onkeyup="applyFilters()">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search employee…" value="{{ search }}" onkeyup="applyFilters()">
+    </div>
 
-    <select id="projectFilter" onchange="applyFilters()">
+    <select id="projectFilter" class="select-input" onchange="applyFilters()">
       <option value="">All Projects</option>
       {% for p in projects %}
       <option value="{{p.id}}" {% if selected_project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
@@ -568,139 +519,159 @@
     </select>
 
     <a href="?export=excel&date={{date_filter}}&selected_date={{request.GET.selected_date}}&status={{current_status}}" class="export-btn">
-      Export Excel
+      📥 Export Excel
     </a>
   </div>
 
-  <!-- TABLE -->
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Project</th>
-        <th>Task</th>
-        <th>Proof</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {% for a in activities %}
-      <tr id="row-{{a.id}}">
-        <td>{{ a.user.first_name }} {{ a.user.last_name }}</td>
-        <td>{{ a.project.name }}</td>
-        <td>{{ a.task_title }}</td>
-
-        <!-- 🔥 MULTIPLE PROOF LINKS -->
-        <td>
-          {% if a.proof_link %}
-            {% for link in a.proof_link.splitlines %}
-              {% if link %}
-                <a href="{{ link }}" target="_blank">🔗 View {{ forloop.counter }}</a><br>
+  <!-- TABLE (desktop) -->
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Project</th>
+            <th>Task</th>
+            <th>Proof</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activities %}
+          <tr id="row-{{a.id}}">
+            <td><div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div></td>
+            <td><span class="project-tag">{{ a.project.name }}</span></td>
+            <td class="task-text">{{ a.task_title }}</td>
+            <td>
+              {% if a.proof_link %}
+                {% for link in a.proof_link.splitlines %}
+                  {% if link %}
+                    <a href="{{ link }}" target="_blank" class="proof-link">🔗 View {{ forloop.counter }}</a><br>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <span style="color:var(--muted);font-size:13px;">No Proof</span>
               {% endif %}
-            {% endfor %}
-          {% else %}
-            No Proof
-          {% endif %}
-        </td>
+            </td>
+            <td>
+              {% if a.status == 'pending' %}
+                <span class="badge badge-pending">Pending</span>
+              {% elif a.status == 'approved' %}
+                <span class="badge badge-approved">Approved</span>
+              {% else %}
+                <span class="badge badge-rejected">Rejected</span>
+              {% endif %}
+            </td>
+            <td class="action-cell">
+              {% if a.status == 'pending' %}
+                <button class="btn-approve" onclick="updateStatus({{a.id}}, 'approved')" title="Approve">✔</button>
+                <button class="btn-reject"  onclick="updateStatus({{a.id}}, 'rejected')" title="Reject">✖</button>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+            <td colspan="6"><span class="empty-icon">📭</span>No records found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-        <td>{{ a.status }}</td>
-
-        <td>
-          {% if a.status == 'pending' %}
-            <button onclick="updateStatus({{a.id}}, 'approved')">✔</button>
-            <button onclick="updateStatus({{a.id}}, 'rejected')">✖</button>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6">No records found</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <!-- MOBILE CARDS -->
+  <div class="mobile-cards">
+    {% for a in activities %}
+    <div class="m-card" id="m-row-{{a.id}}">
+      <div class="m-card-header">
+        <div>
+          <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
+          <div style="margin-top:4px;"><span class="project-tag">{{ a.project.name }}</span></div>
+        </div>
+        {% if a.status == 'pending' %}<span class="badge badge-pending">Pending</span>
+        {% elif a.status == 'approved' %}<span class="badge badge-approved">Approved</span>
+        {% else %}<span class="badge badge-rejected">Rejected</span>{% endif %}
+      </div>
+      <div class="m-card-body">
+        <div class="m-row">
+          <span class="m-label">Task</span>
+          <span class="task-text">{{ a.task_title }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-label">Proof</span>
+          <span>
+            {% if a.proof_link %}
+              {% for link in a.proof_link.splitlines %}
+                {% if link %}<a href="{{ link }}" target="_blank" class="proof-link">🔗 View {{ forloop.counter }}</a>{% endif %}
+              {% endfor %}
+            {% else %}<span style="color:var(--muted);font-size:13px;">No Proof</span>{% endif %}
+          </span>
+        </div>
+      </div>
+      {% if a.status == 'pending' %}
+      <div class="m-actions">
+        <button class="btn-approve" onclick="updateStatus({{a.id}}, 'approved')">✔</button>
+        <button class="btn-reject"  onclick="updateStatus({{a.id}}, 'rejected')">✖</button>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:center;color:var(--muted);padding:40px 0;">
+      <span class="empty-icon">📭</span><br>No records found
+    </div>
+    {% endfor %}
+  </div>
 
 </div>
 
 <script>
-
-// 🔥 APPLY FILTERS
 function applyFilters(){
     let search  = document.getElementById("searchInput").value;
     let project = document.getElementById("projectFilter").value;
-
-    let params = new URLSearchParams();
+    let params  = new URLSearchParams();
     params.set("status", "{{current_status}}");
-    params.set("date", "{{date_filter}}");
-
+    params.set("date",   "{{date_filter}}");
     let selectedDate = new URLSearchParams(window.location.search).get("selected_date");
-    if(selectedDate){
-        params.set("selected_date", selectedDate);
-    }
-
-    if(search) params.set("search", search);
+    if(selectedDate) params.set("selected_date", selectedDate);
+    if(search)  params.set("search",  search);
     if(project) params.set("project", project);
-
     window.location.href = "?" + params.toString();
 }
 
-// 🔥 CUSTOM DATE
 function applyCustomDate() {
     let date = document.getElementById("customDate").value;
-
-    if (!date) {
-        alert("Select date");
-        return;
-    }
-
+    if (!date) { alert("Select date"); return; }
     let params = new URLSearchParams();
-    params.set("date", "custom");
+    params.set("date",          "custom");
     params.set("selected_date", date);
-    params.set("status", "{{current_status}}");
-
+    params.set("status",        "{{current_status}}");
     window.location.href = "?" + params.toString();
 }
 
-// 🔥 AUTO SET DATE
 document.addEventListener("DOMContentLoaded", function () {
-    let params = new URLSearchParams(window.location.search);
-    let selected = params.get("selected_date");
-
-    if (selected) {
-        document.getElementById("customDate").value = selected;
-    }
+    let selected = new URLSearchParams(window.location.search).get("selected_date");
+    if (selected) document.getElementById("customDate").value = selected;
 });
 
-// 🔥 APPROVAL API
 function updateStatus(id, status){
     fetch(`/activities/api/approve/${id}/`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie('csrftoken')
-        },
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie('csrftoken') },
         body: JSON.stringify({ status: status })
     })
     .then(res => res.json())
-    .then(data => {
-        if(data.success){
-            location.reload();
-        }
-    });
+    .then(data => { if(data.success) location.reload(); });
 }
 
-// 🔥 CSRF
 function getCookie(name){
     let value = null;
-    document.cookie.split(';').forEach(c=>{
+    document.cookie.split(';').forEach(c => {
         c = c.trim();
-        if(c.startsWith(name + '=')){
-            value = decodeURIComponent(c.substring(name.length + 1));
-        }
+        if(c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
     });
     return value;
 }
-
 </script>
 
 {% endblock %}

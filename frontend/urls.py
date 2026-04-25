@@ -15,5 +15,7 @@ urlpatterns = [
     path('dashboard/qa/', views.qa_dashboard, name='qa_dashboard'),
     path('dashboard/client/', views.client_dashboard, name='client_dashboard'),
     path('assign-services/<int:project_id>/', views.assign_services, name='assign_services'),
+   
+
 
 ]

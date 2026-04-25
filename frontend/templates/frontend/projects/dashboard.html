@@ -1,313 +1,379 @@
 {% extends "frontend/base.html" %}
-
 {% block content %}
 
 <style>
-.card-soft {
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-    border: none;
+.card-soft{
+  border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.06); border:none; background:#fff;
 }
-
-.service-box {
-    border: 1px solid #e2e8f0;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    transition: 0.2s;
-    cursor: pointer;
-}
-
-.service-box:hover {
-    background: #f8fafc;
-}
-
-.checklist-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.status-badge {
-    font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 20px;
-}
-
-.status-pending { background: #facc15; }
-.status-completed { background: #22c55e; color:white; }
-
-.card-soft {
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    border: none;
-    background: #ffffff;
-}
-
-.badge {
-    font-size: 12px;
-}
-
-.btn-dark {
-    border-radius: 10px;
-}
-
+.category-block{ margin-bottom:16px; }
+.service-list li{ padding:4px 0; }
+.service-list li:hover{ background:#f8fafc; border-radius:6px; padding-left:6px; }
+.cursor-pointer{ cursor:pointer; }
 </style>
 
 <div class="container-fluid">
-<div class="row">
+  <div class="row">
 
-<!-- 🔵 LEFT PANEL -->
-<div class="col-md-3">
-    <div class="card card-soft">
+    <!-- LEFT: PROJECTS -->
+    <div class="col-lg-3 col-12">
+      <div class="card card-soft">
         <div class="card-header fw-bold">Projects</div>
 
+        <input type="text" class="form-control m-2" placeholder="Search..."
+               onkeyup="filterProjects(this)">
+
         <div class="list-group list-group-flush">
-            {% for p in projects %}
-            <a href="?project={{ p.id }}"
-               class="list-group-item {% if selected_project and p.id == selected_project.id %}active{% endif %}">
-                <strong>{{ p.name }}</strong><br>
-                <small class="text-muted">{{ p.client.name }}</small>
-            </a>
-            {% endfor %}
+          {% for p in projects %}
+          <a href="?project={{ p.id }}"
+             class="list-group-item {% if selected_project and p.id == selected_project.id %}active{% endif %}">
+            <strong>{{ p.name }}</strong><br>
+            <small class="text-muted">{{ p.client.name }}</small>
+          </a>
+          {% endfor %}
         </div>
+      </div>
     </div>
-</div>
 
-<!-- 🟢 RIGHT PANEL -->
-<div class="col-md-9">
+    <!-- RIGHT: DETAILS -->
+    <div class="col-lg-9 col-12">
 
-{% if selected_project %}
+      {% if selected_project %}
 
-<!-- 🔹 PROJECT HEADER -->
-
-<!-- 🔹 PROJECT HEADER (ELITE UI) -->
-<div class="card card-soft mb-4">
-    <div class="card-body d-flex justify-content-between align-items-center">
-
-        <!-- LEFT SIDE -->
-        <div>
-            <h4 class="fw-bold mb-1">{{ selected_project.name }}</h4>
-
-            <div class="text-muted small">
-                <i class="bi bi-person-circle"></i> {{ selected_project.client.name }}
-                &nbsp; • &nbsp;
-                <i class="bi bi-calendar-event"></i> {{ selected_project.start_date }}
-            </div>
+      <!-- HEADER -->
+      <div class="card card-soft mb-3">
+        <div class="card-body d-flex justify-content-between">
+          <div>
+            <h5 class="fw-bold mb-1">{{ selected_project.name }}</h5>
+            <small class="text-muted">
+              {{ selected_project.client.name }} • {{ selected_project.start_date }}
+            </small>
+          </div>
         </div>
+      </div>
 
-        <!-- RIGHT SIDE ACTIONS -->
-        <div class="d-flex gap-2">
+      <!-- SERVICES -->
+      <div class="card card-soft mb-3">
+        <div class="card-body">
 
-            <!-- STATUS -->
-            <span class="badge bg-success px-3 py-2 rounded-pill">
-                Active
-            </span>
+          <h6 class="fw-bold mb-2">Services</h6>
 
-            <!-- ASSIGN BUTTON -->
-            <a href="{% url 'assign_services' selected_project.id %}" 
-               class="btn btn-dark btn-sm px-3 shadow-sm d-flex align-items-center">
-
-                <i class="bi bi-diagram-3 me-1"></i> Assign Team
-            </a>
-
-        </div>
-
-    </div>
-</div>
-
-
-<!-- 🔹 ADD SERVICE -->
-<div class="card card-soft mb-3">
-    <div class="card-body">
-
-        <h6>Add New Service</h6>
-
-        <div class="d-flex mb-3">
-            <input id="newService" class="form-control me-2" placeholder="Enter service">
-            <button type="button" onclick="addService()" class="btn btn-primary">Add</button>
-        </div>
-
-        <!-- 🔹 SERVICES -->
-        <form method="post" action="">
+          <!-- CATEGORY + SERVICES -->
+          <form method="post">
             {% csrf_token %}
             <input type="hidden" name="project_id" value="{{ selected_project.id }}">
 
-            <div class="row" id="serviceContainer">
+            <div id="serviceContainer">
 
-                {% for service in services %}
-                <div class="col-md-4">
-                    <div class="service-box">
-                        <input type="checkbox"
-                               name="services"
-                               value="{{ service.id }}"
-                               {% if service in selected_project.services.all %}checked{% endif %}>
-                        {{ service.name }}
-                    </div>
-                </div>
-                {% endfor %}
+              {% for category, services in services_grouped.items %}
+              <div class="category-block" data-category="{{ category }}">
+
+                <h6 class="fw-bold text-primary border-bottom pb-1">
+                  {{ category }}
+                </h6>
+
+                <ol class="ps-3 service-list">
+                  {% for service in services %}
+                  <li>
+                    <label class="cursor-pointer">
+                      <input type="checkbox"
+                             name="services"
+                             value="{{ service.id }}"
+                             {% if service in selected_project.services.all %}checked{% endif %}>
+                      {{ service.name }}
+                    </label>
+                  </li>
+                  {% endfor %}
+                </ol>
+
+              </div>
+              {% endfor %}
 
             </div>
 
+            <!-- 🔥 INLINE ADD -->
+            <div class="d-flex gap-2 flex-wrap mt-3">
+
+              <select id="categorySelect" class="form-select" style="max-width:200px;">
+                <option value="">Category</option>
+                {% for category in services_grouped.keys %}
+                <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+              </select>
+
+              <input type="text" id="newCategory" class="form-control"
+                     placeholder="New category" style="max-width:200px;">
+
+              <input type="text" id="serviceName" class="form-control"
+                     placeholder="Service name">
+
+              <button type="button" class="btn btn-primary"
+                      onclick="addServiceInstant()">+ Add</button>
+            </div>
+
             <button class="btn btn-success w-100 mt-3">
-                Save Services
+              Save Services
             </button>
-        </form>
 
-    </div>
-</div>
-
-<!-- 🔹 CHECKLIST -->
-<div class="card card-soft">
-    <div class="card-body">
-
-        <h5>Checklist</h5>
-
-        {% for item in selected_project.checklists.all %}
-        <div class="checklist-item">
-
-            <div>{{ item.item }}</div>
-
-            <span class="status-badge 
-                {% if item.status == 'completed' %}status-completed
-                {% else %}status-pending{% endif %}">
-                {{ item.status }}
-            </span>
+          </form>
 
         </div>
-        {% empty %}
-        <div>No checklist yet</div>
+      </div>
+
+      <!-- CHECKLIST -->
+      <div class="card card-soft">
+        <div class="card-body">
+
+          <h6 class="fw-bold">Checklist</h6>
+
+          {% regroup selected_project.checklists.all by service.category.name as grouped %}
+
+          {% for group in grouped %}
+          <div class="mt-3">
+            <h6 class="fw-bold text-primary">
+              {{ group.grouper|default:"General" }}
+            </h6>
+
+            {% for item in group.list %}
+            <div class="d-flex justify-content-between border-bottom py-1">
+              <span>{{ item.service.name }}</span>
+              <small>{{ item.status }}</small>
+            </div>
+            {% endfor %}
+          </div>
+          {% empty %}
+          <div class="text-muted">No checklist</div>
+          {% endfor %}
+
+        </div>
+      </div>
+
+      {% else %}
+      <div class="alert alert-info text-center mt-4">
+        Select a project
+      </div>
+      {% endif %}
+      <div class="card card-soft mt-3">
+    <div class="card-body">
+
+        <h6 class="fw-bold mb-3">Team Assignment</h6>
+
+        {% for service_id, data in service_team.items %}
+        <div class="mb-3 border rounded p-3">
+
+            <!-- SERVICE NAME -->
+            <h6 class="fw-bold text-primary mb-2">
+                {{ data.name }}
+            </h6>
+
+            <!-- CURRENT USERS -->
+           <div class="mb-2">
+                {% if data.users %}
+                    {% for user in data.users %}
+                        <span class="badge bg-success me-1 mb-1">
+                            {{ user.name }}
+
+                            <button type="button"
+                                    class="btn btn-sm btn-danger ms-2"
+                                    onclick="removeUser({{ service_id }}, {{ user.id }})">
+                                ✖
+                            </button>
+                        </span>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted small">No team assigned</span>
+                {% endif %}
+            </div>
+            <!-- 🔥 ASSIGN USER -->
+            <div class="d-flex gap-2">
+
+                <select class="form-select form-select-sm"
+                        id="userSelect_{{ service_id }}">
+
+                    <option value="">Select Employee</option>
+
+                    {% for u in users %}
+                    <option value="{{ u.id }}">
+                        {{ u.first_name }} ({{ u.role }})
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+                <button class="btn btn-primary btn-sm"
+                        onclick="assignUser({{ service_id }})">
+                    Assign
+                </button>
+
+            </div>
+
+        </div>
         {% endfor %}
 
     </div>
 </div>
 
-<div class="card card-soft mt-3">
-    <div class="card-body">
-
-        <h5 class="fw-bold mb-3">👥 Team Assignment</h5>
-
-        <div class="row" id="employeeView"></div>
-
     </div>
+    
+  </div>
+
 </div>
 
-<!-- 🔥 PASS DJANGO DATA TO JS -->
 <script>
-const serviceTeam = {{ service_team|safe }};
-
-// 🔥 CONVERT: SERVICE → USER  → USER → SERVICES
-let userMap = {};
-
-for (let key in serviceTeam) {
-    let service = serviceTeam[key];
-
-    service.users.forEach(user => {
-
-        if (!userMap[user]) {
-            userMap[user] = [];
-        }
-
-        userMap[user].push(service.name);
-    });
+// 🔍 SEARCH
+function filterProjects(input){
+  let val = input.value.toLowerCase();
+  document.querySelectorAll(".list-group-item").forEach(el=>{
+    el.style.display = el.innerText.toLowerCase().includes(val) ? "" : "none";
+  });
 }
 
-// 🔥 RENDER UI
-let container = document.getElementById("employeeView");
+// 🚀 ADD SERVICE (NO RELOAD)
+function addServiceInstant(){
 
-for (let user in userMap) {
+  let name = document.getElementById("serviceName").value.trim();
+  let selectedCategory = document.getElementById("categorySelect").value;
+  let newCategory = document.getElementById("newCategory").value.trim();
 
-    let services = userMap[user];
+  let category = newCategory || selectedCategory;
 
+  if(!name || !category){
+    alert("Enter category and service");
+    return;
+  }
+
+  fetch("/api/projects/add-service/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie('csrftoken')
+    },
+    body: JSON.stringify({ name, category })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if(data.success){
+      addServiceToUI(category, data.id, name);
+
+      document.getElementById("serviceName").value = "";
+      document.getElementById("newCategory").value = "";
+    }else{
+      alert(data.error);
+    }
+
+  });
+}
+
+// 🔥 UPDATE UI
+function addServiceToUI(category, id, name){
+
+  let container = document.getElementById("serviceContainer");
+  let block = container.querySelector(`[data-category="${category}"]`);
+
+  if(!block){
     let div = document.createElement("div");
-    div.className = "col-md-4";
-
-    let badges = services.map(s =>
-        `<span class="badge bg-success me-1 mb-1">${s}</span>`
-    ).join("");
-
+    div.className = "category-block";
+    div.setAttribute("data-category", category);
     div.innerHTML = `
-        <div class="p-3 border rounded mb-3">
-            <h6 class="fw-bold">${user}</h6>
-            ${badges}
-        </div>
+      <h6 class="fw-bold text-primary border-bottom pb-1">${category}</h6>
+      <ol class="ps-3 service-list"></ol>
     `;
-
     container.appendChild(div);
+    block = div;
+
+    // update dropdown
+    let opt = document.createElement("option");
+    opt.value = category;
+    opt.text = category;
+    document.getElementById("categorySelect").appendChild(opt);
+  }
+
+  let list = block.querySelector(".service-list");
+
+  let li = document.createElement("li");
+  li.innerHTML = `
+    <label>
+      <input type="checkbox" name="services" value="${id}" checked>
+      ${name}
+    </label>
+  `;
+
+  list.appendChild(li);
 }
 
-// 🔥 EMPTY CASE
-if(Object.keys(userMap).length === 0){
-    container.innerHTML = `<div class="text-muted">No team assigned</div>`;
+// 🔐 CSRF
+function getCookie(name){
+  let value = null;
+  document.cookie.split(';').forEach(c=>{
+    c = c.trim();
+    if(c.startsWith(name + '=')){
+      value = decodeURIComponent(c.substring(name.length + 1));
+    }
+  });
+  return value;
 }
-</script>
-{% else %}
 
-<div class="alert alert-info text-center mt-5">
-    Select a project to manage services
-</div>
+function assignUser(serviceId){
 
-{% endif %}
+    let userId = document.getElementById(`userSelect_${serviceId}`).value;
 
-</div>
-</div>
-</div>
-
-<script>
-function addService() {
-
-    let name = document.getElementById("newService").value;
-
-    if (!name) {
-        alert("Enter service name");
+    if(!userId){
+        alert("Select user");
         return;
     }
 
-    fetch("/api/projects/add-service/", {
+    fetch("/activities/api/assign-service/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie('csrftoken')
         },
-        body: JSON.stringify({ name: name })
+        body: JSON.stringify({
+            service_id: serviceId,
+            user_id: userId,
+            project_id: "{{ selected_project.id }}"
+        })
     })
     .then(res => res.json())
     .then(data => {
 
-        if (data.success) {
-
-            let container = document.getElementById("serviceContainer");
-
-            let div = document.createElement("div");
-            div.className = "col-md-4";
-
-            div.innerHTML = `
-                <div class="service-box">
-                    <input type="checkbox" name="services" value="${data.id}" checked>
-                    ${data.name}
-                </div>
-            `;
-
-            container.appendChild(div);
-            document.getElementById("newService").value = "";
-
-        } else {
+        if(data.success){
+            location.reload(); // simple + safe
+        }else{
             alert(data.error);
         }
+
     });
 }
 
-function getCookie(name) {
-    let cookieValue = null;
-    let cookies = document.cookie.split(';');
-    for (let c of cookies) {
-        c = c.trim();
-        if (c.startsWith(name + '=')) {
-            cookieValue = decodeURIComponent(c.substring(name.length + 1));
+
+function removeUser(serviceId, userId) {
+
+    console.log("CLICK:", serviceId, userId);
+
+    if (!confirm("Remove this user?")) return;
+
+    fetch('/projects/remove-user/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')  // ✅ FIXED
+        },
+        body: JSON.stringify({
+            service_id: serviceId,
+            user_id: userId
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Response:", data);
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert("Failed");
         }
-    }
-    return cookieValue;
+    })
+    .catch(err => console.error("Error:", err));
 }
 </script>
 

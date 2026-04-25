@@ -28,10 +28,9 @@ class AssignedWorkAPI(APIView):
 
             data[project_id]["services"].append({
                 "id": a.service.id,
-                "name": a.service.name,
-                "proof_links": a.proof_link.split("\n") if a.proof_links else []
+                "name": a.service.name
             })
 
-        print("FINAL DATA:", data)  # 👈 DEBUG
+        print("FINAL DATA:", data)  # DEBUG
 
         return Response(data)
