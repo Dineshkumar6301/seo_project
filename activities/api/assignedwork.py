@@ -29,6 +29,7 @@ class AssignedWorkAPI(APIView):
             data[project_id]["services"].append({
                 "id": a.service.id,
                 "name": a.service.name
+                
             })
 
         print("FINAL DATA:", data)  # DEBUG
