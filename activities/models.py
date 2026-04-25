@@ -91,7 +91,7 @@ class Activity(models.Model):
     planned_work = models.TextField(blank=True)
     completed_work = models.TextField(blank=True)
 
-    proof_linkp = models.TextField(blank=True)
+    proof_link = models.TextField(blank=True)
     remarks = models.TextField(blank=True)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
