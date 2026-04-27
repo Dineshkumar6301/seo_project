@@ -375,18 +375,19 @@ h3.mb-4 {
                 </td>
                 <td>
                     {% if a.proof_link %}
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-column gap-2 align-items-start">
                             {% for link in a.proof_link.splitlines %}
                                 {% if link %}
                                     <a href="{{ link }}" target="_blank"
-                                       class="badge bg-primary text-decoration-none px-2 py-1">
-                                        🔗 {{ forloop.counter }}
+                                    class="proof-btn">
+                                        <span class="icon"> 🔗</span>
+                                        <span>View {{ forloop.counter }}</span>
                                     </a>
                                 {% endif %}
                             {% endfor %}
                         </div>
                     {% else %}
-                        <span class="text-muted">No Proof</span>
+                        <span class="no-proof">No Proof</span>
                     {% endif %}
                 </td>
                 <td>

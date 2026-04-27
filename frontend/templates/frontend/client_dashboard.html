@@ -488,7 +488,7 @@ function updateTable(rows){
             proofHTML = r.proof_link
                 .split('\n')
                 .filter(l => l.trim())
-                .map((l,i)=>`<a href="${l}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">Proof ${i+1}</a>`)
+                .map((l,i)=>`<a href="${l}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">View ${i+1}</a>`)
                 .join('');
         }
 
