@@ -40,7 +40,7 @@ class TodayActivityAPI(APIView):
                 "service": a.service_id,
                 "service_name": a.service.name,
                 "task_title": a.task_title,
-                "planned_work": a.planned_work,
+                "keyword": a.keyword,
                 "completed_work": a.completed_work,
                 "proof_links": a.proof_link.split("\n") if a.proof_link else [],
                 "remarks": a.remarks,

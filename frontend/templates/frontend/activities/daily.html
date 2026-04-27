@@ -30,11 +30,10 @@
     <th>Project</th>
     <th>Service</th>
     <th>Task_Title</th>
-    <th>Planned Work</th>
+    <th>Keyword</th>
     <th>Completed Work</th>
     <th>Proof Link</th>
     <th>Remarks</th>
-    <th></th>
 </tr>
 </thead>
 
@@ -75,7 +74,7 @@ return `
 </td>
 
 <td><input class="task_title form-control" value="${data.task_title || ''}"></td>
-<td><input class="planned form-control" value="${data.planned_work || ''}"></td>
+<td><input class="keyword form-control" value="${data.keyword || ''}"></td>
 <td><input class="completed form-control" value="${data.completed_work || ''}"></td>
 
 <td>
@@ -231,7 +230,7 @@ let payload = {
     project: project,
     service: service,
     task_title: row.querySelector(".task_title").value,
-    planned_work: row.querySelector(".planned").value,
+    keyword: row.querySelector(".keyword").value,
     completed_work: row.querySelector(".completed").value,
     proof_links: proofs,
     remarks: row.querySelector(".remarks").value

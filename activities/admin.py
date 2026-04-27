@@ -39,7 +39,7 @@ class ChecklistAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'created_at'
 
-
+from django.conf import settings
 # ===============================
 # ACTIVITY ADMIN
 # ===============================
@@ -87,7 +87,7 @@ class ActivityAdmin(admin.ModelAdmin):
             'fields': ('task_title', 'checklist_item')
         }),
         ('Work Info', {
-            'fields': ('planned_work', 'completed_work', 'proof_link', 'remarks')
+            'fields': ('keyword', 'completed_work', 'proof_link', 'remarks')
         }),
         ('Status', {
             'fields': ('status',)

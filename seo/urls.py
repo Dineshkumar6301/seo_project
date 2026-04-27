@@ -13,4 +13,5 @@ urlpatterns = [
     path('activities/', include('activities.urls')),  # UI + API
     path('api/clients/', include('clients.urls')),  # API
     path('api/projects/', include('projects.urls')),  # API
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

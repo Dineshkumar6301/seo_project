@@ -52,69 +52,27 @@ class Checklist(models.Model):
         return f"{self.project.name} - {self.service.name} - {self.item}"
 
 
+# models.py
+
+from django.db import models
+from django.conf import settings
+
+
 class Activity(models.Model):
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='activities' 
-    )
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name='activities'
-    )
-
-    service = models.ForeignKey(
-        Service,
-        on_delete=models.CASCADE
-    )
-    checklist_item = models.ForeignKey(
-        Checklist,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-
-    date = models.DateField()
-
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    project = models.ForeignKey("projects.Project", on_delete=models.CASCADE)
+    service = models.ForeignKey("projects.Service", on_delete=models.CASCADE)
     task_title = models.CharField(max_length=255)
-
-    planned_work = models.TextField(blank=True)
-    completed_work = models.TextField(blank=True)
-
-    proof_link = models.TextField(blank=True)
-    remarks = models.TextField(blank=True)
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="approved_activities"
-    )
-
-    approved_at = models.DateTimeField(null=True, blank=True)
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
+    keyword = models.CharField(max_length=255, blank=True, null=True)
+    completed_work = models.TextField(blank=True, null=True)
+    proof_link = models.TextField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    date = models.DateField()
+    status = models.CharField(max_length=20, default="pending")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-created_at']
-
-        unique_together = ['user', 'project', 'service', 'date', 'task_title']
-
-    def __str__(self):
-        return f"{self.user} | {self.project} | {self.service} | {self.date}"
+    def get_proof_links(self):
+        if not self.proof_link:
+            return []
+        return [link.strip() for link in self.proof_link.splitlines() if link.strip()]

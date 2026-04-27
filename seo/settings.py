@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'clients',
     'activities',
     'frontend',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -150,12 +152,9 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 import os
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -175,3 +174,18 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 BASE_URL = os.getenv("BASE_URL")
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv("CLOUDINARY_CLOUD_NAME"),
+    'API_KEY': os.getenv("CLOUDINARY_API_KEY"),
+    'API_SECRET': os.getenv("CLOUDINARY_API_SECRET"),
+}
+

@@ -526,7 +526,7 @@
       {% endfor %}
     </select>
 
-    <a href="?export=excel&date={{date_filter}}&selected_date={{request.GET.selected_date}}&status={{current_status}}" class="export-btn">
+    <a href="?export=excel&date={{date_filter}}{% if request.GET.selected_date %}&selected_date={{request.GET.selected_date}}{% endif %}&status={{current_status}}&search={{search}}&project={{selected_project}}" class="export-btn">
       📥 Export Excel
     </a>
   </div>
@@ -540,6 +540,8 @@
             <th>User</th>
             <th>Project</th>
             <th>Task</th>
+
+            <th>Keyword</th>
             <th>Proof</th>
             <th>Status</th>
             <th>Action</th>
@@ -551,11 +553,14 @@
             <td><div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div></td>
             <td><span class="project-tag">{{ a.project.name }}</span></td>
             <td class="task-text">{{ a.task_title }}</td>
+            <td class="task-text">{{ a.keyword }}</td>
             <td>
               {% if a.proof_link %}
                 {% for link in a.proof_link.splitlines %}
                   {% if link %}
-                    <a href="{{ link }}" target="_blank" class="proof-link">🔗 View {{ forloop.counter }}</a><br>
+                    <a href="{{ link }}" target="_blank" class="proof-link">
+                      🔗 {{ link }}
+                    </a><br>
                   {% endif %}
                 {% endfor %}
               {% else %}
@@ -580,7 +585,7 @@
           </tr>
           {% empty %}
           <tr class="empty-row">
-            <td colspan="6"><span class="empty-icon">📭</span>No records found</td>
+          <td colspan="7" style="text-align:center;"><span class="empty-icon">📭</span>No records found</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -607,14 +612,24 @@
           <span class="task-text">{{ a.task_title }}</span>
         </div>
         <div class="m-row">
+          <span class="m-label">Keyword</span>
+          <span>{{ a.keyword }}</span>
+        </div>
+        <div class="m-row">
           <span class="m-label">Proof</span>
           <span>
-            {% if a.proof_link %}
-              {% for link in a.proof_link.splitlines %}
-                {% if link %}<a href="{{ link }}" target="_blank" class="proof-link">🔗 View {{ forloop.counter }}</a>{% endif %}
-              {% endfor %}
-            {% else %}<span style="color:var(--muted);font-size:13px;">No Proof</span>{% endif %}
-          </span>
+          {% if a.proof_link %}
+            {% for link in a.proof_link.splitlines %}
+              {% if link %}
+               <a href="{{ link }}" target="_blank" class="proof-link">
+                🔗 {{ link }}
+              </a><br>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <span style="color:var(--muted);font-size:13px;">No Proof</span>
+          {% endif %}
+        </span>
         </div>
       </div>
       {% if a.status == 'pending' %}
@@ -669,7 +684,12 @@ function updateStatus(id, status){
         body: JSON.stringify({ status: status })
     })
     .then(res => res.json())
-    .then(data => { if(data.success) location.reload(); });
+    .then(data => {
+      if(data.success){
+        document.getElementById(`row-${id}`).remove();
+        document.getElementById(`m-row-${id}`)?.remove();
+      }
+    });
 }
 
 function getCookie(name){

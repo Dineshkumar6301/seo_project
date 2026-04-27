@@ -147,12 +147,7 @@
         </div>
       </div>
 
-      {% else %}
-      <div class="alert alert-info text-center mt-4">
-        Select a project
-      </div>
-      {% endif %}
-      <div class="card card-soft mt-3">
+ <div class="card card-soft mt-3">
     <div class="card-body">
 
         <h6 class="fw-bold mb-3">Team Assignment</h6>
@@ -174,7 +169,7 @@
 
                             <button type="button"
                                     class="btn btn-sm btn-danger ms-2"
-                                    onclick="removeUser({{ service_id }}, {{ user.id }})">
+                                    onclick="removeUser({{ service_id }}, {{ user.id }}, this)">
                                 ✖
                             </button>
                         </span>
@@ -210,6 +205,13 @@
         {% endfor %}
 
     </div>
+      {% else %}
+      
+      <div class="alert alert-info text-center mt-4">
+        Select a project
+      </div>
+      {% endif %}
+     
 </div>
 
     </div>
@@ -315,7 +317,9 @@ function getCookie(name){
 
 function assignUser(serviceId){
 
-    let userId = document.getElementById(`userSelect_${serviceId}`).value;
+    let select = document.getElementById(`userSelect_${serviceId}`);
+    let userId = select.value;
+    let userText = select.options[select.selectedIndex].text;
 
     if(!userId){
         alert("Select user");
@@ -338,7 +342,27 @@ function assignUser(serviceId){
     .then(data => {
 
         if(data.success){
-            location.reload(); // simple + safe
+
+            // ✅ ADD USER TO UI (NO RELOAD)
+            let container = select.closest(".mb-3").querySelector(".mb-2");
+
+            let badge = document.createElement("span");
+            badge.className = "badge bg-success me-1 mb-1";
+
+            badge.innerHTML = `
+                ${userText}
+                <button type="button"
+                        class="btn btn-sm btn-danger ms-2"
+                        onclick="removeUser(${serviceId}, ${userId})">
+                    ✖
+                </button>
+            `;
+
+            container.appendChild(badge);
+
+            // ✅ RESET SELECT
+            select.value = "";
+
         }else{
             alert(data.error);
         }
@@ -346,10 +370,7 @@ function assignUser(serviceId){
     });
 }
 
-
-function removeUser(serviceId, userId) {
-
-    console.log("CLICK:", serviceId, userId);
+function removeUser(serviceId, userId, btn=null){
 
     if (!confirm("Remove this user?")) return;
 
@@ -357,7 +378,7 @@ function removeUser(serviceId, userId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')  // ✅ FIXED
+            'X-CSRFToken': getCookie('csrftoken')
         },
         body: JSON.stringify({
             service_id: serviceId,
@@ -366,14 +387,21 @@ function removeUser(serviceId, userId) {
     })
     .then(res => res.json())
     .then(data => {
-        console.log("Response:", data);
+
         if (data.status === 'success') {
-            location.reload();
+
+            // ✅ REMOVE BADGE FROM UI
+            if(btn){
+                btn.parentElement.remove();
+            } else {
+                // fallback
+                location.reload();
+            }
+
         } else {
             alert("Failed");
         }
-    })
-    .catch(err => console.error("Error:", err));
+    });
 }
 </script>
 
