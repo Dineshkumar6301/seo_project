@@ -378,6 +378,7 @@
           <tr>
             <th>Project</th>
             <th>Task</th>
+            <th>Proof</th>
             <th>Status</th>
             <th>Date</th>
           </tr>
@@ -387,6 +388,17 @@
           <tr data-date="{{ a.date|date:'Y-m-d' }}" data-status="{{ a.status }}">
             <td><strong>{{ a.project.name }}</strong></td>
             <td>{{ a.task_title }}</td>
+            <td>
+                {% if a.proof_link %}
+                  {% for link in a.proof_link.splitlines %}
+                    <a href="{{ link }}" target="_blank" style="display:block; color:var(--accent); text-decoration:underline;">
+                      View Proof {{ forloop.counter }}
+                    </a>
+                  {% endfor %}
+                {% else %}
+                  <span style="color:var(--muted); font-style:italic;">No proof</span>
+                {% endif %}
+              </td>
             <td>
               <span class="badge
                 {% if a.status == 'approved' %}bg-success
@@ -433,22 +445,38 @@ function updateKPI(kpi){
 function updateTable(rows){
     let table = document.getElementById("taskTable");
     table.innerHTML = "";
+
     if(!rows.length){
-        table.innerHTML = `<tr><td colspan="4" class="empty-state">📋 No activity data</td></tr>`;
+        table.innerHTML = `<tr><td colspan="5" class="empty-state">📋 No activity data</td></tr>`;
         return;
     }
+
     rows.forEach(r => {
-        const badgeCls = r.status === 'approved' ? 'bg-success' : r.status === 'pending' ? 'bg-warning' : 'bg-danger';
+        const badgeCls =
+            r.status === 'approved' ? 'bg-success' :
+            r.status === 'pending' ? 'bg-warning' :
+            'bg-danger';
+
+        // ✅ HANDLE MULTIPLE LINKS (STRING → SPLIT)
+        let proofHTML = 'No proof';
+        if(r.proof_link){
+            proofHTML = r.proof_link
+                .split('\n')
+                .filter(l => l.trim() !== "")
+                .map((l,i)=>`<a href="${l.trim()}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">Proof ${i+1}</a>`)
+                .join('');
+        }
+
         table.innerHTML += `
             <tr>
                 <td><strong>${r.project__name}</strong></td>
                 <td>${r.task_title}</td>
+                <td>${proofHTML}</td>
                 <td><span class="badge ${badgeCls}">${r.status}</span></td>
                 <td style="color:var(--muted)">${r.date}</td>
             </tr>`;
     });
 }
-
 // 🔥 CHART
 function updateChart(labels, data){
     if(chartInstance) chartInstance.destroy();

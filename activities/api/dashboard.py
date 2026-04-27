@@ -49,6 +49,7 @@ class ClientDashboardAPI(APIView):
         table = list(qs.values(
             'task_title',
             'status',
+            'proof_link', 
             'date',
             'project__name'
         ))
