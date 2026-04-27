@@ -320,7 +320,6 @@ def qa_dashboard(request):
 def client_dashboard(request):
 
     client = request.user.client
-
     activities = Activity.objects.filter(
         project__client=client
     )

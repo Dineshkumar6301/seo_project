@@ -414,6 +414,7 @@
           {% endfor %}
         </tbody>
       </table>
+      <div id="pagination" style="margin-top:15px;"></div>
     </div>
   </div>
 
@@ -421,23 +422,61 @@
 
 <script>
 let chartInstance = null;
+let currentPage = 1;
+let currentType = "all";
+let lastTotal = 0;
+let servicesLoaded = false;
 
-// 🔥 MAIN LOAD FUNCTION
-function loadDashboard(type="all"){
-    fetch(`/activities/api/dashboard/?type=${type}`)
+// 🔹 GET FILTER VALUES (SAFE)
+function getFilters(){
+    return {
+        type: currentType,
+        page: currentPage,
+        limit: 10,
+        search: document.getElementById("searchInput")?.value || "",
+        service: document.getElementById("serviceFilter")?.value || "",
+        start_date: document.getElementById("startDate")?.value || "",
+        end_date: document.getElementById("endDate")?.value || "",
+        order: document.getElementById("orderFilter")?.value || "-date"
+    };
+}
+
+// 🔹 BUILD QUERY
+function buildQuery(params){
+    return Object.keys(params)
+        .filter(k => params[k])
+        .map(k => `${k}=${encodeURIComponent(params[k])}`)
+        .join("&");
+}
+
+// 🔥 MAIN LOAD
+function loadDashboard(){
+    const query = buildQuery(getFilters());
+
+    fetch(`/activities/api/dashboard/?${query}`)
     .then(res => res.json())
     .then(data => {
+
         updateKPI(data.kpi);
         updateTable(data.table);
         updateChart(data.chart.labels, data.chart.data);
+        updatePagination(data.pagination);
+
+        // ✅ Load services once
+        if(!servicesLoaded && data.services){
+            populateServices(data.services);
+            servicesLoaded = true;
+        }
+
+        lastTotal = data.kpi.total;
     });
 }
 
 // 🔥 KPI
 function updateKPI(kpi){
-    document.getElementById("totalTasks").innerText    = kpi.total;
+    document.getElementById("totalTasks").innerText = kpi.total;
     document.getElementById("approvedTasks").innerText = kpi.approved;
-    document.getElementById("pendingTasks").innerText  = kpi.pending;
+    document.getElementById("pendingTasks").innerText = kpi.pending;
     document.getElementById("rejectedTasks").innerText = kpi.rejected;
 }
 
@@ -457,13 +496,13 @@ function updateTable(rows){
             r.status === 'pending' ? 'bg-warning' :
             'bg-danger';
 
-        // ✅ HANDLE MULTIPLE LINKS (STRING → SPLIT)
         let proofHTML = 'No proof';
+
         if(r.proof_link){
             proofHTML = r.proof_link
                 .split('\n')
-                .filter(l => l.trim() !== "")
-                .map((l,i)=>`<a href="${l.trim()}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">Proof ${i+1}</a>`)
+                .filter(l => l.trim())
+                .map((l,i)=>`<a href="${l}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">Proof ${i+1}</a>`)
                 .join('');
         }
 
@@ -477,9 +516,11 @@ function updateTable(rows){
             </tr>`;
     });
 }
+
 // 🔥 CHART
 function updateChart(labels, data){
     if(chartInstance) chartInstance.destroy();
+
     chartInstance = new Chart(document.getElementById("chart"), {
         type: 'line',
         data: {
@@ -489,52 +530,91 @@ function updateChart(labels, data){
                 data: data.length ? data : [0],
                 borderColor: '#4f46e5',
                 backgroundColor: 'rgba(79,70,229,0.08)',
-                borderWidth: 2.5,
+                borderWidth: 2,
                 tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#4f46e5',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                fill: true
             }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#fff',
-                    borderColor: '#dde3f0',
-                    borderWidth: 1,
-                    titleColor: '#1e293b',
-                    bodyColor: '#64748b',
-                    padding: 12,
-                    cornerRadius: 10
-                }
-            },
-            scales: {
-                x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } } },
-                y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94a3b8', font: { family: 'Segoe UI', size: 12 } }, beginAtZero: true }
-            }
         }
     });
 }
 
-// 🔥 FILTER CLICK
-function filterData(type, btn){
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadDashboard(type);
+// 🔥 PAGINATION
+function updatePagination(pagination){
+    const container = document.getElementById("pagination");
+    if(!container) return;
+
+    container.innerHTML = "";
+
+    for(let i=1; i<=pagination.pages; i++){
+        container.innerHTML += `
+            <button onclick="goToPage(${i})"
+                class="filter-btn"
+                style="${i===pagination.page?'background:#4f46e5;color:#fff':''}">
+                ${i}
+            </button>`;
+    }
 }
 
-// 🔥 AUTO REFRESH (REAL SaaS)
+function goToPage(page){
+    currentPage = page;
+    loadDashboard();
+}
+
+// 🔥 SERVICES (DYNAMIC)
+function populateServices(services){
+    const select = document.getElementById("serviceFilter");
+    if(!select) return;
+
+    select.innerHTML = `<option value="">All Services</option>`;
+
+    services.forEach(s => {
+        select.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+}
+
+// 🔥 FILTER BUTTONS
+function filterData(type, btn){
+    currentType = type;
+    currentPage = 1;
+
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+
+    loadDashboard();
+}
+
+// 🔥 APPLY FILTERS
+function applyFilters(){
+    currentPage = 1;
+    loadDashboard();
+}
+
+// 🔥 SEARCH (SAFE)
+document.addEventListener("DOMContentLoaded", () => {
+    const search = document.getElementById("searchInput");
+    if(search){
+        search.addEventListener("input", () => {
+            currentPage = 1;
+            loadDashboard();
+        });
+    }
+});
+
+// 🔥 SMART REFRESH (OPTIMIZED)
 setInterval(() => {
-    let activeBtn = document.querySelector('.filter-btn.active');
-    let type = activeBtn ? activeBtn.innerText.toLowerCase() : "all";
-    loadDashboard(type);
+    fetch(`/activities/api/dashboard/`)
+    .then(res => res.json())
+    .then(data => {
+        if(data.kpi.total !== lastTotal){
+            loadDashboard();
+        }
+    });
 }, 5000);
 
 // 🔥 INITIAL LOAD
-window.onload = () => loadDashboard("all");
+window.onload = () => loadDashboard();
+
 </script>
+
 
 {% endblock %}
