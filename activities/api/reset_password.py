@@ -33,6 +33,6 @@ class ResetPasswordAPI(APIView):
         user.set_password(password)
         user.save()
 
-        record.delete()  # one-time use
+        record.delete() 
 
         return Response({"message": "Password updated"}, status=200)

@@ -14,7 +14,6 @@ class AssignServiceAPI(APIView):
         if not user_id or not service_id or not project_id:
             return Response({"error": "Missing data"}, status=400)
 
-        # 🔥 prevent duplicate assignment
         exists = ProjectServiceAssignment.objects.filter(
             user_id=user_id,
             service_id=service_id,

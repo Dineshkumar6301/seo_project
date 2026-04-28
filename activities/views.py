@@ -14,10 +14,6 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment
 import openpyxl
 
-
-# =========================
-# 🔵 DAILY ENTRY
-# =========================
 @login_required
 def activity_daily(request):
 
@@ -42,9 +38,6 @@ def activity_approval(request):
         'user', 'project', 'service'
     )
 
-    # =========================
-    # DATE FILTER
-    # =========================
     if date_filter == "today":
         queryset = queryset.filter(date=today)
 
@@ -65,10 +58,6 @@ def activity_approval(request):
                 queryset = queryset.filter(date=selected_date)
             except:
                 pass
-
-    # =========================
-    # SEARCH
-    # =========================
     if search:
         queryset = queryset.filter(
             Q(user__email__icontains=search) |
@@ -76,15 +65,11 @@ def activity_approval(request):
             Q(user__last_name__icontains=search)
         )
 
-        # =========================
-    # PROJECT FILTER
-    # =========================
+
     if project_id:
         queryset = queryset.filter(project_id=project_id)
 
-    # =========================
-    # COUNTS
-    # =========================
+  
     counts = queryset.values('status').annotate(count=Count('id'))
     count_map = {i['status']: i['count'] for i in counts}
 
@@ -92,9 +77,7 @@ def activity_approval(request):
     approved_count = count_map.get('approved', 0)
     rejected_count = count_map.get('rejected', 0)
 
-    # =========================
-    # 🔥 EXPORT EXCEL FINAL
-    # =========================
+
     if request.GET.get('export') == "excel":
 
         wb = openpyxl.Workbook()
@@ -103,9 +86,7 @@ def activity_approval(request):
 
         from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
 
-        # =========================
-        # HEADER (MATCH REPORT)
-        # =========================
+     
         headers = [
             "S.No", "Project", "Employee", "Service",
             "Task", "Keyword", "Proof Links", "Status", "Date"
@@ -122,9 +103,6 @@ def activity_approval(request):
             cell.fill = header_fill
             cell.alignment = center
 
-        # =========================
-        # DATA
-        # =========================
         row_num = 2
         serial = 1
 
@@ -146,7 +124,6 @@ def activity_approval(request):
                 ws.cell(row=row_num, column=8, value=a.status if i == 0 else "")
                 ws.cell(row=row_num, column=9, value=str(a.date) if i == 0 else "")
 
-                # 🔗 Clickable link
                 if link:
                     cell = ws.cell(row=row_num, column=7)
                     cell.hyperlink = link
@@ -156,9 +133,6 @@ def activity_approval(request):
 
             end_row = row_num - 1
 
-            # =========================
-            # MERGE CELLS (skip Proof column 7)
-            # =========================
             if end_row > start_row:
                 for col in [1, 2, 3, 4, 5, 6, 8, 9]:
                     ws.merge_cells(
@@ -170,9 +144,7 @@ def activity_approval(request):
 
             serial += 1
 
-        # =========================
-        # STYLING
-        # =========================
+   
         thin = Side(style="thin")
         border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
@@ -185,9 +157,7 @@ def activity_approval(request):
                 else:
                     cell.alignment = center
 
-        # =========================
-        # STATUS COLORS
-        # =========================
+ 
         for row in ws.iter_rows(min_row=2):
             status_cell = row[7]
 
@@ -198,17 +168,13 @@ def activity_approval(request):
             elif status_cell.value == "rejected":
                 status_cell.fill = PatternFill(start_color="FEE2E2", fill_type="solid")
 
-        # =========================
-        # WIDTHS
-        # =========================
+     
+    
         widths = [6, 22, 28, 20, 30, 20, 45, 15, 15]
 
         for i, w in enumerate(widths, start=1):
             ws.column_dimensions[chr(64 + i)].width = w
 
-        # =========================
-        # FILTER + FREEZE
-        # =========================
         ws.auto_filter.ref = "A1:I1"
         ws.freeze_panes = "A2"
 
@@ -221,10 +187,6 @@ def activity_approval(request):
         return response
         
         
-
-    # =========================
-    # NORMAL VIEW
-    # =========================
     activities = queryset.filter(status=status).order_by('-created_at')
     projects = Project.objects.all()
     profile = Profile.objects.filter(user=request.user).first()
@@ -252,17 +214,6 @@ def activity_reports(request):
         'activities': activities
     })
 
-
-@login_required
-def activity_reports(request):
-
-    activities = Activity.objects.select_related(
-        'user', 'project', 'service'
-    ).order_by('-date')
-
-    return render(request, 'frontend/activities/reports.html', {
-        'activities': activities
-    })
 
 
 from openpyxl import Workbook
@@ -294,9 +245,6 @@ def export_report(request):
     ws = wb.active
     ws.title = "Activities"
 
-    # =========================
-    # HEADER
-    # =========================
     headers = [
         "S.No", "Project", "Employee", "Service",
         "Task", "Keyword", "Proof Links", "Status", "Date"
@@ -313,9 +261,7 @@ def export_report(request):
         cell.fill = header_fill
         cell.alignment = center_align
 
-    # =========================
-    # DATA
-    # =========================
+
     row_num = 2
     serial = 1
 
@@ -347,9 +293,7 @@ def export_report(request):
 
         end_row = row_num - 1
 
-        # =========================
-        # MERGE CELLS (skip Proof column 7)
-        # =========================
+
         if end_row > start_row:
             for col in [1, 2, 3, 4, 5, 6, 8, 9]:
                 ws.merge_cells(
@@ -361,9 +305,6 @@ def export_report(request):
 
         serial += 1
 
-    # =========================
-    # STYLING
-    # =========================
     thin = Side(style="thin")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
@@ -376,11 +317,9 @@ def export_report(request):
             else:
                 cell.alignment = center_align
 
-    # =========================
-    # STATUS COLORS
-    # =========================
+
     for row in ws.iter_rows(min_row=2):
-        status_cell = row[7]  # column 8
+        status_cell = row[7]
 
         if status_cell.value == "approved":
             status_cell.fill = PatternFill(start_color="D1FAE5", fill_type="solid")
@@ -389,23 +328,15 @@ def export_report(request):
         elif status_cell.value == "rejected":
             status_cell.fill = PatternFill(start_color="FEE2E2", fill_type="solid")
 
-    # =========================
-    # COLUMN WIDTHS
-    # =========================
     widths = [6, 22, 28, 20, 30, 20, 45, 15, 15]
 
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[chr(64 + i)].width = w
 
-    # =========================
-    # FILTER + FREEZE
-    # =========================
+  
     ws.auto_filter.ref = "A1:I1"
     ws.freeze_panes = "A2"
 
-    # =========================
-    # SUMMARY SHEET
-    # =========================
     summary = wb.create_sheet("Summary")
 
     total = activities.count()
@@ -426,9 +357,7 @@ def export_report(request):
         cell.font = Font(bold=True)
         cell.alignment = center_align
 
-    # =========================
-    # RESPONSE
-    # =========================
+ 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )

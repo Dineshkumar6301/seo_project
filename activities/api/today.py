@@ -16,7 +16,6 @@ class TodayActivityAPI(APIView):
         if not date:
             return Response({"error": "Date is required"}, status=400)
 
-        # 🔥 GET ASSIGNMENTS
         assignments = ProjectServiceAssignment.objects.filter(
             user=request.user
         )
@@ -24,7 +23,6 @@ class TodayActivityAPI(APIView):
         assigned_services = assignments.values_list('service_id', flat=True)
         assigned_projects = assignments.values_list('project_id', flat=True)
 
-        # 🔥 STRICT FILTER
         activities = Activity.objects.filter(
             user=request.user,
             date=date,

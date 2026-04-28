@@ -45,7 +45,6 @@ urlpatterns = [
     path('api/upsert/', ActivityUpsertAPI.as_view()),
     path('api/project-services/<int:project_id>/', ProjectServiceAPI.as_view()),
     path('api/export/', ExportExcelAPI.as_view()),
-    # activities/urls.py
     path('api/dashboard/', ClientDashboardAPI.as_view()),
     path('api/assignment/delete/<int:id>/', DeleteAssignmentAPI.as_view()),
     path('export-report/', views.export_report, name='export_report'),

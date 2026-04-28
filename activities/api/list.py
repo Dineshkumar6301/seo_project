@@ -9,8 +9,6 @@ class ActivityListAPI(APIView):
     def get(self, request):
 
         activities = Activity.objects.all()
-
-        # Role filtering
         if request.user.role == 'employee':
             activities = activities.filter(user=request.user)
 
@@ -20,7 +18,7 @@ class ActivityListAPI(APIView):
                 status='approved'
             )
 
-        # Filters
+    
         date = request.GET.get('date')
         project = request.GET.get('project')
         status_val = request.GET.get('status')

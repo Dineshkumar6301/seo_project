@@ -13,11 +13,9 @@ class ClientDashboardAPI(APIView):
 
         qs = Activity.objects.all()
 
-        # 🔒 CLIENT RESTRICTION
         if hasattr(request.user, "client"):
             qs = qs.filter(project__client=request.user.client)
 
-        # 🔹 PARAMS SAFE
         try:
             page  = max(1, int(request.GET.get("page", 1)))
             limit = min(50, max(1, int(request.GET.get("limit", 10))))
@@ -34,7 +32,6 @@ class ClientDashboardAPI(APIView):
 
         today = now().date()
 
-        # 🔥 DATE FILTER
         if start_date and end_date:
             qs = qs.filter(date__range=[start_date, end_date])
         elif filter_type == "today":
@@ -46,7 +43,6 @@ class ClientDashboardAPI(APIView):
         elif filter_type == "year":
             qs = qs.filter(date__year=today.year)
 
-        # 🔹 SEARCH
         if search:
             qs = qs.filter(
                 Q(task_title__icontains=search)      |
@@ -60,18 +56,16 @@ class ClientDashboardAPI(APIView):
         if project:
             qs = qs.filter(project__id=project)
 
-        # 🔹 SERVICE
+        
         if service:
             qs = qs.filter(service__name__iexact=service)
 
-        # 🔥 KPI — computed BEFORE status filter so counts are always full
         base_qs  = qs
         total    = base_qs.count()
         approved = base_qs.filter(status="approved").count()
         pending  = base_qs.filter(status="pending").count()
         rejected = base_qs.filter(status="rejected").count()
 
-        # ✅ CHART — daily task counts from the base filtered queryset
         chart_qs = (
             base_qs
             .annotate(day=TruncDate("date"))
@@ -82,18 +76,16 @@ class ClientDashboardAPI(APIView):
         chart_labels = [str(row["day"]) for row in chart_qs]
         chart_data   = [row["count"]    for row in chart_qs]
 
-        # 🔹 STATUS FILTER (AFTER KPI + CHART)
+
         if status:
             qs = qs.filter(status=status)
 
-        # 🔹 ORDER
         qs = qs.order_by("-date")
 
-        # 🔹 PAGINATION
         total_count = qs.count()
         start       = (page - 1) * limit
         end         = start + limit
-        total_pages = max(1, (total_count + limit - 1) // limit)   # no off-by-one
+        total_pages = max(1, (total_count + limit - 1) // limit)
 
         table = list(
             qs.values(
@@ -109,7 +101,6 @@ class ClientDashboardAPI(APIView):
             )[start:end]
         )
 
-        # stringify dates in table so JSON serialises cleanly
         for row in table:
             if row.get("date"):
                 row["date"] = str(row["date"])
@@ -122,8 +113,8 @@ class ClientDashboardAPI(APIView):
                 "rejected": rejected,
             },
             "chart": {
-                "labels": chart_labels,   # e.g. ["2025-04-21", "2025-04-22", ...]
-                "data":   chart_data,     # e.g. [3, 7, 2, ...]
+                "labels": chart_labels,
+                "data":   chart_data,     
             },
             "table": table,
             "pagination": {

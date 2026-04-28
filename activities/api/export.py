@@ -13,11 +13,11 @@ class ExportExcelAPI(APIView):
 
         qs = Activity.objects.all()
 
-        # 🔒 CLIENT FILTER
+    
         if hasattr(request.user, "client"):
             qs = qs.filter(project__client=request.user.client)
 
-        # 🔹 PARAMS
+    
         filter_type = request.GET.get("type")
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
@@ -28,7 +28,7 @@ class ExportExcelAPI(APIView):
 
         today = now().date()
 
-        # 🔥 DATE
+        
         if start_date and end_date:
             qs = qs.filter(date__range=[start_date, end_date])
         elif filter_type == "today":
@@ -38,19 +38,18 @@ class ExportExcelAPI(APIView):
         elif filter_type == "month":
             qs = qs.filter(date__month=today.month)
 
-        # 🔹 STATUS
+        
         if status:
             qs = qs.filter(status=status)
 
-        # 🔹 PROJECT
+        
         if project:
             qs = qs.filter(project__id=project)
 
-        # 🔹 SERVICE
+        
         if service:
             qs = qs.filter(service__name__iexact=service.strip())
 
-        # 🔹 SEARCH
         if search:
             qs = qs.filter(
                 Q(task_title__icontains=search) |
@@ -60,20 +59,17 @@ class ExportExcelAPI(APIView):
                 Q(user__last_name__icontains=search)
             )
 
-        # =========================
-        # 📊 EXCEL BUILD
-        # =========================
         wb = Workbook()
         ws = wb.active
         ws.title = "Activity Report"
 
-        # 🔹 TITLE
+    
         ws.merge_cells("A1:J1")
         ws["A1"] = "CLIENT ACTIVITY REPORT"
         ws["A1"].font = Font(size=16, bold=True)
         ws["A1"].alignment = Alignment(horizontal="center")
 
-        # 🔹 FILTER INFO
+    
         ws.merge_cells("A2:J2")
         ws["A2"] = f"Date: {start_date or 'All'} → {end_date or 'All'} | Search: {search or 'None'}"
         ws["A2"].alignment = Alignment(horizontal="center")
@@ -94,7 +90,7 @@ class ExportExcelAPI(APIView):
             cell.font = header_font
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # 🔹 DATA
+    
         row_num = 4
         serial = 1
 
@@ -132,27 +128,22 @@ class ExportExcelAPI(APIView):
             serial += 1
             
 
-        # ✅ APPLY AFTER MERGE (IMPORTANT)
+        
         for row in ws.iter_rows(min_row=4):
-            cell = row[7]  # column 8 (Proof Links)
+            cell = row[7] 
 
             if cell.value:
                 link = str(cell.value).strip()
 
-                # fix missing http
+            
                 if not link.startswith("http"):
                     link = "https://" + link
 
-                # ✅ KEEP FULL LINK VISIBLE
                 cell.value = link
-
-                # ✅ FORCE CLICKABLE
                 cell.hyperlink = link
-
-                # ✅ FORCE BLUE + UNDERLINE
                 cell.font = Font(color="0563C1", underline="single")
 
-                # 🔹 STYLING
+
                 border = Border(
                     left=Side(style="thin"),
                     right=Side(style="thin"),

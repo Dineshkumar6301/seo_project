@@ -52,7 +52,6 @@ class Checklist(models.Model):
         return f"{self.project.name} - {self.service.name} - {self.item}"
 
 
-# models.py
 
 from django.db import models
 from django.conf import settings

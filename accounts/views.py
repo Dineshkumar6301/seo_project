@@ -47,7 +47,6 @@ class LoginAPI(APIView):
 
         login(request, user)
 
-        # 🔥 ROLE-BASED REDIRECT URL
         if user.role == "client":
             redirect_url = "/dashboard/client/"
 
@@ -61,7 +60,7 @@ class LoginAPI(APIView):
         elif user.role == "manager":
             redirect_url = "/dashboard/"
 
-        else:  # admin
+        else:
             redirect_url = "/dashboard/"
         return Response({
             "status": "success",
@@ -78,19 +77,16 @@ def profile_view(request):
 
     user = request.user
 
-    # 🔥 SAFE PROFILE FETCH
     profile, created = Profile.objects.get_or_create(user=user)
 
     if request.method == "POST":
 
-        # USER
         user.first_name = request.POST.get('first_name')
         user.last_name = request.POST.get('last_name')
         user.email = request.POST.get('email')
         user.mobile = request.POST.get('mobile')
         user.save()
 
-        # PROFILE
         profile.phone = request.POST.get('phone')
         profile.location = request.POST.get('location')
         profile.bio = request.POST.get('bio')

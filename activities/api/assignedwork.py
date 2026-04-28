@@ -32,6 +32,6 @@ class AssignedWorkAPI(APIView):
                 
             })
 
-        print("FINAL DATA:", data)  # DEBUG
+        print("FINAL DATA:", data)
 
         return Response(data)
