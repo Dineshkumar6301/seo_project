@@ -7,7 +7,6 @@ from django.utils.timezone import now
 from datetime import timedelta
 from activities.models import Activity
 
-
 class ExportExcelAPI(APIView):
 
     def get(self, request):
@@ -99,6 +98,7 @@ class ExportExcelAPI(APIView):
         row_num = 4
         serial = 1
 
+
         for a in qs:
 
             links = [l.strip() for l in str(a.proof_link).splitlines() if l.strip()] or [""]
@@ -130,14 +130,35 @@ class ExportExcelAPI(APIView):
                     ws.merge_cells(start_row=start_row, start_column=col, end_row=end_row, end_column=col)
 
             serial += 1
+            
 
-        # 🔹 STYLING
-        border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin")
-        )
+        # ✅ APPLY AFTER MERGE (IMPORTANT)
+        for row in ws.iter_rows(min_row=4):
+            cell = row[7]  # column 8 (Proof Links)
+
+            if cell.value:
+                link = str(cell.value).strip()
+
+                # fix missing http
+                if not link.startswith("http"):
+                    link = "https://" + link
+
+                # ✅ KEEP FULL LINK VISIBLE
+                cell.value = link
+
+                # ✅ FORCE CLICKABLE
+                cell.hyperlink = link
+
+                # ✅ FORCE BLUE + UNDERLINE
+                cell.font = Font(color="0563C1", underline="single")
+
+                # 🔹 STYLING
+                border = Border(
+                    left=Side(style="thin"),
+                    right=Side(style="thin"),
+                    top=Side(style="thin"),
+                    bottom=Side(style="thin")
+                )
 
         for row in ws.iter_rows():
             for cell in row:

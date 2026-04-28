@@ -1,25 +1,33 @@
 {% extends "frontend/base.html" %}
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
   :root {
-    --bg:        #f0f4ff;
+    --bg:        #f5f7ff;
     --surface:   #ffffff;
-    --surface2:  #e8edf8;
-    --border:    #dde3f0;
-    --accent:    #4f46e5;
+    --surface2:  #f0f3fc;
+    --border:    #e4e9f7;
+    --accent:    #4338ca;
+    --accent-h:  #3730a3;
     --accent-lt: #eef2ff;
-    --success:   #10b981;
-    --warning:   #f59e0b;
-    --danger:    #ef4444;
-    --info:      #0ea5e9;
-    --text:      #1e293b;
+    --success:   #059669;
+    --success-lt:#d1fae5;
+    --warning:   #d97706;
+    --warning-lt:#fef3c7;
+    --danger:    #dc2626;
+    --danger-lt: #fee2e2;
+    --info:      #0284c7;
+    --text:      #0f172a;
+    --text-2:    #475569;
     --muted:     #94a3b8;
-    --radius:    16px;
-    --radius-sm: 10px;
-    --shadow:    0 4px 24px rgba(79,70,229,0.07);
+    --radius:    14px;
+    --radius-sm: 8px;
+    --shadow:    0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(67,56,202,0.06);
+    --shadow-md: 0 4px 24px rgba(67,56,202,0.12);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,75 +35,97 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
 
   .dash {
-    max-width: 1280px;
+    max-width: 1360px;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 36px 28px 60px;
   }
 
-  /* ── HEADER ── */
-  .dash-header {
+  /* ── TOPBAR ── */
+  .topbar {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 24px;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .brand-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
   }
 
   .dash-title {
-    font-size: clamp(20px, 3.5vw, 26px);
+    font-size: clamp(22px, 3vw, 28px);
     font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .dash-title span {
     color: var(--accent);
-    letter-spacing: -0.3px;
   }
 
-  .dash-title small {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
   }
 
-  /* ── LIVE BADGE ── */
   .live-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #d1fae5;
+    gap: 7px;
+    background: var(--success-lt);
     color: #065f46;
     border: 1px solid #a7f3d0;
     border-radius: 100px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    padding: 5px 12px;
+    padding: 6px 14px;
+    white-space: nowrap;
   }
 
   .live-dot {
     width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--success);
-    animation: pulse 2s infinite;
+    animation: blink 2s infinite;
   }
 
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
   /* ── FILTER PILLS ── */
   .filter-group {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
+    align-items: center;
   }
 
-  .filter-btn {
+  .filter-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-right: 4px;
+  }
+
+  .pill {
     display: inline-flex;
     align-items: center;
     padding: 7px 18px;
@@ -104,23 +134,25 @@
     font-weight: 500;
     border: 1.5px solid var(--border);
     background: var(--surface);
-    color: var(--muted);
+    color: var(--text-2);
     cursor: pointer;
-    font-family: 'Segoe UI', sans-serif;
-    transition: all 0.18s ease;
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+    user-select: none;
+    line-height: 1;
   }
 
-  .filter-btn:hover {
+  .pill:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: var(--accent-lt);
   }
 
-  .filter-btn.active {
+  .pill.active {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
-    box-shadow: 0 4px 14px rgba(79,70,229,0.25);
+    box-shadow: 0 4px 14px rgba(67,56,202,0.3);
   }
 
   /* ── KPI GRID ── */
@@ -128,137 +160,157 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 14px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
 
   .kpi-card {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px 22px;
+    padding: 22px 20px 20px;
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
-    transition: transform 0.18s, box-shadow 0.18s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
   }
 
   .kpi-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 32px rgba(79,70,229,0.12);
+    box-shadow: var(--shadow-md);
   }
 
-  .kpi-card::before {
-    content: '';
+  .kpi-accent-bar {
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
     border-radius: 2px 2px 0 0;
   }
 
-  .kpi-card.total::before   { background: var(--accent); }
-  .kpi-card.approved::before{ background: var(--success); }
-  .kpi-card.pending::before { background: var(--warning); }
-  .kpi-card.rejected::before{ background: var(--danger); }
+  .kpi-card.k-total   .kpi-accent-bar { background: var(--accent); }
+  .kpi-card.k-approved .kpi-accent-bar { background: var(--success); }
+  .kpi-card.k-pending  .kpi-accent-bar { background: var(--warning); }
+  .kpi-card.k-rejected .kpi-accent-bar { background: var(--danger); }
 
-  .kpi-icon {
-    width: 36px; height: 36px;
+  .kpi-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .kpi-icon-wrap {
+    width: 38px; height: 38px;
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 18px;
+    flex-shrink: 0;
   }
 
-  .kpi-card.total    .kpi-icon { background: var(--accent-lt); }
-  .kpi-card.approved .kpi-icon { background: #d1fae5; }
-  .kpi-card.pending  .kpi-icon { background: #fef3c7; }
-  .kpi-card.rejected .kpi-icon { background: #fee2e2; }
+  .kpi-card.k-total    .kpi-icon-wrap { background: var(--accent-lt); }
+  .kpi-card.k-approved .kpi-icon-wrap { background: var(--success-lt); }
+  .kpi-card.k-pending  .kpi-icon-wrap { background: var(--warning-lt); }
+  .kpi-card.k-rejected .kpi-icon-wrap { background: var(--danger-lt); }
 
   .kpi-value {
-    font-size: 30px;
+    font-size: 32px;
     font-weight: 700;
+    letter-spacing: -1px;
     line-height: 1;
-    margin-bottom: 4px;
-    transition: all 0.3s;
+    margin-bottom: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.3s;
   }
 
-  .kpi-card.total    .kpi-value { color: var(--accent); }
-  .kpi-card.approved .kpi-value { color: #065f46; }
-  .kpi-card.pending  .kpi-value { color: #92400e; }
-  .kpi-card.rejected .kpi-value { color: #991b1b; }
+  .kpi-card.k-total    .kpi-value { color: var(--accent); }
+  .kpi-card.k-approved .kpi-value { color: var(--success); }
+  .kpi-card.k-pending  .kpi-value { color: var(--warning); }
+  .kpi-card.k-rejected .kpi-value { color: var(--danger); }
 
   .kpi-label {
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--muted);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
   }
 
-  /* ── CHART + TABLE CARDS ── */
+  /* ── CARD UI ── */
   .card-ui {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: 20px;
   }
 
-  .card-header-bar {
+  .card-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 22px 14px;
-    border-bottom: 1px solid var(--border);
+    padding: 16px 22px 14px;
+    border-bottom: 1.5px solid var(--border);
     background: var(--surface2);
+    border-radius: var(--radius) var(--radius) 0 0;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .card-header-bar h5 {
+  .card-title {
     font-size: 14px;
     font-weight: 700;
     color: var(--text);
-    margin: 0;
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .card-header-bar h5 .dot {
+  .card-title-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
     background: var(--accent);
+    flex-shrink: 0;
   }
 
-  .card-body-pad { padding: 22px; }
+  .card-body { padding: 22px; }
 
   /* ── TABLE ── */
-  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 480px;
+    min-width: 520px;
   }
 
   thead th {
     background: var(--surface2);
     border-bottom: 1.5px solid var(--border);
-    font-size: 11px;
+    font-size: 10.5px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.1px;
     color: var(--muted);
     font-weight: 700;
-    padding: 12px 18px;
+    padding: 11px 18px;
     text-align: left;
     white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
   }
+
+  thead th:first-child { border-radius: 0; }
 
   tbody tr {
     border-bottom: 1px solid var(--border);
-    transition: background 0.13s;
+    transition: background 0.1s;
   }
 
   tbody tr:last-child { border-bottom: none; }
+
   tbody tr:hover { background: #f8f9ff; }
 
   tbody td {
@@ -268,380 +320,597 @@
     color: var(--text);
   }
 
+  .cell-project {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .cell-task {
+    color: var(--text-2);
+    max-width: 220px;
+  }
+
+  .cell-date {
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* ── BADGES ── */
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 11px;
+    padding: 3px 10px;
     border-radius: 100px;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: capitalize;
+    white-space: nowrap;
   }
 
   .badge::before {
     content: '';
     width: 5px; height: 5px;
     border-radius: 50%;
+    flex-shrink: 0;
   }
 
-  .bg-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-  .bg-success::before { background: var(--success); }
-  .bg-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-  .bg-warning::before { background: var(--warning); animation: pulse 2s infinite; }
-  .bg-danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-  .bg-danger::before  { background: var(--danger); }
+  .badge-approved { background: var(--success-lt); color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-approved::before { background: var(--success); }
+  .badge-pending  { background: var(--warning-lt); color: #92400e; border: 1px solid #fde68a; }
+  .badge-pending::before  { background: var(--warning); animation: blink 2s infinite; }
+  .badge-rejected { background: var(--danger-lt);  color: #991b1b; border: 1px solid #fecaca; }
+  .badge-rejected::before { background: var(--danger); }
 
-  /* ── EMPTY STATE ── */
-  .empty-state {
+  /* ── PROOF LINKS ── */
+  .proof-link {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+    margin-right: 6px;
+  }
+
+  .proof-link:hover { border-bottom-color: var(--accent); }
+
+  /* ── EMPTY / LOADING STATES ── */
+  .empty-row td {
     text-align: center;
-    padding: 48px 20px;
+    padding: 52px 20px;
     color: var(--muted);
     font-size: 14px;
+    font-weight: 500;
   }
+
+  .loading-row td {
+    text-align: center;
+    padding: 52px 20px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PAGINATION ── */
+  .pagination-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .page-info {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ── EXPORT BTN ── */
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--accent);
+    border: 1.5px solid var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .btn-export:hover {
+    background: var(--accent-h);
+    transform: translateY(-1px);
+  }
+
+  .btn-export:active { transform: translateY(0); }
+
+  /* ── SELECT ── */
+  .select-sm {
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    padding: 7px 14px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .select-sm:focus { border-color: var(--accent); }
+
+  /* ── CHART ── */
+  #chartCanvas { max-height: 260px; }
 
   /* ── MOBILE ── */
-  @media (max-width: 768px) {
-    .dash { padding: 18px 14px; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   }
 
-  @media (max-width: 420px) {
-    .kpi-value { font-size: 24px; }
+  @media (max-width: 600px) {
+    .dash { padding: 16px 14px 40px; }
+    .kpi-value { font-size: 26px; }
+    .topbar { flex-direction: column; }
+  }
+
+  @media (max-width: 380px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   }
 </style>
 
 <div class="dash">
 
-  <!-- HEADER -->
-  <div class="dash-header">
-    <div class="dash-title">
-      <small>Client View</small>
-      📊 Client Dashboard
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="brand-label">Client Portal</div>
+      <div class="dash-title"><span>📊</span> Activity Dashboard</div>
     </div>
-    <span class="live-badge">
-      <span class="live-dot"></span>
-      Live · Auto-refresh 5s
-    </span>
+    <div class="topbar-right">
+      <span class="live-badge">
+        <span class="live-dot"></span>
+        Live · Refreshing
+      </span>
+    </div>
   </div>
 
-  <!-- FILTER PILLS -->
+  <!-- DATE FILTER PILLS -->
   <div class="filter-group">
-    <button class="filter-btn active" onclick="filterData('all', this)">All</button>
-    <button class="filter-btn" onclick="filterData('today', this)">Today</button>
-    <button class="filter-btn" onclick="filterData('week', this)">Week</button>
-    <button class="filter-btn" onclick="filterData('month', this)">Month</button>
+    <span class="filter-group-label">Range:</span>
+    <button class="pill active" data-filter="all">All Time</button>
+    <button class="pill" data-filter="today">Today</button>
+    <button class="pill" data-filter="week">This Week</button>
+    <button class="pill" data-filter="month">This Month</button>
   </div>
 
   <!-- KPI CARDS -->
   <div class="kpi-grid">
-    <div class="kpi-card total">
-      <div class="kpi-icon">📁</div>
-      <div class="kpi-value" id="totalTasks">0</div>
-      <div class="kpi-label">Total Tasks</div>
+    <div class="kpi-card k-total">
+      <div class="kpi-accent-bar"></div>
+      <div class="kpi-top">
+        <div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-label">Total Tasks</div>
+        </div>
+        <div class="kpi-icon-wrap">📁</div>
+      </div>
     </div>
-    <div class="kpi-card approved">
-      <div class="kpi-icon">✅</div>
-      <div class="kpi-value" id="approvedTasks">0</div>
-      <div class="kpi-label">Approved</div>
+    <div class="kpi-card k-approved">
+      <div class="kpi-accent-bar"></div>
+      <div class="kpi-top">
+        <div>
+          <div class="kpi-value" id="kpiApproved">—</div>
+          <div class="kpi-label">Approved</div>
+        </div>
+        <div class="kpi-icon-wrap">✅</div>
+      </div>
     </div>
-    <div class="kpi-card pending">
-      <div class="kpi-icon">⏳</div>
-      <div class="kpi-value" id="pendingTasks">0</div>
-      <div class="kpi-label">Pending</div>
+    <div class="kpi-card k-pending">
+      <div class="kpi-accent-bar"></div>
+      <div class="kpi-top">
+        <div>
+          <div class="kpi-value" id="kpiPending">—</div>
+          <div class="kpi-label">Pending</div>
+        </div>
+        <div class="kpi-icon-wrap">⏳</div>
+      </div>
     </div>
-    <div class="kpi-card rejected">
-      <div class="kpi-icon">❌</div>
-      <div class="kpi-value" id="rejectedTasks">0</div>
-      <div class="kpi-label">Rejected</div>
+    <div class="kpi-card k-rejected">
+      <div class="kpi-accent-bar"></div>
+      <div class="kpi-top">
+        <div>
+          <div class="kpi-value" id="kpiRejected">—</div>
+          <div class="kpi-label">Rejected</div>
+        </div>
+        <div class="kpi-icon-wrap">❌</div>
+      </div>
     </div>
   </div>
 
-  <!-- CHART -->
+  <!-- CHART CARD -->
   <div class="card-ui">
-    <div class="card-header-bar">
-      <h5><span class="dot"></span> Activity Trend</h5>
+    <div class="card-head">
+      <div class="card-title">
+        <span class="card-title-dot"></span>
+        Activity Trend
+      </div>
     </div>
-    <div class="card-body-pad">
-      <canvas id="chart"></canvas>
+    <div class="card-body">
+      <canvas id="chartCanvas"></canvas>
     </div>
   </div>
 
+  <!-- TABLE CARD -->
+  <div class="card-ui">
+    <div class="card-head">
+      <div class="card-title">
+        <span class="card-title-dot" style="background: var(--info)"></span>
+        Task Activity
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select id="perPageSelect" class="select-sm" aria-label="Rows per page">
+          <option value="10">10 / page</option>
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+        <button class="btn-export" id="exportBtn" type="button">
+          ↓ Export Excel
+        </button>
+      </div>
+    </div>
 
-  <!-- TABLE -->
-<div class="card-ui">
-  <div class="card-header-bar">
-    <h5>
-      <span class="dot" style="background:var(--info)"></span>
-      Task Activity
-    </h5>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Task</th>
+            <th>Proof</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="taskTableBody">
+          <tr class="loading-row">
+            <td colspan="5">
+              <span class="spinner"></span>
+              Loading data…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION: outside table-wrap to avoid clipping -->
+    <div class="pagination-wrap" id="paginationWrap" style="display:none;"></div>
+
   </div>
 
-  <div class="table-scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>Project</th>
-          <th>Task</th>
-          <th>Proof</th>
-          <th>Status</th>
-          <th>Date</th>
-        </tr>
-      </thead>
+</div><!-- /dash -->
 
-      <!-- ✅ IMPORTANT: NO DJANGO LOOP -->
-      <tbody id="taskTable">
-        <tr>
-          <td colspan="5" class="empty-state">
-            ⏳ Loading data...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- ✅ PAGINATION (JS controlled) -->
-    <div id="pagination" style="margin-top:15px;"></div>
-
-  </div>
-</div>
-
-  
 <script>
-let chartInstance = null;
-let currentPage = 1;
-let currentType = "all";
-let lastTotal = 0;
-let servicesLoaded = false;
+(function () {
+  'use strict';
 
-// 🔹 GET FILTER VALUES (SAFE)
-function getFilters(){
-    return {
-        type: currentType,
-        page: currentPage,
-        limit: 10,
-        search: document.getElementById("searchInput")?.value || "",
-        service: document.getElementById("serviceFilter")?.value || "",
-        start_date: document.getElementById("startDate")?.value || "",
-        end_date: document.getElementById("endDate")?.value || "",
-        order: document.getElementById("orderFilter")?.value || "-date"
+  /* ─── STATE ─────────────────────────── */
+  var state = {
+    type      : 'all',
+    page      : 1,
+    limit     : 10,
+    lastTotal : null,
+    loading   : false,
+    servicesLoaded: false
+  };
+
+  var chartInstance = null;
+  var pollTimer     = null;
+
+  /* ─── DOM REFS ───────────────────────── */
+  var tableBody    = document.getElementById('taskTableBody');
+  var paginationWrap = document.getElementById('paginationWrap');
+  var perPageSelect = document.getElementById('perPageSelect');
+  var exportBtn    = document.getElementById('exportBtn');
+
+  /* ─── UTILS ──────────────────────────── */
+  function buildQuery(extra) {
+    var params = {
+      type  : state.type,
+      page  : state.page,
+      limit : state.limit
     };
-}
-
-// 🔹 BUILD QUERY
-function buildQuery(params){
+    if (extra) Object.assign(params, extra);
     return Object.keys(params)
-        .filter(k => params[k])
-        .map(k => `${k}=${encodeURIComponent(params[k])}`)
-        .join("&");
-}
+      .filter(function(k){ return params[k] !== '' && params[k] != null; })
+      .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
+      .join('&');
+  }
 
-// 🔥 MAIN LOAD
-function loadDashboard(){
-    const query = buildQuery(getFilters());
+  function badgeClass(status) {
+    if (status === 'approved') return 'badge-approved';
+    if (status === 'pending')  return 'badge-pending';
+    return 'badge-rejected';
+  }
 
-    fetch(`/activities/api/dashboard/?${query}`)
-    .then(res => res.json())
-    .then(data => {
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-        updateKPI(data.kpi);
-        updateTable(data.table);
-        updateChart(data.chart.labels, data.chart.data);
-        updatePagination(data.pagination);
+  /* ─── RENDER KPI ─────────────────────── */
+  function renderKPI(kpi) {
+    document.getElementById('kpiTotal').textContent    = kpi.total    != null ? kpi.total    : '0';
+    document.getElementById('kpiApproved').textContent = kpi.approved != null ? kpi.approved : '0';
+    document.getElementById('kpiPending').textContent  = kpi.pending  != null ? kpi.pending  : '0';
+    document.getElementById('kpiRejected').textContent = kpi.rejected != null ? kpi.rejected : '0';
+  }
 
-        // ✅ Load services once
-        if(!servicesLoaded && data.services){
-            populateServices(data.services);
-            servicesLoaded = true;
+  /* ─── RENDER TABLE ───────────────────── */
+  function renderTable(rows) {
+    if (!rows || !rows.length) {
+      tableBody.innerHTML =
+        '<tr class="empty-row"><td colspan="5">📋 No tasks found for this period</td></tr>';
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function(r) {
+      var proofHTML = 'No proof';
+      if (r.proof_link) {
+        var links = r.proof_link.split('\n').filter(function(l){ return l.trim(); });
+        if (links.length) {
+          proofHTML = links.map(function(l, i) {
+            return '<a href="' + escHtml(l.trim()) + '" target="_blank" rel="noopener noreferrer" class="proof-link">View ' + (i + 1) + '</a>';
+          }).join('');
         }
+      }
 
-        lastTotal = data.kpi.total;
+      html +=
+        '<tr>' +
+        '<td class="cell-project">' + escHtml(r.project__name || '—') + '</td>' +
+        '<td class="cell-task">'    + escHtml(r.task_title    || '—') + '</td>' +
+        '<td>'                      + proofHTML                       + '</td>' +
+        '<td><span class="badge '  + badgeClass(r.status) + '">'     + escHtml(r.status) + '</span></td>' +
+        '<td class="cell-date">'   + escHtml(r.date         || '—') + '</td>' +
+        '</tr>';
     });
-}
+    tableBody.innerHTML = html;
+  }
 
-// 🔥 KPI
-function updateKPI(kpi){
-    document.getElementById("totalTasks").innerText = kpi.total;
-    document.getElementById("approvedTasks").innerText = kpi.approved;
-    document.getElementById("pendingTasks").innerText = kpi.pending;
-    document.getElementById("rejectedTasks").innerText = kpi.rejected;
-}
+  /* ─── RENDER CHART ───────────────────── */
+  function renderChart(labels, data) {
+    var ctx = document.getElementById('chartCanvas');
+    if (!ctx) return;
 
-// 🔥 TABLE
-function updateTable(rows){
-    let table = document.getElementById("taskTable");
-    table.innerHTML = "";
-
-    if(!rows.length){
-        table.innerHTML = `<tr><td colspan="5" class="empty-state">📋 No activity data</td></tr>`;
-        return;
+    if (chartInstance) {
+      chartInstance.data.labels   = labels.length ? labels : ['No Data'];
+      chartInstance.data.datasets[0].data = data.length ? data : [0];
+      chartInstance.update('none');
+      return;
     }
 
-    rows.forEach(r => {
-        const badgeCls =
-            r.status === 'approved' ? 'bg-success' :
-            r.status === 'pending' ? 'bg-warning' :
-            'bg-danger';
-
-        let proofHTML = 'No proof';
-
-        if(r.proof_link){
-            proofHTML = r.proof_link
-                .split('\n')
-                .filter(l => l.trim())
-                .map((l,i)=>`<a href="${l}" target="_blank" style="display:block;color:#4f46e5;text-decoration:underline;">View ${i+1}</a>`)
-                .join('');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.length ? labels : ['No Data'],
+        datasets: [{
+          label: 'Tasks',
+          data:  data.length  ? data   : [0],
+          borderColor:     '#4338ca',
+          backgroundColor: 'rgba(67,56,202,0.07)',
+          borderWidth: 2,
+          tension: 0.42,
+          fill: true,
+          pointBackgroundColor: '#4338ca',
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            titleFont: { family: "'DM Sans', sans-serif", size: 12 },
+            bodyFont:  { family: "'JetBrains Mono', monospace", size: 13 },
+            padding: 10,
+            cornerRadius: 8
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(148,163,184,0.15)' },
+            ticks: { color: '#94a3b8', font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(148,163,184,0.15)' },
+            ticks: { color: '#94a3b8', font: { size: 11 }, precision: 0 }
+          }
         }
-
-        table.innerHTML += `
-            <tr>
-                <td><strong>${r.project__name}</strong></td>
-                <td>${r.task_title}</td>
-                <td>${proofHTML}</td>
-                <td><span class="badge ${badgeCls}">${r.status}</span></td>
-                <td style="color:var(--muted)">${r.date}</td>
-            </tr>`;
+      }
     });
-}
+  }
 
-// 🔥 CHART
-function updateChart(labels, data){
-    if(chartInstance) chartInstance.destroy();
+  /* ─── RENDER PAGINATION ──────────────── */
+  function renderPagination(p) {
+    if (!p || p.pages <= 1) {
+      paginationWrap.style.display = 'none';
+      paginationWrap.innerHTML = '';
+      return;
+    }
 
-    chartInstance = new Chart(document.getElementById("chart"), {
-        type: 'line',
-        data: {
-            labels: labels.length ? labels : ["No Data"],
-            datasets: [{
-                label: "Tasks",
-                data: data.length ? data : [0],
-                borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79,70,229,0.08)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
+    var current = p.page;
+    var total   = p.pages;
+    var html    = '';
+
+    if (current > 1) {
+      html += '<button class="pill" data-page="' + (current - 1) + '">← Prev</button>';
+    }
+
+    var start = Math.max(1, current - 2);
+    var end   = Math.min(total, current + 2);
+
+    if (start > 1) {
+      html += '<button class="pill" data-page="1">1</button>';
+      if (start > 2) html += '<span style="color:var(--muted);padding:0 4px;">…</span>';
+    }
+
+    for (var i = start; i <= end; i++) {
+      html += '<button class="pill' + (i === current ? ' active' : '') +
+              '" data-page="' + i + '">' + i + '</button>';
+    }
+
+    if (end < total) {
+      if (end < total - 1) html += '<span style="color:var(--muted);padding:0 4px;">…</span>';
+      html += '<button class="pill" data-page="' + total + '">' + total + '</button>';
+    }
+
+    if (current < total) {
+      html += '<button class="pill" data-page="' + (current + 1) + '">Next →</button>';
+    }
+
+    html += '<span class="page-info">Page ' + current + ' of ' + total + '</span>';
+
+    paginationWrap.innerHTML = html;
+    paginationWrap.style.display = 'flex';
+  }
+
+  /* ─── MAIN FETCH ─────────────────────── */
+  function loadDashboard(silent) {
+    if (state.loading && !silent) return;
+    if (!silent) {
+      state.loading = true;
+      tableBody.innerHTML =
+        '<tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading data…</td></tr>';
+    }
+
+    var query = buildQuery();
+
+    fetch('/activities/api/dashboard/?' + query, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (data.kpi)        renderKPI(data.kpi);
+      if (data.table)      renderTable(data.table);
+      if (data.chart)      renderChart(data.chart.labels || [], data.chart.data || []);
+      if (data.pagination) renderPagination(data.pagination);
+
+      if (!state.servicesLoaded && data.services) {
+        state.servicesLoaded = true;
+      }
+
+      state.lastTotal = (data.kpi && data.kpi.total != null) ? data.kpi.total : state.lastTotal;
+      state.loading   = false;
+    })
+    .catch(function(err) {
+      console.error('[Dashboard] fetch error:', err);
+      state.loading = false;
+      if (!silent) {
+        tableBody.innerHTML =
+          '<tr class="empty-row"><td colspan="5">⚠️ Failed to load data. Please refresh.</td></tr>';
+      }
+    });
+  }
+
+  /* ─── SMART POLL (passes current filters) ── */
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(function() {
+      fetch('/activities/api/dashboard/?' + buildQuery(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(res){ return res.ok ? res.json() : null; })
+      .then(function(data) {
+        if (!data) return;
+        var newTotal = data.kpi && data.kpi.total != null ? data.kpi.total : null;
+        if (state.lastTotal !== null && newTotal !== null && newTotal !== state.lastTotal) {
+          loadDashboard(false);
         }
+      })
+      .catch(function(){});
+    }, 5000);
+  }
+
+  /* ─── EVENT: FILTER PILLS ────────────── */
+  document.querySelectorAll('.filter-group .pill[data-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-group .pill[data-filter]').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      state.type = btn.getAttribute('data-filter');
+      state.page = 1;
+      loadDashboard(false);
     });
-}
+  });
 
-function updatePagination(p){
-    const container = document.getElementById("pagination");
-    if(!container) return;
+  /* ─── EVENT: PER PAGE SELECT ─────────── */
+  perPageSelect.addEventListener('change', function() {
+    state.limit = parseInt(this.value, 10) || 10;
+    state.page  = 1;
+    loadDashboard(false);
+  });
 
-    container.innerHTML = "";
+  /* ─── EVENT: PAGINATION (delegated) ──── */
+  paginationWrap.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-page]');
+    if (!btn) return;
+    var page = parseInt(btn.getAttribute('data-page'), 10);
+    if (isNaN(page)) return;
+    state.page = page;
+    loadDashboard(false);
+  });
 
-    const current = p.page;
-    const total = p.pages;
+  /* ─── EVENT: EXPORT ──────────────────── */
+  exportBtn.addEventListener('click', function() {
+  var params = {
+    type: state.type
+    // ❌ REMOVE limit & page
+  };
+    var query = Object.keys(params)
+      .filter(function(k){ return params[k] !== '' && params[k] != null; })
+      .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
+      .join('&');
+    window.location.href = '/activities/api/export/?' + query;
+  });
 
-    if(total <= 1) return;
+  /* ─── INIT ───────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function() {
+    loadDashboard(false);
+    startPolling();
+  });
 
-    // 🔹 PREV BUTTON
-    if(current > 1){
-        container.innerHTML += `
-            <button onclick="goToPage(${current - 1})" class="filter-btn">
-                ◀ Prev
-            </button>`;
-    }
-
-    // 🔹 SMART RANGE (only show nearby pages)
-    let start = Math.max(1, current - 2);
-    let end = Math.min(total, current + 2);
-
-    // 🔹 FIRST + DOTS
-    if(start > 1){
-        container.innerHTML += `
-            <button onclick="goToPage(1)" class="filter-btn">1</button>
-            <span style="padding:6px;">...</span>
-        `;
-    }
-
-    // 🔹 PAGE NUMBERS
-    for(let i = start; i <= end; i++){
-        container.innerHTML += `
-            <button onclick="goToPage(${i})"
-                class="filter-btn"
-                style="${i===current?'background:#4f46e5;color:#fff':''}">
-                ${i}
-            </button>`;
-    }
-
-    // 🔹 LAST + DOTS
-    if(end < total){
-        container.innerHTML += `
-            <span style="padding:6px;">...</span>
-            <button onclick="goToPage(${total})" class="filter-btn">${total}</button>
-        `;
-    }
-
-    // 🔹 NEXT BUTTON
-    if(current < total){
-        container.innerHTML += `
-            <button onclick="goToPage(${current + 1})" class="filter-btn">
-                Next ▶
-            </button>`;
-    }
-}
-
-function goToPage(page){
-    currentPage = page;
-    loadDashboard();
-}
-
-// 🔥 SERVICES (DYNAMIC)
-function populateServices(services){
-    const select = document.getElementById("serviceFilter");
-    if(!select) return;
-
-    select.innerHTML = `<option value="">All Services</option>`;
-
-    services.forEach(s => {
-        select.innerHTML += `<option value="${s}">${s}</option>`;
-    });
-}
-
-// 🔥 FILTER BUTTONS
-function filterData(type, btn){
-    currentType = type;
-    currentPage = 1;
-
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-
-    loadDashboard();
-}
-
-// 🔥 APPLY FILTERS
-function applyFilters(){
-    currentPage = 1;
-    loadDashboard();
-}
-
-// 🔥 SEARCH (SAFE)
-document.addEventListener("DOMContentLoaded", () => {
-    const search = document.getElementById("searchInput");
-    if(search){
-        search.addEventListener("input", () => {
-            currentPage = 1;
-            loadDashboard();
-        });
-    }
-});
-
-// 🔥 SMART REFRESH (OPTIMIZED)
-setInterval(() => {
-    fetch(`/activities/api/dashboard/`)
-    .then(res => res.json())
-    .then(data => {
-        if(data.kpi.total !== lastTotal){
-            loadDashboard();
-        }
-    });
-}, 5000);
-
-// 🔥 INITIAL LOAD
-window.onload = () => loadDashboard();
-
+})();
 </script>
-
 
 {% endblock %}
