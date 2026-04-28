@@ -1,132 +1,162 @@
 from rest_framework.views import APIView
 from django.http import HttpResponse
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
-from ..models import Activity
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from django.db.models import Q
+from django.utils.timezone import now
+from datetime import timedelta
+from activities.models import Activity
 
 
 class ExportExcelAPI(APIView):
 
     def get(self, request):
 
-        date = request.GET.get('date')
-        qs = Activity.objects.filter(user=request.user, date=date).select_related(
-            'project', 'service'
-        )
+        qs = Activity.objects.all()
 
+        # 🔒 CLIENT FILTER
+        if hasattr(request.user, "client"):
+            qs = qs.filter(project__client=request.user.client)
+
+        # 🔹 PARAMS
+        filter_type = request.GET.get("type")
+        start_date = request.GET.get("start_date")
+        end_date = request.GET.get("end_date")
+        search = request.GET.get("search")
+        status = request.GET.get("status")
+        project = request.GET.get("project")
+        service = request.GET.get("service")
+
+        today = now().date()
+
+        # 🔥 DATE
+        if start_date and end_date:
+            qs = qs.filter(date__range=[start_date, end_date])
+        elif filter_type == "today":
+            qs = qs.filter(date=today)
+        elif filter_type == "week":
+            qs = qs.filter(date__gte=today - timedelta(days=7))
+        elif filter_type == "month":
+            qs = qs.filter(date__month=today.month)
+
+        # 🔹 STATUS
+        if status:
+            qs = qs.filter(status=status)
+
+        # 🔹 PROJECT
+        if project:
+            qs = qs.filter(project__id=project)
+
+        # 🔹 SERVICE
+        if service:
+            qs = qs.filter(service__name__iexact=service.strip())
+
+        # 🔹 SEARCH
+        if search:
+            qs = qs.filter(
+                Q(task_title__icontains=search) |
+                Q(keyword__icontains=search) |
+                Q(project__name__icontains=search) |
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search)
+            )
+
+        # =========================
+        # 📊 EXCEL BUILD
+        # =========================
         wb = Workbook()
         ws = wb.active
-        ws.title = "Daily Sheet"
+        ws.title = "Activity Report"
 
-        # =========================
-        # HEADER
-        # =========================
+        # 🔹 TITLE
+        ws.merge_cells("A1:J1")
+        ws["A1"] = "CLIENT ACTIVITY REPORT"
+        ws["A1"].font = Font(size=16, bold=True)
+        ws["A1"].alignment = Alignment(horizontal="center")
+
+        # 🔹 FILTER INFO
+        ws.merge_cells("A2:J2")
+        ws["A2"] = f"Date: {start_date or 'All'} → {end_date or 'All'} | Search: {search or 'None'}"
+        ws["A2"].alignment = Alignment(horizontal="center")
+
         headers = [
-            "S.No", "Employee", "Project", "Service",
-            "Task", "Keyword", "Completed",
-            "Proof Links", "Remarks"
+            "S.No","Employee","Project","Service",
+            "Task","Keyword","Completed Work",
+            "Proof Links","Status","Date"
         ]
+
         ws.append(headers)
 
-        header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="4F46E5", fill_type="solid")
-        center = Alignment(horizontal="center", vertical="center")
-        wrap = Alignment(wrap_text=True, vertical="top")
+        header_font = Font(color="FFFFFF", bold=True)
 
-        for cell in ws[1]:
-            cell.font = header_font
+        for cell in ws[3]:
             cell.fill = header_fill
-            cell.alignment = center
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # =========================
-        # DATA
-        # =========================
-        row_num = 2
+        # 🔹 DATA
+        row_num = 4
         serial = 1
 
         for a in qs:
 
-            # 🔥 SPLIT LINKS
-            if a.proof_link:
-                links = [l.strip() for l in str(a.proof_link).splitlines() if l.strip()]
-            else:
-                links = [""]
+            links = [l.strip() for l in str(a.proof_link).splitlines() if l.strip()] or [""]
 
             start_row = row_num
 
             for i, link in enumerate(links):
 
                 ws.cell(row=row_num, column=1, value=serial if i == 0 else "")
-                ws.cell(
-    row=row_num,
-    column=2,
-    value=f"{a.user.first_name} {a.user.last_name}" if i == 0 else ""
-)
+                ws.cell(row=row_num, column=2, value=f"{a.user.first_name} {a.user.last_name}" if i == 0 else "")
                 ws.cell(row=row_num, column=3, value=a.project.name if i == 0 else "")
-                ws.cell(row=row_num, column=4, value=a.service.name if a.service and i == 0 else "")
+                ws.cell(row=row_num, column=4, value=a.service.name if i == 0 else "")
                 ws.cell(row=row_num, column=5, value=a.task_title if i == 0 else "")
                 ws.cell(row=row_num, column=6, value=a.keyword if i == 0 else "")
                 ws.cell(row=row_num, column=7, value=a.completed_work if i == 0 else "")
                 ws.cell(row=row_num, column=8, value=link)
-                ws.cell(row=row_num, column=9, value=a.remarks if i == 0 else "")
+                ws.cell(row=row_num, column=9, value=a.status if i == 0 else "")
+                ws.cell(row=row_num, column=10, value=str(a.date) if i == 0 else "")
 
-                # 🔗 CLICKABLE LINK
                 if link:
-                    cell = ws.cell(row=row_num, column=8)
-                    cell.hyperlink = link
-                    cell.style = "Hyperlink"
+                    ws.cell(row=row_num, column=8).hyperlink = link
 
                 row_num += 1
 
             end_row = row_num - 1
 
-            # =========================
-            # MERGE CELLS (skip Proof column 8)
-            # =========================
             if end_row > start_row:
-                for col in [1, 2, 3, 4, 5, 6, 7, 9]:
-                    ws.merge_cells(
-                        start_row=start_row,
-                        start_column=col,
-                        end_row=end_row,
-                        end_column=col
-                    )
+                for col in [1,2,3,4,5,6,7,9,10]:
+                    ws.merge_cells(start_row=start_row, start_column=col, end_row=end_row, end_column=col)
 
             serial += 1
 
-        # =========================
-        # STYLING
-        # =========================
-        thin = Side(style="thin")
-        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+        # 🔹 STYLING
+        border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin")
+        )
 
         for row in ws.iter_rows():
             for cell in row:
                 cell.border = border
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
 
-                if cell.column == 8:
-                    cell.alignment = wrap
-                else:
-                    cell.alignment = center
-
-        # =========================
-        # COLUMN WIDTHS
-        # =========================
-        widths = [6, 20, 22, 20, 30, 20, 30, 45, 25]
-
+        widths = [6,20,22,18,30,20,30,45,15,15]
         for i, w in enumerate(widths, start=1):
-            ws.column_dimensions[chr(64 + i)].width = w
+            ws.column_dimensions[chr(64+i)].width = w
 
-        # =========================
-        # FILTER + FREEZE
-        # =========================
-        ws.auto_filter.ref = "A1:I1"
-        ws.freeze_panes = "A2"
+        ws.freeze_panes = "A4"
+        ws.auto_filter.ref = "A3:J3"
+
+        filename = f"report_{start_date or 'all'}_{end_date or 'all'}.xlsx"
 
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        response['Content-Disposition'] = f'attachment; filename=activity_{date}.xlsx'
+        response["Content-Disposition"] = f"attachment; filename={filename}"
 
         wb.save(response)
         return response

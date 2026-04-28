@@ -2,8 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils.timezone import now
 from datetime import timedelta
-from django.db.models import Count, Q
-from django.db.models.functions import TruncDate
+from django.db.models import Q
 from activities.models import Activity
 
 
@@ -11,111 +10,108 @@ class ClientDashboardAPI(APIView):
 
     def get(self, request):
 
-        # 🔹 BASE QUERY
-        qs = Activity.objects.filter(
-            project__client=request.user.client
-        )
+        qs = Activity.objects.all()
 
-        # 🔹 FILTER PARAMS
-        filter_type = request.GET.get("type", "all")
+        # 🔒 CLIENT RESTRICTION
+        if hasattr(request.user, "client"):
+            qs = qs.filter(project__client=request.user.client)
+
+        # 🔹 PARAMS SAFE
+        try:
+            page = max(1, int(request.GET.get("page", 1)))
+            limit = min(50, max(1, int(request.GET.get("limit", 10))))
+        except:
+            page, limit = 1, 10
+
+        filter_type = request.GET.get("type")
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
         search = request.GET.get("search")
         service = request.GET.get("service")
-        order = request.GET.get("order", "-date")
+        status = request.GET.get("status")
+        project = request.GET.get("project")
 
         today = now().date()
 
-        # 🔹 DATE FILTER (priority)
+        # 🔥 DATE FILTER (PRIORITY)
         if start_date and end_date:
             qs = qs.filter(date__range=[start_date, end_date])
-
         elif filter_type == "today":
             qs = qs.filter(date=today)
-
         elif filter_type == "week":
             qs = qs.filter(date__gte=today - timedelta(days=7))
 
         elif filter_type == "month":
             qs = qs.filter(date__month=today.month)
+        
+        elif filter_type == "year":
+            qs = qs.filter(date__year=today.year)
 
-        # 🔹 SEARCH FILTER
+         # 🔹 STATUS
+
+        # 🔹 SEARCH
         if search:
             qs = qs.filter(
                 Q(task_title__icontains=search) |
-                Q(project__name__icontains=search)
+                Q(keyword__icontains=search) |
+                Q(project__name__icontains=search) |
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search)
             )
 
-        # 🔹 SERVICE FILTER
+        # 🔹 PROJECT
+        if project:
+            qs = qs.filter(project__id=project)
+
+        # 🔹 SERVICE
         if service:
-            qs = qs.filter(service__name__iexact=service)
+            qs = qs.filter(service__name__iexact=service.strip())
 
-        # 🔹 ORDERING
-        qs = qs.order_by(order)
+        # 🔥 KPI (FROM BASE FILTERED QS BEFORE STATUS)
+        base_qs = qs
 
-        # 🔹 SERVICES (dynamic dropdown)
-        services = list(
-            qs.values_list("service__name", flat=True).distinct()
-        )
+        total = base_qs.count()
+        approved = base_qs.filter(status="approved").count()
+        pending = base_qs.filter(status="pending").count()
+        rejected = base_qs.filter(status="rejected").count()
 
-        # 🔹 KPI (single-pass counts)
-        total = qs.count()
-        approved = qs.filter(status="approved").count()
-        pending = qs.filter(status="pending").count()
-        rejected = qs.filter(status="rejected").count()
+        # 🔹 STATUS FILTER (AFTER KPI)
+        if status:
+            qs = qs.filter(status=status)
 
-        completion_rate = (approved / total * 100) if total else 0
+        # 🔹 ORDER
+        qs = qs.order_by("-date")
 
-        # 🔹 CHART (last 30 days only)
-        chart_qs = (
-            qs.annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(count=Count('id'))
-            .order_by('-day')[:30]
-        )
-
-        chart_qs = list(chart_qs)[::-1]  # reverse for frontend
-
-        chart_labels = [str(x['day']) for x in chart_qs]
-        chart_data = [x['count'] for x in chart_qs]
-
-        # 🔥 PAGINATION (dynamic limit)
-        page = int(request.GET.get("page", 1))
-        limit = int(request.GET.get("limit", 10))
-
-        total_count = qs.count()
-        total_pages = (total_count // limit) + (1 if total_count % limit else 0)
-
+        # 🔹 PAGINATION
         start = (page - 1) * limit
         end = start + limit
 
-        table = list(qs.values(
-            'task_title',
-            'status',
-            'proof_link',
-            'date',
-            'project__name'
-        )[start:end])
+        table = list(
+            qs.values(
+                'id',
+                'task_title',
+                'keyword',
+                'status',
+                'proof_link',
+                'date',
+                'project__name',
+                'user__first_name',
+                'user__last_name'
+            )[start:end]
+        )
 
-        # 🔹 RESPONSE
+        total_pages = (qs.count() // limit) + (1 if qs.count() % limit else 0)
+
         return Response({
             "kpi": {
                 "total": total,
                 "approved": approved,
                 "pending": pending,
-                "rejected": rejected,
-                "completion_rate": round(completion_rate, 2)
-            },
-            "chart": {
-                "labels": chart_labels,
-                "data": chart_data
+                "rejected": rejected
             },
             "table": table,
-            "services": services,
             "pagination": {
                 "page": page,
-                "limit": limit,
-                "total": total_count,
                 "pages": total_pages
             }
         })

@@ -128,6 +128,7 @@
     display: block;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
   }
 
   .stat-card::after {
@@ -146,6 +147,11 @@
     transform: translateY(-4px);
     box-shadow: 0 16px 40px rgba(79,70,229,0.1);
     border-color: #c7d2fe;
+  }
+
+  .stat-card.active-filter {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
   }
 
   .stat-icon {
@@ -199,7 +205,7 @@
     position: relative;
     flex: 1;
     min-width: 200px;
-    max-width: 320px;
+    max-width: 280px;
   }
 
   .search-wrap svg {
@@ -230,6 +236,21 @@
     box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
   }
 
+  .date-input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.18s;
+    min-width: 145px;
+  }
+
+  .date-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+
   .select-input {
     background: var(--surface);
     border: 1.5px solid var(--border);
@@ -246,9 +267,8 @@
     background-repeat: no-repeat;
     background-position: right 12px center;
     transition: border-color 0.18s;
-    flex: 1;
-    min-width: 180px;
-    max-width: 260px;
+    min-width: 160px;
+    max-width: 220px;
   }
 
   .select-input:focus { border-color: var(--accent); }
@@ -422,7 +442,7 @@
   .btn-reject:hover  { background: #fca5a5; box-shadow: 0 4px 14px rgba(239,68,68,0.28); transform: scale(1.08); }
 
   /* ── EMPTY STATE ── */
-  .empty-row td {
+  .empty-state {
     padding: 64px 20px;
     text-align: center;
     color: var(--muted);
@@ -430,6 +450,33 @@
   }
 
   .empty-icon { font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.45; }
+
+  /* ── PAGINATION ── */
+  .pagination-wrap {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  /* ── LOADING OVERLAY ── */
+  .table-loading {
+    display: none;
+    position: relative;
+  }
+  .table-loading.active { display: block; }
+  .loading-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 0 0 var(--radius) var(--radius);
+    animation: loading 1s ease-in-out infinite;
+  }
+  @keyframes loading {
+    0% { opacity: 0.4; transform: scaleX(0.3); transform-origin: left; }
+    50% { opacity: 1; transform: scaleX(1); transform-origin: left; }
+    100% { opacity: 0.4; transform: scaleX(0.3); transform-origin: right; }
+  }
 
   /* ── MOBILE ── */
   .mobile-cards { display: none; }
@@ -440,7 +487,7 @@
     .stat-num { font-size: 24px; }
     .stat-icon { display: none; }
     .toolbar { flex-direction: column; align-items: stretch; }
-    .search-wrap, .select-input { max-width: 100%; }
+    .search-wrap, .select-input, .date-input { max-width: 100%; min-width: unset; width: 100%; }
     .export-btn { justify-content: center; }
     .table-card { display: none; }
     .mobile-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
@@ -471,64 +518,69 @@
   <!-- HEADER -->
   <div class="dash-header">
     <div class="dash-title">
-      
       Approval Dashboard
     </div>
   </div>
 
-  <!-- DATE FILTER -->
+  <!-- DATE FILTER PILLS -->
   <div class="filter-group">
-    <a href="?date=today&status={{current_status}}" class="pill {% if date_filter == 'today' %}active{% endif %}">Today</a>
-    <a href="?date=week&status={{current_status}}"  class="pill {% if date_filter == 'week'  %}active{% endif %}">Week</a>
-    <a href="?date=month&status={{current_status}}" class="pill {% if date_filter == 'month' %}active{% endif %}">Month</a>
-    <a href="?date=year&status={{current_status}}"  class="pill {% if date_filter == 'year'  %}active{% endif %}">Year</a>
-    <a href="?date=all&status={{current_status}}"   class="pill {% if date_filter == 'all'   %}active{% endif %}">All</a>
-  </div>
-
-  <!-- CUSTOM DATE FILTER -->
-  <div class="filter-group mt-2">
-    <input type="date" id="customDate" style="padding:7px 14px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;max-width:180px;">
-    <button class="pill" onclick="applyCustomDate()">Custom Date</button>
+    <button class="pill" onclick="setDateFilter(event, 'today')">Today</button>
+    <button class="pill" onclick="setDateFilter(event, 'week')">Week</button>
+    <button class="pill" onclick="setDateFilter(event, 'month')">Month</button>
+    <button class="pill" onclick="setDateFilter(event, 'year')">Year</button>
+    <button class="pill" onclick="setDateFilter(event, 'all')">All</button>
   </div>
 
   <!-- STATUS CARDS -->
   <div class="status-row">
-    <a href="?status=pending&date={{date_filter}}" class="stat-card pending">
+    <div class="stat-card pending {% if current_status == 'pending' %}active-filter{% endif %}" onclick="setStatusFilter('pending')">
       <div class="stat-icon">⏳</div>
       <div class="stat-label">Pending</div>
-      <div class="stat-num">{{ pending_count }}</div>
-    </a>
-    <a href="?status=approved&date={{date_filter}}" class="stat-card approved">
+      <div class="stat-num" id="kpi-pending">{{ pending_count }}</div>
+    </div>
+    <div class="stat-card approved {% if current_status == 'approved' %}active-filter{% endif %}" onclick="setStatusFilter('approved')">
       <div class="stat-icon">✅</div>
       <div class="stat-label">Approved</div>
-      <div class="stat-num">{{ approved_count }}</div>
-    </a>
-    <a href="?status=rejected&date={{date_filter}}" class="stat-card rejected">
+      <div class="stat-num" id="kpi-approved">{{ approved_count }}</div>
+    </div>
+    <div class="stat-card rejected {% if current_status == 'rejected' %}active-filter{% endif %}" onclick="setStatusFilter('rejected')">
       <div class="stat-icon">❌</div>
       <div class="stat-label">Rejected</div>
-      <div class="stat-num">{{ rejected_count }}</div>
-    </a>
+      <div class="stat-num" id="kpi-rejected">{{ rejected_count }}</div>
+    </div>
   </div>
 
   <!-- TOOLBAR -->
   <div class="toolbar">
+    <!-- Search -->
     <div class="search-wrap">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
       </svg>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search employee…" value="{{ search }}" onkeyup="applyFilters()">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search employee / task…" value="{{ search }}">
     </div>
 
-    <select id="projectFilter" class="select-input" onchange="applyFilters()">
+    <!-- Project Filter -->
+    <select id="projectFilter" class="select-input">
       <option value="">All Projects</option>
       {% for p in projects %}
       <option value="{{p.id}}" {% if selected_project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>
       {% endfor %}
     </select>
 
-    <a href="?export=excel&date={{date_filter}}{% if request.GET.selected_date %}&selected_date={{request.GET.selected_date}}{% endif %}&status={{current_status}}&search={{search}}&project={{selected_project}}" class="export-btn">
+    <!-- Date Range -->
+    <input type="date" id="startDate" class="date-input" placeholder="Start date">
+    <input type="date" id="endDate"   class="date-input" placeholder="End date">
+
+    <!-- Export -->
+    <button class="export-btn" onclick="exportExcel()">
       📥 Export Excel
-    </a>
+    </button>
+  </div>
+
+  <!-- LOADING BAR -->
+  <div id="loadingBar" class="table-loading">
+    <div class="loading-bar"></div>
   </div>
 
   <!-- TABLE (desktop) -->
@@ -540,166 +592,358 @@
             <th>User</th>
             <th>Project</th>
             <th>Task</th>
-
             <th>Keyword</th>
             <th>Proof</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
-        <tbody>
-          {% for a in activities %}
-          <tr id="row-{{a.id}}">
-            <td><div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div></td>
-            <td><span class="project-tag">{{ a.project.name }}</span></td>
-            <td class="task-text">{{ a.task_title }}</td>
-            <td class="task-text">{{ a.keyword }}</td>
-            <td>
-              {% if a.proof_link %}
-                {% for link in a.proof_link.splitlines %}
-                  {% if link %}
-                    <a href="{{ link }}" target="_blank" class="proof-link">
-                      🔗 {{ link }}
-                    </a><br>
-                  {% endif %}
-                {% endfor %}
-              {% else %}
-                <span style="color:var(--muted);font-size:13px;">No Proof</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if a.status == 'pending' %}
-                <span class="badge badge-pending">Pending</span>
-              {% elif a.status == 'approved' %}
-                <span class="badge badge-approved">Approved</span>
-              {% else %}
-                <span class="badge badge-rejected">Rejected</span>
-              {% endif %}
-            </td>
-            <td class="action-cell">
-              {% if a.status == 'pending' %}
-                <button class="btn-approve" onclick="updateStatus({{a.id}}, 'approved')" title="Approve">✔</button>
-                <button class="btn-reject"  onclick="updateStatus({{a.id}}, 'rejected')" title="Reject">✖</button>
-              {% else %}—{% endif %}
+        <tbody id="taskTable">
+          <!-- JS renders rows here -->
+          <tr>
+            <td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">
+              <span style="font-size:28px;display:block;margin-bottom:8px;opacity:.4;">⏳</span>
+              Loading…
             </td>
           </tr>
-          {% empty %}
-          <tr class="empty-row">
-          <td colspan="7" style="text-align:center;"><span class="empty-icon">📭</span>No records found</td>
-          </tr>
-          {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- PAGINATION -->
+  <div class="pagination-wrap" id="pagination"></div>
+
   <!-- MOBILE CARDS -->
-  <div class="mobile-cards">
-    {% for a in activities %}
-    <div class="m-card" id="m-row-{{a.id}}">
-      <div class="m-card-header">
-        <div>
-          <div class="user-name">{{ a.user.first_name }} {{ a.user.last_name }}</div>
-          <div style="margin-top:4px;"><span class="project-tag">{{ a.project.name }}</span></div>
-        </div>
-        {% if a.status == 'pending' %}<span class="badge badge-pending">Pending</span>
-        {% elif a.status == 'approved' %}<span class="badge badge-approved">Approved</span>
-        {% else %}<span class="badge badge-rejected">Rejected</span>{% endif %}
-      </div>
-      <div class="m-card-body">
-        <div class="m-row">
-          <span class="m-label">Task</span>
-          <span class="task-text">{{ a.task_title }}</span>
-        </div>
-        <div class="m-row">
-          <span class="m-label">Keyword</span>
-          <span>{{ a.keyword }}</span>
-        </div>
-        <div class="m-row">
-          <span class="m-label">Proof</span>
-          <span>
-          {% if a.proof_link %}
-            {% for link in a.proof_link.splitlines %}
-              {% if link %}
-               <a href="{{ link }}" target="_blank" class="proof-link">
-                🔗 {{ link }}
-              </a><br>
-              {% endif %}
-            {% endfor %}
-          {% else %}
-            <span style="color:var(--muted);font-size:13px;">No Proof</span>
-          {% endif %}
-        </span>
-        </div>
-      </div>
-      {% if a.status == 'pending' %}
-      <div class="m-actions">
-        <button class="btn-approve" onclick="updateStatus({{a.id}}, 'approved')">✔</button>
-        <button class="btn-reject"  onclick="updateStatus({{a.id}}, 'rejected')">✖</button>
-      </div>
-      {% endif %}
-    </div>
-    {% empty %}
-    <div style="text-align:center;color:var(--muted);padding:40px 0;">
-      <span class="empty-icon">📭</span><br>No records found
-    </div>
-    {% endfor %}
+  <div class="mobile-cards" id="mobileCards">
+    <!-- JS renders mobile cards here -->
   </div>
 
 </div>
 
 <script>
-function applyFilters(){
-    let search  = document.getElementById("searchInput").value;
-    let project = document.getElementById("projectFilter").value;
-    let params  = new URLSearchParams();
-    params.set("status", "{{current_status}}");
-    params.set("date",   "{{date_filter}}");
-    let selectedDate = new URLSearchParams(window.location.search).get("selected_date");
-    if(selectedDate) params.set("selected_date", selectedDate);
-    if(search)  params.set("search",  search);
-    if(project) params.set("project", project);
-    window.location.href = "?" + params.toString();
+  // ── STATE ──────────────────────────────────────────────────
+  let currentPage   = 1;
+  let dateFilter    = "{{ date_filter|default:'all' }}";
+  let statusFilter  = "{{ current_status|default:'' }}";
+  let searchTimer   = null;
+
+  function getFilters() {
+  const start = document.getElementById("startDate")?.value;
+  const end   = document.getElementById("endDate")?.value;
+
+  // ❌ prevent half-date bug
+  if ((start && !end) || (!start && end)) {
+    alert("Please select both start and end date");
+    return null;
+  }
+
+  const useRange = start && end;   // ✅ define FIRST
+
+  // ✅ remove pill active if custom date used
+  if (useRange) {
+    document.querySelectorAll(".filter-group .pill").forEach(p => {
+      p.classList.remove("active");
+    });
+  }
+
+  return {
+    type: useRange ? "" : dateFilter,
+    status: statusFilter,
+    search: document.getElementById("searchInput")?.value || "",
+    project: document.getElementById("projectFilter")?.value || "",
+    start_date: start,
+    end_date: end,
+    page: currentPage,
+    limit: 20
+  };
 }
 
-function applyCustomDate() {
-    let date = document.getElementById("customDate").value;
-    if (!date) { alert("Select date"); return; }
-    let params = new URLSearchParams();
-    params.set("date",          "custom");
-    params.set("selected_date", date);
-    params.set("status",        "{{current_status}}");
-    window.location.href = "?" + params.toString();
+  function buildQuery(params) {
+    return Object.entries(params)
+      .filter(([, v]) => v !== "" && v !== null && v !== undefined)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join("&");
+  }
+function setStatusFilter(val) {
+  if (statusFilter === val) {
+    statusFilter = "";   // ✅ toggle OFF
+  } else {
+    statusFilter = val;
+  }
+
+  currentPage = 1;
+
+  document.querySelectorAll(".stat-card").forEach(c => {
+    c.classList.remove("active-filter");
+  });
+
+  if (statusFilter) {
+    document.querySelector(`.stat-card.${statusFilter}`)?.classList.add("active-filter");
+  }
+
+  loadDashboard();
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    let selected = new URLSearchParams(window.location.search).get("selected_date");
-    if (selected) document.getElementById("customDate").value = selected;
-});
+  function loadDashboard() {
+  const filters = getFilters();
+  if (!filters) return;
 
-function updateStatus(id, status){
+  const query = buildQuery(filters);
+
+  document.getElementById("loadingBar").classList.add("active");
+
+  fetch(`/activities/api/dashboard/?${query}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("loadingBar").classList.remove("active");
+      updateKPIs(data.kpi);
+      updateTable(data.table);
+      updateMobileCards(data.table);
+      updatePagination(data.pagination);
+    })
+    .catch(() => {
+      document.getElementById("loadingBar").classList.remove("active");
+    });
+}
+
+function setDateFilter(e, val) {
+  dateFilter = val;
+  currentPage = 1;
+
+  // clear custom dates
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+
+  document.querySelectorAll(".filter-group .pill").forEach(p => {
+    p.classList.remove("active");
+  });
+
+  e.currentTarget.classList.add("active");
+
+  loadDashboard();
+}
+
+  // ── KPI CARDS ──────────────────────────────────────────────
+  function updateKPIs(kpi) {
+    if (!kpi) return;
+    document.getElementById("kpi-pending").textContent  = kpi.pending  ?? "—";
+    document.getElementById("kpi-approved").textContent = kpi.approved ?? "—";
+    document.getElementById("kpi-rejected").textContent = kpi.rejected ?? "—";
+  }
+
+  // ── TABLE RENDER ───────────────────────────────────────────
+  function updateTable(rows) {
+    const tbody = document.getElementById("taskTable");
+    tbody.innerHTML = "";
+
+    if (!rows || !rows.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <span class="empty-icon">📭</span>
+              No records found
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    rows.forEach(r => {
+      let proofHTML = `<span style="color:var(--muted);font-size:13px;">No Proof</span>`;
+      if (r.proof_link) {
+        proofHTML = r.proof_link.split('\n')
+          .map(l => l.trim()).filter(Boolean)
+          .map(l => `<a href="${l}" target="_blank" class="proof-link">🔗 ${l}</a>`)
+          .join("<br>");
+      }
+
+      const badge = `<span class="badge badge-${r.status}">${capitalize(r.status)}</span>`;
+
+      const actions = r.status === "pending"
+        ? `<button class="btn-approve" onclick="updateStatus(${r.id},'approved')" title="Approve">✔</button>
+           <button class="btn-reject"  onclick="updateStatus(${r.id},'rejected')" title="Reject">✖</button>`
+        : `—`;
+
+      tbody.innerHTML += `
+        <tr id="row-${r.id}">
+          <td><div class="user-name">${r.user__first_name || ''} ${r.user__last_name || ''}</div></td>
+          <td><span class="project-tag">${r.project__name || ''}</span></td>
+          <td class="task-text">${r.task_title || ''}</td>
+          <td class="task-text">${r.keyword || ''}</td>
+          <td>${proofHTML}</td>
+          <td>${badge}</td>
+          <td class="action-cell">${actions}</td>
+        </tr>`;
+    });
+  }
+
+  // ── MOBILE CARDS RENDER ────────────────────────────────────
+  function updateMobileCards(rows) {
+    const container = document.getElementById("mobileCards");
+    container.innerHTML = "";
+
+    if (!rows || !rows.length) {
+      container.innerHTML = `
+        <div style="text-align:center;color:var(--muted);padding:40px 0;">
+          <span class="empty-icon">📭</span><br>No records found
+        </div>`;
+      return;
+    }
+
+    rows.forEach(r => {
+      let proofHTML = `<span style="color:var(--muted);font-size:13px;">No Proof</span>`;
+      if (r.proof_link) {
+        proofHTML = r.proof_link.split('\n')
+          .map(l => l.trim()).filter(Boolean)
+          .map(l => `<a href="${l}" target="_blank" class="proof-link">🔗 ${l}</a>`)
+          .join("<br>");
+      }
+
+      const badge = `<span class="badge badge-${r.status}">${capitalize(r.status)}</span>`;
+
+      const actions = r.status === "pending"
+        ? `<div class="m-actions">
+             <button class="btn-approve" onclick="updateStatus(${r.id},'approved')">✔</button>
+             <button class="btn-reject"  onclick="updateStatus(${r.id},'rejected')">✖</button>
+           </div>`
+        : "";
+
+      container.innerHTML += `
+        <div class="m-card" id="m-row-${r.id}">
+          <div class="m-card-header">
+            <div>
+              <div class="user-name">${r.user__first_name || ''} ${r.user__last_name || ''}</div>
+              <div style="margin-top:4px;"><span class="project-tag">${r.project__name || ''}</span></div>
+            </div>
+            ${badge}
+          </div>
+          <div class="m-card-body">
+            <div class="m-row">
+              <span class="m-label">Task</span>
+              <span class="task-text">${r.task_title || ''}</span>
+            </div>
+            <div class="m-row">
+              <span class="m-label">Keyword</span>
+              <span>${r.keyword || ''}</span>
+            </div>
+            <div class="m-row">
+              <span class="m-label">Proof</span>
+              <span>${proofHTML}</span>
+            </div>
+          </div>
+          ${actions}
+        </div>`;
+    });
+  }
+
+  // ── PAGINATION ─────────────────────────────────────────────
+  function updatePagination(p) {
+    const container = document.getElementById("pagination");
+    if (!container || !p) return;
+    container.innerHTML = "";
+
+    const current = p.page;
+    const total   = p.pages;
+    if (total <= 1) return;
+
+    if (current > 1) {
+      container.innerHTML += `<button onclick="goToPage(${current - 1})" class="pill">◀</button>`;
+    }
+
+    const start = Math.max(1, current - 2);
+    const end   = Math.min(total, current + 2);
+
+    if (start > 1) container.innerHTML += `<button onclick="goToPage(1)" class="pill">1</button><span style="color:var(--muted);padding:0 4px">…</span>`;
+
+    for (let i = start; i <= end; i++) {
+      container.innerHTML += `<button onclick="goToPage(${i})" class="pill ${i === current ? 'active' : ''}">${i}</button>`;
+    }
+
+    if (end < total) container.innerHTML += `<span style="color:var(--muted);padding:0 4px">…</span><button onclick="goToPage(${total})" class="pill">${total}</button>`;
+
+    if (current < total) {
+      container.innerHTML += `<button onclick="goToPage(${current + 1})" class="pill">▶</button>`;
+    }
+  }
+
+  function goToPage(p) {
+    currentPage = p;
+    loadDashboard();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+ function exportExcel() {
+  const f = getFilters();
+  if (!f) return;
+
+  const query = buildQuery({
+    type: f.type,
+    start_date: f.start_date,
+    end_date: f.end_date,
+    search: f.search,
+    project: f.project,
+    status: f.status
+  });
+
+  window.open(`/activities/export-report/?${query}`, "_blank");
+}
+  // ── APPROVE / REJECT ───────────────────────────────────────
+  function updateStatus(id, status) {
     fetch(`/activities/api/approve/${id}/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie('csrftoken') },
-        body: JSON.stringify({ status: status })
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+      },
+      body: JSON.stringify({ status })
     })
     .then(res => res.json())
     .then(data => {
-      if(data.success){
-        document.getElementById(`row-${id}`).remove();
-        document.getElementById(`m-row-${id}`)?.remove();
-      }
+      if (data.success) loadDashboard();
     });
-}
+  }
 
-function getCookie(name){
+  // ── HELPERS ────────────────────────────────────────────────
+  function capitalize(s) {
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  }
+
+  function getCookie(name) {
     let value = null;
-    document.cookie.split(';').forEach(c => {
-        c = c.trim();
-        if(c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
+    document.cookie.split(";").forEach(c => {
+      c = c.trim();
+      if (c.startsWith(name + "=")) value = decodeURIComponent(c.substring(name.length + 1));
     });
     return value;
-}
+  }
+
+  // ── DEBOUNCED SEARCH ───────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", () => {
+
+    document.getElementById("searchInput")?.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        currentPage = 1;   // 🔥 important
+        loadDashboard();
+      }, 400);
+    });
+    document.getElementById("projectFilter")?.addEventListener("change", () => {
+      currentPage = 1; loadDashboard();
+    });
+
+    document.getElementById("startDate")?.addEventListener("change", () => {
+      currentPage = 1; loadDashboard();
+    });
+
+    document.getElementById("endDate")?.addEventListener("change", () => {
+      currentPage = 1; loadDashboard();
+    });
+
+    // Initial load
+    loadDashboard();
+  });
 </script>
 
 {% endblock %}
