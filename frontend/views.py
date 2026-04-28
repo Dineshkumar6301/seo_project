@@ -11,12 +11,10 @@ from django.utils import timezone
 from django.db.models import Count, Q
 
 
-
 def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')  
     return render(request, 'frontend/auth.html')
-
 
 
 def login_view(request):
@@ -123,9 +121,7 @@ def dashboard(request):
 
     performance = int((approved / total_activities) * 100) if total_activities else 0
 
-    # =========================
-    # 🔥 TREND
-    # =========================
+   
     last_7_start = today - timedelta(days=6)
     prev_7_start = today - timedelta(days=13)
     prev_7_end = today - timedelta(days=7)
@@ -140,9 +136,7 @@ def dashboard(request):
 
     trend_direction = "up" if trend_pct > 0 else ("down" if trend_pct < 0 else "flat")
 
-    # =========================
-    # 🔥 TOP PROJECT
-    # =========================
+
     tp = (
         base_qs.values('project__name')
         .annotate(c=Count('id'))
@@ -151,9 +145,7 @@ def dashboard(request):
     )
     top_project = tp['project__name'] if tp else "—"
 
-    # =========================
-    # 🔥 TOP EMPLOYEE
-    # =========================
+
     te = (
         base_qs.values('user__email')
         .annotate(c=Count('id'))
@@ -162,9 +154,7 @@ def dashboard(request):
     )
     top_employee = te['user__email'] if te else "—"
 
-    # =========================
-    # 🔥 RISK
-    # =========================
+
     risk_count = base_qs.filter(
         status='pending',
         date__lt=today - timedelta(days=2)
@@ -172,9 +162,7 @@ def dashboard(request):
 
     risk_label = "High" if risk_count >= 10 else ("Medium" if risk_count >= 3 else "Low")
 
-    # =========================
-    # 🔥 SPARK DATA
-    # =========================
+    
     spark_labels = []
     spark_data = []
 
@@ -183,36 +171,27 @@ def dashboard(request):
         spark_labels.append(d.strftime('%d %b'))
         spark_data.append(base_qs.filter(date=d).count())
 
-    # =========================
-    # 🔥 WEEKDAY DATA
-    # =========================
+   
     weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     weekday_data = [0] * 7
 
     for a in base_qs.filter(date__isnull=False):
         weekday_data[a.date.weekday()] += 1
 
-    # =========================
-    # 🔥 OLD LOGIC (KEPT)
-    # =========================
-    activities = base_qs.order_by('-created_at')[:5]
 
-    # =========================
-    # 🔥 NEW ADVANCED PAGINATION
-    # =========================
+    activities = base_qs.order_by('-created_at')[:10]
+
+
     activities_qs = base_qs.order_by('-created_at')
 
     page_number = request.GET.get('page', 1)
-    per_page = request.GET.get('per_page', 5)
+    per_page = request.GET.get('per_page', 10)
 
     paginator = Paginator(activities_qs, per_page)
     page_obj = paginator.get_page(page_number)
 
     activities_paginated = page_obj.object_list
 
-    # =========================
-    # 🔥 AJAX SUPPORT
-    # =========================
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 
         html = render_to_string(
@@ -229,9 +208,6 @@ def dashboard(request):
             'has_prev': page_obj.has_previous(),
         })
 
-    # =========================
-    # 🔥 CONTEXT
-    # =========================
     context = {
 
         'total_projects': total_projects,
@@ -255,10 +231,8 @@ def dashboard(request):
         'weekday_labels': weekday_labels,
         'weekday_data': weekday_data,
 
-        # 🔥 KEEP OLD
         'activities': activities,
 
-        # 🔥 NEW PAGINATION DATA
         'activities_paginated': activities_paginated,
         'page_obj': page_obj,
         'paginator': paginator,

@@ -74,17 +74,13 @@ from django.contrib.auth.decorators import login_required
 from .models import Profile
 @login_required
 def profile_view(request):
-
     user = request.user
-
     profile, created = Profile.objects.get_or_create(user=user)
 
     if request.method == "POST":
-
         user.first_name = request.POST.get('first_name')
         user.last_name = request.POST.get('last_name')
         user.email = request.POST.get('email')
-        user.mobile = request.POST.get('mobile')
         user.save()
 
         profile.phone = request.POST.get('phone')
@@ -93,21 +89,26 @@ def profile_view(request):
 
         profile.designation = request.POST.get('designation')
         profile.department = request.POST.get('department')
-        profile.experience = request.POST.get('experience') or None
-        profile.skills = request.POST.get('skills')
 
+        # ✅ FIXED HERE
+        experience = request.POST.get('experience')
+        try:
+            profile.experience = int(experience) if experience else 0
+        except (ValueError, TypeError):
+            profile.experience = 0
+
+        profile.skills = request.POST.get('skills')
         profile.company_name = request.POST.get('company_name')
         profile.website = request.POST.get('website')
         profile.industry = request.POST.get('industry')
 
         if request.FILES.get('photo'):
             new_photo = request.FILES.get('photo')
-
             if profile.photo:
                 profile.photo.delete(save=False)
-
             profile.photo = new_photo
-        profile.save()  
+
+        profile.save()
         return redirect('profile_view')
 
     return render(request, 'frontend/profile.html', {
