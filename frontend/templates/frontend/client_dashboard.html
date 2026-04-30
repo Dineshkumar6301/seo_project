@@ -506,6 +506,7 @@
     <button class="pill" data-filter="month">This Month</button>
   </div>
 
+
   <!-- KPI CARDS -->
   <div class="kpi-grid">
     <div class="kpi-card k-total">
@@ -571,14 +572,20 @@
         Task Activity
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <select id="perPageSelect" class="select-sm" aria-label="Rows per page">
+
+        <input type="date" id="startDate" class="select-sm">
+        <input type="date" id="endDate" class="select-sm">
+
+        <select id="perPageSelect" class="select-sm">
           <option value="10">10 / page</option>
           <option value="20">20 / page</option>
           <option value="50">50 / page</option>
         </select>
-        <button class="btn-export" id="exportBtn" type="button">
+
+        <button class="btn-export" id="exportBtn">
           ↓ Export Excel
         </button>
+
       </div>
     </div>
 
@@ -635,18 +642,27 @@
   var exportBtn    = document.getElementById('exportBtn');
 
   /* ─── UTILS ──────────────────────────── */
-  function buildQuery(extra) {
-    var params = {
-      type  : state.type,
-      page  : state.page,
-      limit : state.limit
-    };
-    if (extra) Object.assign(params, extra);
-    return Object.keys(params)
-      .filter(function(k){ return params[k] !== '' && params[k] != null; })
-      .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
-      .join('&');
-  }
+ function buildQuery(extra) {
+  var startDate = document.getElementById('startDate')?.value;
+  var endDate   = document.getElementById('endDate')?.value;
+
+  var params = {
+    type  : state.type,
+    page  : state.page,
+    limit : state.limit
+  };
+
+  // ✅ ADD THIS
+  if (startDate) params.start_date = startDate;
+  if (endDate)   params.end_date   = endDate;
+
+  if (extra) Object.assign(params, extra);
+
+  return Object.keys(params)
+    .filter(function(k){ return params[k] !== '' && params[k] != null; })
+    .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
+    .join('&');
+}
 
   function badgeClass(status) {
     if (status === 'approved') return 'badge-approved';
@@ -891,25 +907,42 @@
     loadDashboard(false);
   });
 
-  /* ─── EVENT: EXPORT ──────────────────── */
-  exportBtn.addEventListener('click', function() {
+ exportBtn.addEventListener('click', function() {
+
+  var startDate = document.getElementById('startDate')?.value;
+  var endDate   = document.getElementById('endDate')?.value;
+
   var params = {
     type: state.type
-    // ❌ REMOVE limit & page
   };
-    var query = Object.keys(params)
-      .filter(function(k){ return params[k] !== '' && params[k] != null; })
-      .map(function(k){ return k + '=' + encodeURIComponent(params[k]); })
-      .join('&');
-    window.location.href = '/activities/api/export/?' + query;
-  });
 
-  /* ─── INIT ───────────────────────────── */
-  document.addEventListener('DOMContentLoaded', function() {
+  if (startDate) params.start_date = startDate;
+  if (endDate)   params.end_date   = endDate;
+
+  var query = Object.keys(params)
+    .filter(k => params[k])
+    .map(k => k + '=' + encodeURIComponent(params[k]))
+    .join('&');
+
+  window.location.href = '/activities/api/export/?' + query;
+});
+
+var startInput = document.getElementById('startDate');
+var endInput   = document.getElementById('endDate');
+
+if (startInput) {
+  startInput.addEventListener('change', function() {
+    state.page = 1;
     loadDashboard(false);
-    startPolling();
   });
+}
 
+if (endInput) {
+  endInput.addEventListener('change', function() {
+    state.page = 1;
+    loadDashboard(false);
+  });
+}
 })();
 </script>
 

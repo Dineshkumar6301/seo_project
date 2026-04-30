@@ -29,14 +29,20 @@ class ExportExcelAPI(APIView):
         today = now().date()
 
         
-        if start_date and end_date:
-            qs = qs.filter(date__range=[start_date, end_date])
-        elif filter_type == "today":
-            qs = qs.filter(date=today)
-        elif filter_type == "week":
-            qs = qs.filter(date__gte=today - timedelta(days=7))
-        elif filter_type == "month":
-            qs = qs.filter(date__month=today.month)
+                # ✅ Custom range overrides filter type
+        if start_date or end_date:
+            if start_date:
+                qs = qs.filter(date__gte=start_date)
+            if end_date:
+                qs = qs.filter(date__lte=end_date)
+
+        else:
+            if filter_type == "today":
+                qs = qs.filter(date=today)
+            elif filter_type == "week":
+                qs = qs.filter(date__gte=today - timedelta(days=7))
+            elif filter_type == "month":
+                qs = qs.filter(date__month=today.month)
 
         
         if status:
