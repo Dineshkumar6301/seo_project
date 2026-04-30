@@ -698,8 +698,8 @@
       if (r.proof_link) {
         var links = r.proof_link.split('\n').filter(function(l){ return l.trim(); });
         if (links.length) {
-          proofHTML = links.map(function(l, i) {
-            return '<a href="' + escHtml(l.trim()) + '" target="_blank" rel="noopener noreferrer" class="proof-link">View ' + (i + 1) + '</a>';
+         proofHTML = links.map(function(l, i) {
+            return '<div><a href="' + escHtml(l.trim()) + '" target="_blank" rel="noopener noreferrer" class="proof-link">View ' + (i + 1) + '</a></div>';
           }).join('');
         }
       }
