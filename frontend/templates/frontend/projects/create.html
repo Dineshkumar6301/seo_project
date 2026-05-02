@@ -33,7 +33,7 @@
                             <option value="">-- Select Client --</option>
                             {% for client in clients %}
                                 <option value="{{ client.id }}">
-                                    {{ client.name }} | {{ client.company_name }}
+                                    {{ client.user.first_name }} {{ client.user.last_name }} | {{ client.user.profile.company_name }}
                                 </option>
                             {% endfor %}
                         </select>
