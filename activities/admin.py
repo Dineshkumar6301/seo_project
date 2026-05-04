@@ -83,9 +83,7 @@ class ActivityAdmin(admin.ModelAdmin):
         ('Basic Info', {
             'fields': ('user', 'project', 'service', 'date')
         }),
-        ('Task Details', {
-            'fields': ('task_title', 'checklist_item')
-        }),
+      
         ('Work Info', {
             'fields': ('keyword', 'completed_work', 'proof_link', 'remarks')
         }),
