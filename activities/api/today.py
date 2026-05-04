@@ -1,7 +1,8 @@
-from frontend.models import ProjectServiceAssignment
+from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from frontend.models import ProjectServiceAssignment
 from activities.models import Activity
 
 
@@ -11,40 +12,45 @@ class TodayActivityAPI(APIView):
 
     def get(self, request):
 
-        date = request.GET.get("date")
-
-        if not date:
+        # ✅ Get date from request
+        date_str = request.GET.get("date")
+        if not date_str:
             return Response({"error": "Date is required"}, status=400)
 
+        try:
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format"}, status=400)
+
+        # ✅ Get only assignments for this user
         assignments = ProjectServiceAssignment.objects.filter(
             user=request.user
-        )
-
-        assigned_services = assignments.values_list('service_id', flat=True)
-        assigned_projects = assignments.values_list('project_id', flat=True)
-
-        activities = Activity.objects.filter(
-            user=request.user,
-            date=date,
-            service_id__in=assigned_services,
-            project_id__in=assigned_projects
         ).select_related("project", "service")
 
-        data = [
-            {
-                "id": a.id,
-                "project": a.project_id,
+        data = []
+
+        for a in assignments:
+
+            # ✅ Ensure only ONE activity per day
+            activity, _ = Activity.objects.get_or_create(
+                user=request.user,
+                project=a.project,
+                service=a.service,
+                date=date
+            )
+
+            data.append({
+                "id": activity.id,
+                "project": a.project.id,
                 "project_name": a.project.name,
-                "service": a.service_id,
+                "service": a.service.id,
                 "service_name": a.service.name,
-                "task_title": a.task_title,
-                "keyword": a.keyword,
-                "completed_work": a.completed_work,
-                "proof_links": a.proof_link.split("\n") if a.proof_link else [],
-                "remarks": a.remarks,
-                "status": a.status,
-            }
-            for a in activities
-        ]
+                "task_title": activity.task_title,
+                "keyword": activity.keyword,
+                "completed_work": activity.completed_work,
+                "proof_links": activity.proof_link.split("\n") if activity.proof_link else [],
+                "remarks": activity.remarks,
+                "status": activity.status,
+            })
 
         return Response(data)
