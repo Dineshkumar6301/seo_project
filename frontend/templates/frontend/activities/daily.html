@@ -132,10 +132,6 @@ function removeProof(btn){
     btn.parentElement.remove();
 }
 
-
-async function loadData() {
-
-    let date = document.getElementById("date").value;
     let today = new Date().toISOString().split("T")[0];
 
     let res = await fetch(`${API}today/?date=${date}`);
