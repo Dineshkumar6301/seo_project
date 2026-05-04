@@ -19,7 +19,7 @@
     <div class="d-flex gap-2">
         <input type="date" id="date" class="form-control">
         <button class="btn btn-primary" onclick="downloadExcel()">Excel</button>
-        <button class="btn btn-dark" onclick="addRow()">+ Add</button>
+      
     </div>
 </div>
 
@@ -133,23 +133,30 @@ function removeProof(btn){
 }
 
 
-// ==============================
-// LOAD DATA
-// ==============================
 async function loadData() {
 
-let date = document.getElementById("date").value;
+    let date = document.getElementById("date").value;
+    let today = new Date().toISOString().split("T")[0];
 
-let res = await fetch(`${API}today/?date=${date}`);
-let data = await res.json();
+    let res = await fetch(`${API}today/?date=${date}`);
+    let data = await res.json();
 
-let body = document.getElementById("tableBody");
-body.innerHTML = "";
+    let body = document.getElementById("tableBody");
+    body.innerHTML = "";
 
-if (data.length === 0) {
-    addRow();
-} else {
+    // 🔥 RULE 1: IF TODAY → ALWAYS START WITH ONE EMPTY ROW
+    if (date === today) {
+        addRow();
+        return;
+    }
 
+    // 🔥 RULE 2: IF NO DATA → ONE EMPTY ROW
+    if (!data || data.length === 0) {
+        addRow();
+        return;
+    }
+
+    // 🔥 RULE 3: LOAD SAVED DATA (PAST DATES)
     data.forEach(d => {
 
         let row = document.createElement("tr");
@@ -164,8 +171,6 @@ if (data.length === 0) {
 
     document.querySelectorAll(".project").forEach(el => loadServices(el));
 }
-}
-
 
 // ==============================
 // LOAD SERVICES
