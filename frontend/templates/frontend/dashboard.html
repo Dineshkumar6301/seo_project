@@ -354,64 +354,127 @@ h3.mb-4 {
 
     <div class="table-responsive">
         <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Project</th>
-                    <th>Employee</th>
-                    <th style="min-width:200px;">Proof</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for a in activities_paginated %}
-            <tr>
-                <td>
-                    <span class="fw-semibold">{{ a.project.name }}</span>
-                </td>
-                <td>
-                    <div class="fw-semibold">{{ a.user.first_name }} {{ a.user.last_name }}</div>
-                    <small class="text-muted">{{ a.user.role }}</small>
-                </td>
-                <td>
-                    {% if a.proof_link %}
-                        <div class="d-flex flex-column gap-2 align-items-start">
-                            {% for link in a.proof_link.splitlines %}
-                                {% if link %}
-                                    <a href="{{ link }}" target="_blank"
-                                    class="proof-btn">
-                                        <span class="icon"> 🔗</span>
-                                        <span>View {{ forloop.counter }}</span>
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <span class="no-proof">No Proof</span>
+           <table class="table align-middle mb-0">
+
+        <thead class="table-light">
+
+        <tr>
+
+            <th>Employee</th>
+
+            <th>Project</th>
+
+            <th>Category</th>
+
+            <th>Service</th>
+
+            <th>Task</th>
+
+            <th>Submitted URL</th>
+
+            <th>Status</th>
+
+        </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for a in activities %}
+
+        <tr>
+
+            <!-- EMPLOYEE -->
+            <td data-label="Employee">
+
+                {{ a.user.first_name }} {{ a.user.last_name }}
+
+            </td>
+
+            <!-- PROJECT -->
+            <td data-label="Project">
+
+                {{ a.project.name }}
+
+            </td>
+
+            <!-- CATEGORY -->
+            <td data-label="Category">
+
+                {{ a.category }}
+
+            </td>
+
+            <!-- SERVICE -->
+            <td data-label="Service">
+
+                {{ a.service_name }}
+
+            </td>
+
+            <!-- TASK -->
+            <td data-label="Task">
+
+                {{ a.task_type }}
+
+            </td>
+
+            <!-- SUBMITTED URL -->
+            <td data-label="Submitted URL">
+
+                {% for key, value in a.dynamic_data.items %}
+
+                    {% if "http://" in value or "https://" in value %}
+
+                        <a href="{{ value }}"
+                        target="_blank"
+                        class="text-primary">
+
+                            View Link
+
+                        </a>
+
+                        <br>
+
                     {% endif %}
-                </td>
-                <td>
-                    {% if a.status == 'approved' %}
-                        <span class="badge bg-success px-3 py-2">Approved</span>
-                    {% elif a.status == 'pending' %}
-                        <span class="badge bg-warning text-dark px-3 py-2">Pending</span>
-                    {% else %}
-                        <span class="badge bg-danger px-3 py-2">Rejected</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="text-muted">{{ a.created_at|date:"d M Y" }}</span>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center text-muted py-4">
-                    📋 No activity data
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
+
+                {% empty %}
+
+                    -
+
+                {% endfor %}
+
+            </td>
+
+            <!-- STATUS -->
+            <td data-label="Status">
+
+                {{ a.status }}
+
+            </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+
+            <td colspan="7"
+                class="text-center p-4">
+
+                No activities found
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+        </tbody>
+
         </table>
+                                
+            
 
         <!-- PAGINATION -->
         <nav class="mt-3">

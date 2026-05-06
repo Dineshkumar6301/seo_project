@@ -591,9 +591,11 @@
           <tr>
             <th>User</th>
             <th>Project</th>
+            <th>Category</th>
+            <th>Service</th>
             <th>Task</th>
             <th>Keyword</th>
-            <th>Proof</th>
+            <th>Submitted URL</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -621,329 +623,793 @@
 
 </div>
 
+
 <script>
-  // ── STATE ──────────────────────────────────────────────────
-  let currentPage   = 1;
-  let dateFilter    = "{{ date_filter|default:'all' }}";
-  let statusFilter  = "{{ current_status|default:'' }}";
-  let searchTimer   = null;
 
-  function getFilters() {
-  const start = document.getElementById("startDate")?.value;
-  const end   = document.getElementById("endDate")?.value;
+let currentPage = 1;
+let dateFilter = "{{ date_filter|default:'all' }}";
+let statusFilter = "{{ current_status|default:'' }}";
+let searchTimer = null;
 
-  // ❌ prevent half-date bug
-  if ((start && !end) || (!start && end)) {
-    alert("Please select both start and end date");
-    return null;
-  }
+// =====================================
+// GET FILTERS
+// =====================================
+function getFilters() {
 
-  const useRange = start && end;   // ✅ define FIRST
+    const start =
+        document.getElementById("startDate")?.value;
 
-  // ✅ remove pill active if custom date used
-  if (useRange) {
-    document.querySelectorAll(".filter-group .pill").forEach(p => {
-      p.classList.remove("active");
-    });
-  }
+    const end =
+        document.getElementById("endDate")?.value;
 
-  return {
-    type: useRange ? "" : dateFilter,
-    status: statusFilter,
-    search: document.getElementById("searchInput")?.value || "",
-    project: document.getElementById("projectFilter")?.value || "",
-    start_date: start,
-    end_date: end,
-    page: currentPage,
-    limit: 20
-  };
+    if (
+        (start && !end)
+        ||
+        (!start && end)
+    ) {
+
+        alert(
+            "Please select both start and end date"
+        );
+
+        return null;
+    }
+
+    const useRange = start && end;
+
+    if (useRange) {
+
+        document
+            .querySelectorAll(
+                ".filter-group .pill"
+            )
+            .forEach(p => {
+
+                p.classList.remove(
+                    "active"
+                );
+            });
+    }
+
+    return {
+
+        type:
+            useRange
+            ? ""
+            : dateFilter,
+
+        status: statusFilter,
+
+        search:
+            document.getElementById(
+                "searchInput"
+            )?.value || "",
+
+        project:
+            document.getElementById(
+                "projectFilter"
+            )?.value || "",
+
+        start_date: start,
+
+        end_date: end,
+
+        page: currentPage,
+
+        limit: 20
+    };
 }
 
-  function buildQuery(params) {
+// =====================================
+// BUILD QUERY
+// =====================================
+function buildQuery(params) {
+
     return Object.entries(params)
-      .filter(([, v]) => v !== "" && v !== null && v !== undefined)
-      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-      .join("&");
-  }
-function setStatusFilter(val) {
-  if (statusFilter === val) {
-    statusFilter = "";   // ✅ toggle OFF
-  } else {
-    statusFilter = val;
-  }
 
-  currentPage = 1;
+        .filter(
+            ([, v]) =>
+                v !== ""
+                &&
+                v !== null
+                &&
+                v !== undefined
+        )
 
-  document.querySelectorAll(".stat-card").forEach(c => {
-    c.classList.remove("active-filter");
-  });
+        .map(
+            ([k, v]) =>
+                `${k}=${encodeURIComponent(v)}`
+        )
 
-  if (statusFilter) {
-    document.querySelector(`.stat-card.${statusFilter}`)?.classList.add("active-filter");
-  }
-
-  loadDashboard();
+        .join("&");
 }
 
-  function loadDashboard() {
-  const filters = getFilters();
-  if (!filters) return;
+// =====================================
+// STATUS FILTER
+// =====================================
+function setStatusFilter(val) {
 
-  const query = buildQuery(filters);
+    if (statusFilter === val) {
 
-  document.getElementById("loadingBar").classList.add("active");
+        statusFilter = "";
 
-  fetch(`/activities/api/dashboard/?${query}`)
+    } else {
+
+        statusFilter = val;
+    }
+
+    currentPage = 1;
+
+    document
+        .querySelectorAll(".stat-card")
+        .forEach(c => {
+
+            c.classList.remove(
+                "active-filter"
+            );
+        });
+
+    if (statusFilter) {
+
+        document
+            .querySelector(
+                `.stat-card.${statusFilter}`
+            )
+            ?.classList.add(
+                "active-filter"
+            );
+    }
+
+    loadDashboard();
+}
+
+// =====================================
+// DATE FILTER
+// =====================================
+function setDateFilter(e, val) {
+
+    dateFilter = val;
+
+    currentPage = 1;
+
+    document.getElementById(
+        "startDate"
+    ).value = "";
+
+    document.getElementById(
+        "endDate"
+    ).value = "";
+
+    document
+        .querySelectorAll(
+            ".filter-group .pill"
+        )
+        .forEach(p => {
+
+            p.classList.remove(
+                "active"
+            );
+        });
+
+    e.currentTarget.classList.add(
+        "active"
+    );
+
+    loadDashboard();
+}
+
+// =====================================
+// LOAD DASHBOARD
+// =====================================
+function loadDashboard() {
+
+    const filters = getFilters();
+
+    if (!filters) return;
+
+    const query =
+        buildQuery(filters);
+
+    document
+        .getElementById(
+            "loadingBar"
+        )
+        .classList.add(
+            "active"
+        );
+
+    fetch(
+        `/activities/api/dashboard/?${query}`
+    )
+
     .then(res => res.json())
+
     .then(data => {
-      document.getElementById("loadingBar").classList.remove("active");
-      updateKPIs(data.kpi);
-      updateTable(data.table);
-      updateMobileCards(data.table);
-      updatePagination(data.pagination);
+
+        document
+            .getElementById(
+                "loadingBar"
+            )
+            .classList.remove(
+                "active"
+            );
+
+        updateKPIs(data.kpi);
+
+        updateTable(data.table);
+
+        updateMobileCards(data.table);
+
+        updatePagination(
+            data.pagination
+        );
     })
-    .catch(() => {
-      document.getElementById("loadingBar").classList.remove("active");
+
+    .catch(err => {
+
+        console.log(err);
+
+        document
+            .getElementById(
+                "loadingBar"
+            )
+            .classList.remove(
+                "active"
+            );
     });
 }
 
-function setDateFilter(e, val) {
-  dateFilter = val;
-  currentPage = 1;
+// =====================================
+// KPI
+// =====================================
+function updateKPIs(kpi) {
 
-  // clear custom dates
-  document.getElementById("startDate").value = "";
-  document.getElementById("endDate").value = "";
+    if (!kpi) return;
 
-  document.querySelectorAll(".filter-group .pill").forEach(p => {
-    p.classList.remove("active");
-  });
+    document.getElementById(
+        "kpi-pending"
+    ).textContent =
+        kpi.pending ?? "—";
 
-  e.currentTarget.classList.add("active");
+    document.getElementById(
+        "kpi-approved"
+    ).textContent =
+        kpi.approved ?? "—";
 
-  loadDashboard();
+    document.getElementById(
+        "kpi-rejected"
+    ).textContent =
+        kpi.rejected ?? "—";
 }
 
-  // ── KPI CARDS ──────────────────────────────────────────────
-  function updateKPIs(kpi) {
-    if (!kpi) return;
-    document.getElementById("kpi-pending").textContent  = kpi.pending  ?? "—";
-    document.getElementById("kpi-approved").textContent = kpi.approved ?? "—";
-    document.getElementById("kpi-rejected").textContent = kpi.rejected ?? "—";
-  }
+// =====================================
+// TABLE
+// =====================================
+// TABLE
+// =====================================
+function updateTable(rows) {
 
-  // ── TABLE RENDER ───────────────────────────────────────────
-  function updateTable(rows) {
-    const tbody = document.getElementById("taskTable");
+    const tbody =
+        document.getElementById(
+            "taskTable"
+        );
+
+    const thead =
+        document.querySelector(
+            "thead tr"
+        );
+
     tbody.innerHTML = "";
 
     if (!rows || !rows.length) {
-      tbody.innerHTML = `
+
+        thead.innerHTML = "";
+
+        tbody.innerHTML = `
+
         <tr>
-          <td colspan="7">
-            <div class="empty-state">
-              <span class="empty-icon">📭</span>
-              No records found
-            </div>
-          </td>
+
+            <td colspan="20">
+
+                <div class="empty-state">
+
+                    <span class="empty-icon">
+                        📭
+                    </span>
+
+                    No records found
+
+                </div>
+
+            </td>
+
         </tr>`;
-      return;
+
+        return;
     }
 
-    rows.forEach(r => {
-      let proofHTML = `<span style="color:var(--muted);font-size:13px;">No Proof</span>`;
-      if (r.proof_link) {
-        proofHTML = r.proof_link.split('\n')
-          .map(l => l.trim()).filter(Boolean)
-          .map(l => `<a href="${l}" target="_blank" class="proof-link">🔗 ${l}</a>`)
-          .join("<br>");
-      }
-
-      const badge = `<span class="badge badge-${r.status}">${capitalize(r.status)}</span>`;
-
-      const actions = r.status === "pending"
-        ? `<button class="btn-approve" onclick="updateStatus(${r.id},'approved')" title="Approve">✔</button>
-           <button class="btn-reject"  onclick="updateStatus(${r.id},'rejected')" title="Reject">✖</button>`
-        : `—`;
-
-      tbody.innerHTML += `
-        <tr id="row-${r.id}">
-          <td><div class="user-name">${r.user__first_name || ''} ${r.user__last_name || ''}</div></td>
-          <td><span class="project-tag">${r.project__name || ''}</span></td>
-          <td class="task-text">${r.task_title || ''}</td>
-          <td class="task-text">${r.keyword || ''}</td>
-          <td>${proofHTML}</td>
-          <td>${badge}</td>
-          <td class="action-cell">${actions}</td>
-        </tr>`;
-    });
-  }
-
-  // ── MOBILE CARDS RENDER ────────────────────────────────────
-  function updateMobileCards(rows) {
-    const container = document.getElementById("mobileCards");
-    container.innerHTML = "";
-
-    if (!rows || !rows.length) {
-      container.innerHTML = `
-        <div style="text-align:center;color:var(--muted);padding:40px 0;">
-          <span class="empty-icon">📭</span><br>No records found
-        </div>`;
-      return;
-    }
+    // =====================================
+    // DYNAMIC KEYS
+    // =====================================
+    let dynamicKeys = new Set();
 
     rows.forEach(r => {
-      let proofHTML = `<span style="color:var(--muted);font-size:13px;">No Proof</span>`;
-      if (r.proof_link) {
-        proofHTML = r.proof_link.split('\n')
-          .map(l => l.trim()).filter(Boolean)
-          .map(l => `<a href="${l}" target="_blank" class="proof-link">🔗 ${l}</a>`)
-          .join("<br>");
-      }
 
-      const badge = `<span class="badge badge-${r.status}">${capitalize(r.status)}</span>`;
+        Object.keys(
+            r.dynamic_data || {}
+        ).forEach(k => {
 
-      const actions = r.status === "pending"
-        ? `<div class="m-actions">
-             <button class="btn-approve" onclick="updateStatus(${r.id},'approved')">✔</button>
-             <button class="btn-reject"  onclick="updateStatus(${r.id},'rejected')">✖</button>
-           </div>`
-        : "";
-
-      container.innerHTML += `
-        <div class="m-card" id="m-row-${r.id}">
-          <div class="m-card-header">
-            <div>
-              <div class="user-name">${r.user__first_name || ''} ${r.user__last_name || ''}</div>
-              <div style="margin-top:4px;"><span class="project-tag">${r.project__name || ''}</span></div>
-            </div>
-            ${badge}
-          </div>
-          <div class="m-card-body">
-            <div class="m-row">
-              <span class="m-label">Task</span>
-              <span class="task-text">${r.task_title || ''}</span>
-            </div>
-            <div class="m-row">
-              <span class="m-label">Keyword</span>
-              <span>${r.keyword || ''}</span>
-            </div>
-            <div class="m-row">
-              <span class="m-label">Proof</span>
-              <span>${proofHTML}</span>
-            </div>
-          </div>
-          ${actions}
-        </div>`;
+            dynamicKeys.add(k);
+        });
     });
-  }
 
-  // ── PAGINATION ─────────────────────────────────────────────
-  function updatePagination(p) {
-    const container = document.getElementById("pagination");
+    dynamicKeys = [...dynamicKeys];
+
+    // =====================================
+    // PRIORITY SORT
+    // =====================================
+    const priority = [
+        "keyword",
+        "url",
+        "submitted_url"
+    ];
+
+    dynamicKeys.sort((a, b) => {
+
+        let ai = priority.indexOf(a);
+        let bi = priority.indexOf(b);
+
+        ai = ai === -1 ? 999 : ai;
+        bi = bi === -1 ? 999 : bi;
+
+        return ai - bi;
+    });
+
+    // =====================================
+    // TABLE HEAD
+    // =====================================
+    thead.innerHTML = `
+
+        <th>User</th>
+
+        <th>Project</th>
+
+        <th>Category</th>
+
+        <th>Service</th>
+
+        <th>Task</th>
+
+        ${dynamicKeys.map(
+            k => `<th>${formatLabel(k)}</th>`
+        ).join("")}
+
+        <th>Status</th>
+
+        <th>Action</th>
+    `;
+
+    // =====================================
+    // TABLE BODY
+    // =====================================
+    rows.forEach(r => {
+
+        const badge = `
+            <span class="
+                badge
+                badge-${r.status}
+            ">
+                ${capitalize(r.status)}
+            </span>
+        `;
+
+        const actions =
+
+            r.status === "pending"
+
+            ? `
+
+                <button
+                    class="btn-approve"
+                    onclick="
+                        updateStatus(
+                            ${r.id},
+                            'approved'
+                        )
+                    ">
+
+                    ✔
+
+                </button>
+
+                <button
+                    class="btn-reject"
+                    onclick="
+                        updateStatus(
+                            ${r.id},
+                            'rejected'
+                        )
+                    ">
+
+                    ✖
+
+                </button>
+            `
+
+            : `—`;
+
+        tbody.innerHTML += `
+
+        <tr>
+
+            <td>
+
+                <div class="user-name">
+
+                    ${r.user__first_name || ""}
+                    ${r.user__last_name || ""}
+
+                </div>
+
+            </td>
+
+            <td>
+
+                <span class="project-tag">
+
+                    ${r.project__name || ""}
+
+                </span>
+
+            </td>
+
+            <td>
+
+                ${r.category || ""}
+
+            </td>
+            <td>
+
+                ${r.service_name || ""}
+
+            </td>
+
+            <td>
+
+                ${r.task_type || ""}
+
+            </td>
+
+            ${dynamicKeys.map(k => {
+
+                let val =
+                    r.dynamic_data?.[k] || "";
+
+                if(typeof val === "string"){
+
+                    let possibleLinks =
+                        val.split(",");
+
+                    let allLinks =
+                        possibleLinks.map(link => {
+
+                        link = link.trim();
+
+                        if(
+                            link.startsWith("http://") ||
+                            link.startsWith("https://")
+                        ){
+
+                            return `
+                            <div class="mb-1">
+
+                                <a href="${link}"
+                                   target="_blank"
+                                   class="proof-link">
+
+                                   ${link.length > 35
+                                        ? link.substring(0,35) + "..."
+                                        : link}
+
+                                </a>
+
+                            </div>`;
+                        }
+
+                        return `
+                        <div>
+                            ${link}
+                        </div>`;
+                    }).join("");
+
+                    return `<td>${allLinks}</td>`;
+                }
+
+                return `<td>${val}</td>`;
+
+            }).join("")}
+
+            <td>
+                ${badge}
+            </td>
+
+            <td class="action-cell">
+                ${actions}
+            </td>
+
+        </tr>
+        `;
+    });
+}
+// =====================================
+function updatePagination(p) {
+
+    const container =
+        document.getElementById(
+            "pagination"
+        );
+
     if (!container || !p) return;
+
     container.innerHTML = "";
 
     const current = p.page;
-    const total   = p.pages;
+
+    const total = p.pages;
+
     if (total <= 1) return;
 
     if (current > 1) {
-      container.innerHTML += `<button onclick="goToPage(${current - 1})" class="pill">◀</button>`;
+
+        container.innerHTML += `
+            <button
+                onclick="goToPage(${current - 1})"
+                class="pill">
+
+                ◀
+
+            </button>
+        `;
     }
 
-    const start = Math.max(1, current - 2);
-    const end   = Math.min(total, current + 2);
+    for (let i = 1; i <= total; i++) {
 
-    if (start > 1) container.innerHTML += `<button onclick="goToPage(1)" class="pill">1</button><span style="color:var(--muted);padding:0 4px">…</span>`;
+        container.innerHTML += `
 
-    for (let i = start; i <= end; i++) {
-      container.innerHTML += `<button onclick="goToPage(${i})" class="pill ${i === current ? 'active' : ''}">${i}</button>`;
+            <button
+                onclick="goToPage(${i})"
+                class="
+                    pill
+                    ${i === current ? 'active' : ''}
+                ">
+
+                ${i}
+
+            </button>
+        `;
     }
-
-    if (end < total) container.innerHTML += `<span style="color:var(--muted);padding:0 4px">…</span><button onclick="goToPage(${total})" class="pill">${total}</button>`;
 
     if (current < total) {
-      container.innerHTML += `<button onclick="goToPage(${current + 1})" class="pill">▶</button>`;
+
+        container.innerHTML += `
+            <button
+                onclick="goToPage(${current + 1})"
+                class="pill">
+
+                ▶
+
+            </button>
+        `;
     }
-  }
-
-  function goToPage(p) {
-    currentPage = p;
-    loadDashboard();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
- function exportExcel() {
-  const f = getFilters();
-  if (!f) return;
-
-  const query = buildQuery({
-    type: f.type,
-    start_date: f.start_date,
-    end_date: f.end_date,
-    search: f.search,
-    project: f.project,
-    status: f.status
-  });
-
-  window.open(`/activities/export-report/?${query}`, "_blank");
 }
-  // ── APPROVE / REJECT ───────────────────────────────────────
-  function updateStatus(id, status) {
-    fetch(`/activities/api/approve/${id}/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken")
-      },
-      body: JSON.stringify({ status })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) loadDashboard();
-    });
-  }
 
-  // ── HELPERS ────────────────────────────────────────────────
-  function capitalize(s) {
-    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
-  }
+function goToPage(p) {
 
-  function getCookie(name) {
-    let value = null;
-    document.cookie.split(";").forEach(c => {
-      c = c.trim();
-      if (c.startsWith(name + "=")) value = decodeURIComponent(c.substring(name.length + 1));
-    });
-    return value;
-  }
+    currentPage = p;
 
-  // ── DEBOUNCED SEARCH ───────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", () => {
-
-    document.getElementById("searchInput")?.addEventListener("input", () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        currentPage = 1;   // 🔥 important
-        loadDashboard();
-      }, 400);
-    });
-    document.getElementById("projectFilter")?.addEventListener("change", () => {
-      currentPage = 1; loadDashboard();
-    });
-
-    document.getElementById("startDate")?.addEventListener("change", () => {
-      currentPage = 1; loadDashboard();
-    });
-
-    document.getElementById("endDate")?.addEventListener("change", () => {
-      currentPage = 1; loadDashboard();
-    });
-
-    // Initial load
     loadDashboard();
-  });
-</script>
 
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+// =====================================
+// EXPORT
+// =====================================
+function exportExcel() {
+
+    const f = getFilters();
+
+    if (!f) return;
+
+    const query = buildQuery({
+
+        type: f.type,
+
+        start_date: f.start_date,
+
+        end_date: f.end_date,
+
+        search: f.search,
+
+        project: f.project,
+
+        status: f.status
+    });
+
+    window.open(
+        `/activities/api/export/?${query}`,
+        "_blank"
+    );
+}
+
+// =====================================
+// APPROVE / REJECT
+// =====================================
+function updateStatus(id, status) {
+
+    fetch(`/activities/api/approve/${id}/`, {
+
+        method: "POST",
+
+        headers: {
+
+            "Content-Type":
+                "application/json",
+
+            "X-CSRFToken":
+                getCookie("csrftoken")
+        },
+
+        body: JSON.stringify({
+            status
+        })
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        if (data.success) {
+
+            loadDashboard();
+        }
+    });
+}
+
+// =====================================
+// HELPERS
+// =====================================
+function capitalize(s) {
+
+    return s
+
+        ? s.charAt(0)
+            .toUpperCase()
+            + s.slice(1)
+
+        : "";
+}
+
+function getCookie(name) {
+
+    let value = null;
+
+    document.cookie
+        .split(";")
+        .forEach(c => {
+
+            c = c.trim();
+
+            if (
+                c.startsWith(
+                    name + "="
+                )
+            ) {
+
+                value = decodeURIComponent(
+                    c.substring(
+                        name.length + 1
+                    )
+                );
+            }
+        });
+
+    return value;
+}
+
+// =====================================
+// INITIAL LOAD
+// =====================================
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        document
+            .getElementById(
+                "searchInput"
+            )
+
+            ?.addEventListener(
+                "input",
+                () => {
+
+                    clearTimeout(
+                        searchTimer
+                    );
+
+                    searchTimer =
+                        setTimeout(() => {
+
+                            currentPage = 1;
+
+                            loadDashboard();
+
+                        }, 400);
+                }
+            );
+
+        document
+            .getElementById(
+                "projectFilter"
+            )
+
+            ?.addEventListener(
+                "change",
+                () => {
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        document
+            .getElementById(
+                "startDate"
+            )
+
+            ?.addEventListener(
+                "change",
+                () => {
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        document
+            .getElementById(
+                "endDate"
+            )
+
+            ?.addEventListener(
+                "change",
+                () => {
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        loadDashboard();
+    }
+);
+// =====================================
+// FORMAT LABEL
+// =====================================
+function formatLabel(text){
+
+    return text
+        .replaceAll("_", " ")
+        .replace(/\b\w/g,
+            l => l.toUpperCase()
+        );
+}
+
+</script>
 {% endblock %}

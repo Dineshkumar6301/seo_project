@@ -83,108 +83,283 @@ from accounts.models import User
 
 
 
+from collections import defaultdict
+import json
+
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from accounts.models import User
+from activities.models import Checklist
+
+from projects.models import (
+    Project,
+    Service,
+    ServiceCategory,
+    ProjectService
+)
+
+
+# =========================================================
+# PROJECT DASHBOARD
+# =========================================================
 @login_required(login_url='home')
 def project_dashboard(request):
-    users = User.objects.filter(is_active=True).exclude(role='client')
-    projects = Project.objects.select_related('client').all()
-   
-    services_qs = Service.objects.select_related('category').all()
 
-    services_grouped = defaultdict(list)
+    users = User.objects.filter(
+        is_active=True
+    ).exclude(role='client')
 
-    for s in services_qs:
-        category_name = s.category.name if s.category else "Other"
-        services_grouped[category_name].append(s)
+    projects = Project.objects.select_related(
+        'client'
+    ).all()
+
+    selected_project = None
+    project_services = []
 
     project_id = request.GET.get('project')
-    selected_project = None
 
+    # =====================================================
+    # SELECTED PROJECT
+    # =====================================================
     if project_id:
-        selected_project = get_object_or_404(Project, id=project_id)
+
+        selected_project = get_object_or_404(
+            Project,
+            id=project_id
+        )
+
+        # ✅ GET PROJECT SERVICES
+        project_services = ProjectService.objects.filter(
+            project=selected_project
+        ).select_related(
+            'service',
+            'service__category'
+        )
+
+    # =====================================================
+    # GROUP SERVICES BY CATEGORY
+    # =====================================================
+    services_grouped = defaultdict(list)
+
+    for ps in project_services:
+
+        category_name = (
+            ps.service.category.name
+            if ps.service.category
+            else "Other"
+        )
+
+        services_grouped[category_name].append(
+            ps.service
+        )
+
+    # =====================================================
+    # TEAM ASSIGNMENT
+    # =====================================================
     service_team = {}
 
     if selected_project:
 
-        project_services = selected_project.services.all()
-
         assignments = ProjectServiceAssignment.objects.filter(
             project=selected_project
-        ).select_related('user', 'service')
+        ).select_related(
+            'user',
+            'service'
+        )
 
-        # 🔥 initialize all services
-        for s in project_services:
-            service_team[s.id] = {
-                "name": s.name,
+        for ps in project_services:
+
+            service = ps.service
+
+            service_team[service.id] = {
+                "name": service.name,
                 "users": []
             }
 
         for a in assignments:
+
             if a.service_id in service_team:
+
                 service_team[a.service_id]["users"].append({
                     "id": a.user.id,
-                    "name": a.user.first_name or a.user.email or "User"
+                    "name": (
+                        a.user.first_name
+                        or a.user.email
+                        or "User"
+                    )
                 })
+
+    # =====================================================
+    # SAVE PROJECT SERVICES
+    # =====================================================
     if request.method == "POST":
 
         project_id = request.POST.get('project_id')
-        selected_services = request.POST.getlist('services')
 
-        project = get_object_or_404(Project, id=project_id)
+        selected_services = request.POST.getlist(
+            'services'
+        )
+
+        project = get_object_or_404(
+            Project,
+            id=project_id
+        )
 
         try:
+
             with transaction.atomic():
-                project.services.set(selected_services)
-                Checklist.objects.filter(project=project).delete()
-                services_qs = Service.objects.filter(id__in=selected_services)
+
+                # =========================================
+                # REMOVE UNCHECKED SERVICES
+                # =========================================
+                ProjectService.objects.filter(
+                    project=project
+                ).exclude(
+                    service_id__in=selected_services
+                ).delete()
+
+                # =========================================
+                # ADD NEW SERVICES
+                # =========================================
+                existing_service_ids = ProjectService.objects.filter(
+                    project=project
+                ).values_list(
+                    'service_id',
+                    flat=True
+                )
+
+                new_services = []
+
+                for sid in selected_services:
+
+                    if int(sid) not in existing_service_ids:
+
+                        new_services.append(
+                            ProjectService(
+                                project=project,
+                                service_id=sid
+                            )
+                        )
+
+                ProjectService.objects.bulk_create(
+                    new_services
+                )
+
+                # =========================================
+                # CHECKLIST RESET
+                # =========================================
+                Checklist.objects.filter(
+                    project=project
+                ).delete()
+
+                services = Service.objects.filter(
+                    id__in=selected_services
+                )
 
                 checklist_items = [
+
                     Checklist(
                         project=project,
                         service=service,
                         item=f"{service.name} - Task",
                         status='Approved'
                     )
-                    for service in services_qs
+
+                    for service in services
                 ]
 
-                Checklist.objects.bulk_create(checklist_items)
+                Checklist.objects.bulk_create(
+                    checklist_items
+                )
 
         except Exception as e:
-            return HttpResponseBadRequest(f"Error: {str(e)}")
 
-        return redirect(f'/projects/project-dashboard/?project={project_id}')
+            return HttpResponseBadRequest(
+                f"Error: {str(e)}"
+            )
 
-    return render(request, 'frontend/projects/dashboard.html', {
-        'projects': projects,
-        'services_grouped': dict(services_grouped),
-        'selected_project': selected_project,
-        'service_team': service_team,
-        'users':users
-    })
+        return redirect(
+            f'/projects/project-dashboard/?project={project_id}'
+        )
 
-from .models import ServiceCategory
+    # =====================================================
+    # ALL GLOBAL SERVICES
+    # =====================================================
+    all_services = Service.objects.select_related(
+        'category'
+    ).all()
 
+    return render(
+        request,
+        'frontend/projects/dashboard.html',
+        {
+            'projects': projects,
+            'all_services': all_services,
+            'services_grouped': dict(services_grouped),
+            'selected_project': selected_project,
+            'service_team': service_team,
+            'users': users
+        }
+    )
+
+
+# =========================================================
+# ADD GLOBAL SERVICE
+# =========================================================
 @login_required(login_url='home')
 @require_POST
 def add_service(request):
 
     data = json.loads(request.body)
+
     name = data.get("name")
     category_name = data.get("category")
 
-    category, _ = ServiceCategory.objects.get_or_create(name=category_name)
+    if not name or not category_name:
 
-    service, created = Service.objects.get_or_create(
-        name=name,
-        category=category
+        return JsonResponse({
+            "error": "Missing data"
+        }, status=400)
+
+    category, _ = ServiceCategory.objects.get_or_create(
+        name=category_name
     )
 
+    # ✅ GLOBAL SERVICE
+    service, created = Service.objects.get_or_create(
+        name=name,
+        defaults={
+            "category": category
+        }
+    )
+
+    # =========================================
+    # UPDATE CATEGORY IF NEEDED
+    # =========================================
+    if service.category != category:
+
+        service.category = category
+        service.save()
+
     return JsonResponse({
+
         "success": True,
+
         "id": service.id,
+
         "name": service.name,
-        "category": category.name
+
+        "category": (
+            service.category.name
+            if service.category
+            else ""
+        )
     })
+
 import json
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required

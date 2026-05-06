@@ -1,180 +1,392 @@
 from rest_framework.views import APIView
 from django.http import HttpResponse
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from django.db.models import Q
-from django.utils.timezone import now
+
+from openpyxl import Workbook
+from openpyxl.styles import (
+    Font,
+    Alignment,
+    PatternFill
+)
+from openpyxl.utils import get_column_letter
+
 from datetime import timedelta
+from django.utils.timezone import now
+
 from activities.models import Activity
+
 
 class ExportExcelAPI(APIView):
 
     def get(self, request):
 
-        qs = Activity.objects.all()
+        qs = Activity.objects.select_related(
+            "user",
+            "project"
+        ).all().order_by("-date")
 
-    
-        if hasattr(request.user, "client"):
-            qs = qs.filter(project__client=request.user.client)
-
-    
-        filter_type = request.GET.get("type")
-        start_date = request.GET.get("start_date")
-        end_date = request.GET.get("end_date")
-        search = request.GET.get("search")
-        status = request.GET.get("status")
+        # =================================
+        # FILTERS
+        # =================================
         project = request.GET.get("project")
         service = request.GET.get("service")
+        task = request.GET.get("task")
+
+        # OLD SUPPORT
+        filter_type = (
+            request.GET.get("type")
+            or request.GET.get("filter")
+        )
+
+        start = (
+            request.GET.get("start_date")
+            or request.GET.get("start")
+        )
+
+        end = (
+            request.GET.get("end_date")
+            or request.GET.get("end")
+        )
+
+        # NEW OPTIONAL FILTERS
+        status = request.GET.get("status")
+        search = request.GET.get("search")
+
+        if project:
+
+            qs = qs.filter(project_id=project)
+
+        if service:
+
+            qs = qs.filter(service_name=service)
+
+        if task:
+
+            qs = qs.filter(task_type=task)
+
+        # =================================
+        # STATUS
+        # =================================
+        if status:
+
+            qs = qs.filter(status=status)
+
+        # =================================
+        # SEARCH
+        # =================================
+        if search:
+
+            qs = qs.filter(
+                Q(user__first_name__icontains=search)
+                |
+                Q(user__last_name__icontains=search)
+                |
+                Q(project__name__icontains=search)
+                |
+                Q(task_type__icontains=search)
+                |
+                Q(service_name__icontains=search)
+            )
 
         today = now().date()
 
-        
-                # ✅ Custom range overrides filter type
-        if start_date or end_date:
-            if start_date:
-                qs = qs.filter(date__gte=start_date)
-            if end_date:
-                qs = qs.filter(date__lte=end_date)
+        if filter_type == "today":
 
-        else:
-            if filter_type == "today":
-                qs = qs.filter(date=today)
-            elif filter_type == "week":
-                qs = qs.filter(date__gte=today - timedelta(days=7))
-            elif filter_type == "month":
-                qs = qs.filter(date__month=today.month)
+            qs = qs.filter(date=today)
 
-        
-        if status:
-            qs = qs.filter(status=status)
+        elif filter_type == "week":
 
-        
-        if project:
-            qs = qs.filter(project__id=project)
-
-        
-        if service:
-            qs = qs.filter(service__name__iexact=service.strip())
-
-        if search:
             qs = qs.filter(
-                Q(task_title__icontains=search) |
-                Q(keyword__icontains=search) |
-                Q(project__name__icontains=search) |
-                Q(user__first_name__icontains=search) |
-                Q(user__last_name__icontains=search)
+                date__gte=today - timedelta(days=7)
             )
 
+        elif filter_type == "month":
+
+            qs = qs.filter(
+                date__gte=today - timedelta(days=30)
+            )
+
+        elif filter_type == "year":
+
+            qs = qs.filter(
+                date__year=today.year
+            )
+
+        elif filter_type == "custom":
+
+            if start and end:
+
+                qs = qs.filter(
+                    date__range=[start, end]
+                )
+
+        # =================================
+        # CUSTOM DATE RANGE
+        # =================================
+        if start and end:
+
+            qs = qs.filter(
+                date__range=[start, end]
+            )
+
+        # =================================
+        # WORKBOOK
+        # =================================
         wb = Workbook()
+
         ws = wb.active
-        ws.title = "Activity Report"
 
-    
-        ws.merge_cells("A1:J1")
-        ws["A1"] = "CLIENT ACTIVITY REPORT"
-        ws["A1"].font = Font(size=16, bold=True)
-        ws["A1"].alignment = Alignment(horizontal="center")
+        ws.title = "SEO Report"
 
-    
-        ws.merge_cells("A2:J2")
-        ws["A2"] = f"Date: {start_date or 'All'} → {end_date or 'All'} | Search: {search or 'None'}"
-        ws["A2"].alignment = Alignment(horizontal="center")
+        # =================================
+        # DYNAMIC KEYS
+        # =================================
+        dynamic_keys = set()
 
+        for a in qs:
+
+            data = a.dynamic_data or {}
+
+            for key in data.keys():
+
+                dynamic_keys.add(key)
+
+        # =================================
+        # PRIORITY SORT
+        # =================================
+        priority = [
+            "keyword",
+            "url",
+            "submitted_url"
+        ]
+
+        dynamic_keys = list(dynamic_keys)
+
+        dynamic_keys.sort(
+            key=lambda x: (
+                priority.index(x)
+                if x in priority else 999,
+                x
+            )
+        )
+
+        # =================================
+        # HEADERS
+        # =================================
         headers = [
-            "S.No","Employee","Project","Service",
-            "Task","Keyword","Completed Work",
-            "Proof Links","Status","Date"
+            "S.No",
+            "Date",
+            "Employee",
+            "Project",
+            "Category",
+            "Service",
+            "Task",
+        ] + [
+            k.replace("_", " ").title()
+            for k in dynamic_keys
         ]
 
         ws.append(headers)
 
-        header_fill = PatternFill(start_color="4F46E5", fill_type="solid")
-        header_font = Font(color="FFFFFF", bold=True)
+        # =================================
+        # HEADER DESIGN
+        # =================================
+        header_fill = PatternFill(
+            start_color="1F4E78",
+            end_color="1F4E78",
+            fill_type="solid"
+        )
 
-        for cell in ws[3]:
+        for cell in ws[1]:
+
+            cell.font = Font(
+                bold=True,
+                color="FFFFFF"
+            )
+
             cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    
-        row_num = 4
-        serial = 1
+            cell.alignment = Alignment(
+                horizontal="center",
+                vertical="center",
+                wrap_text=True
+            )
 
+        # =================================
+        # DATA
+        # =================================
+        for i, a in enumerate(qs, start=1):
 
-        for a in qs:
+            data = a.dynamic_data or {}
 
-            links = [l.strip() for l in str(a.proof_link).splitlines() if l.strip()] or [""]
+            # =================================
+            # SUBMITTED BY
+            # =================================
+            employee = ""
 
-            start_row = row_num
+            if a.user:
 
-            for i, link in enumerate(links):
+                employee = (
+                    f"{a.user.first_name} "
+                    f"{a.user.last_name}"
+                ).strip()
 
-                ws.cell(row=row_num, column=1, value=serial if i == 0 else "")
-                ws.cell(row=row_num, column=2, value=f"{a.user.first_name} {a.user.last_name}" if i == 0 else "")
-                ws.cell(row=row_num, column=3, value=a.project.name if i == 0 else "")
-                ws.cell(row=row_num, column=4, value=a.service.name if i == 0 else "")
-                ws.cell(row=row_num, column=5, value=a.task_title if i == 0 else "")
-                ws.cell(row=row_num, column=6, value=a.keyword if i == 0 else "")
-                ws.cell(row=row_num, column=7, value=a.completed_work if i == 0 else "")
-                ws.cell(row=row_num, column=8, value=link)
-                ws.cell(row=row_num, column=9, value=a.status if i == 0 else "")
-                ws.cell(row=row_num, column=10, value=str(a.date) if i == 0 else "")
+                if not employee:
 
-                if link:
-                    ws.cell(row=row_num, column=8).hyperlink = link
+                    employee = a.user.email
 
-                row_num += 1
+            # =================================
+            # BASE ROW
+            # =================================
+            row = [
+                i,
+                str(a.date),
+                employee,
+                a.project.name if a.project else "",
+                getattr(a, "category", ""),
+                a.service_name,
+                a.task_type,
+            ]
 
-            end_row = row_num - 1
+            # =================================
+            # DYNAMIC VALUES
+            # =================================
+            for key in dynamic_keys:
 
-            if end_row > start_row:
-                for col in [1,2,3,4,5,6,7,9,10]:
-                    ws.merge_cells(start_row=start_row, start_column=col, end_row=end_row, end_column=col)
+                val = data.get(key, "")
 
-            serial += 1
-            
+                # =================================
+                # MULTIPLE LINKS SUPPORT
+                # =================================
+                if isinstance(val, str):
 
-        
-        for row in ws.iter_rows(min_row=4):
-            cell = row[7] 
+                    possible_links = [
+                        x.strip()
+                        for x in val.replace(",", "\n").split("\n")
+                        if x.strip()
+                    ]
 
-            if cell.value:
-                link = str(cell.value).strip()
+                    val = "\n".join(
+                        possible_links
+                    )
 
-            
-                if not link.startswith("http"):
-                    link = "https://" + link
+                row.append(val)
 
-                cell.value = link
-                cell.hyperlink = link
-                cell.font = Font(color="0563C1", underline="single")
+            ws.append(row)
 
+            current_row = ws.max_row
 
-                border = Border(
-                    left=Side(style="thin"),
-                    right=Side(style="thin"),
-                    top=Side(style="thin"),
-                    bottom=Side(style="thin")
+            # =================================
+            # CLICKABLE LINKS
+            # =================================
+            for idx, key in enumerate(
+                dynamic_keys,
+                start=8
+            ):
+
+                val = data.get(key, "")
+
+                if isinstance(val, str):
+
+                    first_link = (
+                        val.split(",")[0]
+                        .strip()
+                    )
+
+                    if (
+                        first_link.startswith("http://")
+                        or first_link.startswith("https://")
+                    ):
+
+                        cell = ws.cell(
+                            current_row,
+                            idx
+                        )
+
+                        cell.hyperlink = first_link
+
+                        cell.style = "Hyperlink"
+
+                        cell.alignment = Alignment(
+                            wrap_text=True,
+                            vertical="top"
+                        )
+
+        # =================================
+        # CELL STYLING
+        # =================================
+        for row in ws.iter_rows():
+
+            for cell in row:
+
+                cell.alignment = Alignment(
+                    wrap_text=True,
+                    vertical="top"
                 )
 
-        for row in ws.iter_rows():
-            for cell in row:
-                cell.border = border
-                cell.alignment = Alignment(wrap_text=True, vertical="top")
+        # =================================
+        # COLUMN WIDTH
+        # =================================
+        for column_cells in ws.columns:
 
-        widths = [6,20,22,18,30,20,30,45,15,15]
-        for i, w in enumerate(widths, start=1):
-            ws.column_dimensions[chr(64+i)].width = w
+            length = 0
 
-        ws.freeze_panes = "A4"
-        ws.auto_filter.ref = "A3:J3"
+            column = column_cells[0].column
 
-        filename = f"report_{start_date or 'all'}_{end_date or 'all'}.xlsx"
+            for cell in column_cells:
 
+                try:
+
+                    length = max(
+                        length,
+                        len(str(cell.value))
+                    )
+
+                except:
+
+                    pass
+
+            adjusted_width = min(
+                length + 5,
+                60
+            )
+
+            ws.column_dimensions[
+                get_column_letter(column)
+            ].width = adjusted_width
+
+        # =================================
+        # ROW HEIGHT
+        # =================================
+        for row in range(
+            2,
+            ws.max_row + 1
+        ):
+
+            ws.row_dimensions[row].height = 60
+
+        # =================================
+        # FREEZE HEADER
+        # =================================
+        ws.freeze_panes = "A2"
+
+        # =================================
+        # RESPONSE
+        # =================================
         response = HttpResponse(
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            content_type=(
+                "application/vnd.openxmlformats-"
+                "officedocument.spreadsheetml.sheet"
+            )
         )
-        response["Content-Disposition"] = f"attachment; filename={filename}"
+
+        response[
+            "Content-Disposition"
+        ] = (
+            'attachment; '
+            'filename=seo_report.xlsx'
+        )
 
         wb.save(response)
+
         return response

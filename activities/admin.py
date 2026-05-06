@@ -1,96 +1,155 @@
 from django.contrib import admin
-from .models import Checklist, Activity
+from .models import Activity, Checklist
 
 
-# ===============================
+# =========================================================
+# ACTIVITY ADMIN
+# =========================================================
+@admin.register(Activity)
+class ActivityAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'user',
+        'project',
+        'category',
+        'service_name',
+        'task_type',
+        'status',
+        'date',
+        'created_at'
+    )
+
+    list_filter = (
+        'category',
+        'service_name',
+        'task_type',
+        'status',
+        'date'
+    )
+
+    search_fields = (
+        'user__first_name',
+        'user__last_name',
+        'project__name',
+        'service_name',
+        'task_type'
+    )
+
+    readonly_fields = (
+        'created_at',
+        'updated_at'
+    )
+
+    ordering = (
+        '-date',
+        '-created_at'
+    )
+
+    list_per_page = 50
+
+    fieldsets = (
+
+        ("Basic Information", {
+            "fields": (
+                'user',
+                'project',
+                'date'
+            )
+        }),
+
+        ("Dynamic Structure", {
+            "fields": (
+                'category',
+                'service_name',
+                'task_type'
+            )
+        }),
+
+        ("Dynamic Form Data", {
+            "fields": (
+                'dynamic_data',
+            )
+        }),
+
+        ("Status", {
+            "fields": (
+                'status',
+            )
+        }),
+
+        ("Timestamps", {
+            "fields": (
+                'created_at',
+                'updated_at'
+            )
+        }),
+    )
+
+
+# =========================================================
 # CHECKLIST ADMIN
-# ===============================
+# =========================================================
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
 
     list_display = (
+        'id',
         'project',
         'service',
         'item',
         'status',
         'order',
-        'is_active',
         'completed_by',
         'created_at'
     )
 
     list_filter = (
-        'project',
-        'service',
         'status',
-        'is_active',
-        'created_at'
+        'service',
+        'project'
     )
 
     search_fields = (
-        'item',
         'project__name',
-        'service__name'
+        'service__name',
+        'item'
     )
 
-    ordering = ('order',)
-
-    list_editable = ('status', 'order', 'is_active')
-
-    date_hierarchy = 'created_at'
-
-from django.conf import settings
-# ===============================
-# ACTIVITY ADMIN
-# ===============================
-@admin.register(Activity)
-class ActivityAdmin(admin.ModelAdmin):
-
-    list_display = (
-        'user',
-        'project',
-        'service',
-        'task_title',
-        'date',
-        'status',
-        'created_at'
+    ordering = (
+        'order',
+        'id'
     )
 
-    list_filter = (
-        'project',
-        'service',
-        'status',
-        'date',
-        'created_at'
+    list_per_page = 50
+
+    readonly_fields = (
+        'created_at',
+        'completed_at'
     )
-
-    search_fields = (
-        'task_title',
-        'user__username',
-        'project__name',
-        'service__name'
-    )
-
-    ordering = ('-created_at',)
-
-    date_hierarchy = 'date'
-
-    list_editable = ('status',)
-
-    readonly_fields = ('created_at',)
 
     fieldsets = (
-        ('Basic Info', {
-            'fields': ('user', 'project', 'service', 'date')
+
+        ("Checklist Information", {
+            "fields": (
+                'project',
+                'service',
+                'item',
+                'order'
+            )
         }),
-      
-        ('Work Info', {
-            'fields': ('keyword', 'completed_work', 'proof_link', 'remarks')
+
+        ("Status", {
+            "fields": (
+                'status',
+                'completed_by',
+                'completed_at'
+            )
         }),
-        ('Status', {
-            'fields': ('status',)
-        }),
-        ('Meta', {
-            'fields': ('created_at',)
+
+        ("Created", {
+            "fields": (
+                'created_at',
+            )
         }),
     )

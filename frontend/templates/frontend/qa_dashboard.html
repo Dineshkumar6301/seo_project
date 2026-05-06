@@ -13,6 +13,7 @@ body {
     box-shadow:0 10px 30px rgba(0,0,0,0.06);
     transition:0.3s;
 }
+
 .card-ui:hover {
     transform:translateY(-3px);
 }
@@ -22,6 +23,7 @@ body {
     font-size:28px;
     font-weight:800;
 }
+
 .kpi-box {
     background:linear-gradient(135deg,#fef9c3,#fde68a);
 }
@@ -32,14 +34,20 @@ body {
     text-transform:uppercase;
     color:#64748b;
     letter-spacing:0.5px;
+    white-space: nowrap;
 }
 
 .table tbody tr {
     transition:0.2s;
 }
+
 .table tbody tr:hover {
     background:#f1f5f9;
     transform:scale(1.01);
+}
+
+.table td {
+    vertical-align: middle;
 }
 
 /* ===== STATUS ===== */
@@ -47,11 +55,15 @@ body {
     background:linear-gradient(135deg,#fde68a,#facc15);
     color:black;
 }
+
 .badge-approved {
     background:linear-gradient(135deg,#34d399,#22c55e);
+    color:white;
 }
+
 .badge-rejected {
     background:linear-gradient(135deg,#f87171,#ef4444);
+    color:white;
 }
 
 /* ===== SERVICE BADGE ===== */
@@ -60,6 +72,20 @@ body {
     color:white;
     border-radius:10px;
     padding:5px 10px;
+    display:inline-block;
+    font-size:12px;
+    font-weight:600;
+}
+
+/* ===== CATEGORY BADGE ===== */
+.badge-category {
+    background:linear-gradient(135deg,#c084fc,#9333ea);
+    color:white;
+    border-radius:10px;
+    padding:5px 10px;
+    display:inline-block;
+    font-size:12px;
+    font-weight:600;
 }
 
 /* ===== BUTTONS ===== */
@@ -68,8 +94,21 @@ body {
     padding:5px 10px;
     transition:0.3s;
 }
+
 .btn-action:hover {
     transform:scale(1.1);
+}
+
+/* ===== LINKS ===== */
+.proof-link {
+    display:block;
+    margin-bottom:5px;
+    word-break: break-all;
+}
+
+/* ===== TABLE SCROLL ===== */
+.table-responsive {
+    overflow-x:auto;
 }
 
 /* ===== MOBILE ===== */
@@ -100,6 +139,7 @@ body {
         display:block;
         color:#64748b;
         font-size:12px;
+        margin-bottom:3px;
     }
 
 }
@@ -107,96 +147,258 @@ body {
 
 <div class="container-fluid">
 
-<h4 class="mb-4 fw-bold">🧪 QA Approval Dashboard</h4>
+<h4 class="mb-4 fw-bold">
+    🧪 QA Approval Dashboard
+</h4>
 
 <!-- KPI -->
 <div class="row g-3 mb-4">
 
     <div class="col-md-3">
+
         <div class="card card-ui kpi-box p-3 text-center">
-            <div class="kpi text-warning">{{ activities|length }}</div>
-            <small class="fw-semibold">Pending Tasks</small>
+
+            <div class="kpi text-warning">
+                {{ activities|length }}
+            </div>
+
+            <small class="fw-semibold">
+                Pending Tasks
+            </small>
+
         </div>
+
     </div>
 
 </div>
 
 <!-- TABLE -->
 <div class="card card-ui">
+
 <div class="card-body p-0">
+
+<div class="table-responsive">
 
 <table class="table align-middle mb-0">
 
 <thead class="table-light">
+
 <tr>
+
     <th>Employee</th>
+
     <th>Client</th>
+
     <th>Project</th>
+
+    <th>Category</th>
+
     <th>Service</th>
+
     <th>Task</th>
-    <th>Proof</th>
+
+    {% if activities %}
+
+        {% for key, value in activities.0.dynamic_data.items %}
+
+            <th>
+
+                {{ key|title }}
+
+            </th>
+
+        {% endfor %}
+
+    {% endif %}
+
     <th>Status</th>
-    <th class="text-end">Action</th>
+
+    <th class="text-end">
+
+        Action
+
+    </th>
+
 </tr>
+
 </thead>
 
 <tbody>
 
 {% for a in activities %}
+
 <tr>
 
-<td data-label="Employee">
-    <strong>{{ a.user.email }}</strong>
-</td>
+    <!-- EMPLOYEE -->
+    <td data-label="Employee">
 
-<td data-label="Client">
-    {{ a.project.client.name }}
-</td>
+        <strong>
 
-<td data-label="Project">
-    {{ a.project.name }}
-</td>
+            {{ a.user.email }}
 
-<td data-label="Service">
-    <span class="badge-service">
-        {{ a.service.name }}
-    </span>
-</td>
+        </strong>
 
-<td data-label="Task">{{ a.task_title }}</td>
+    </td>
 
-<td data-label="Proof">
-    {% if a.proof_link %}
-    <a href="{{ a.proof_link }}" target="_blank" class="text-primary">View</a>
-    {% else %}
-    -
-    {% endif %}
-</td>
+    <!-- CLIENT -->
+    <td data-label="Client">
 
-<td data-label="Status">
-    <span class="badge badge-pending">{{ a.status }}</span>
-</td>
+        {{ a.project.client.name }}
 
-<td data-label="Action" class="text-end">
+    </td>
 
-<button onclick="updateStatus({{ a.id }}, 'approved')" 
-class="btn btn-success btn-sm btn-action">
-✔
-</button>
+    <!-- PROJECT -->
+    <td data-label="Project">
 
-<button onclick="updateStatus({{ a.id }}, 'rejected')" 
-class="btn btn-danger btn-sm btn-action">
-✖
-</button>
+        {{ a.project.name }}
 
-</td>
+    </td>
+
+    <!-- CATEGORY -->
+    <td data-label="Category">
+
+        <span class="badge-category">
+
+            {{ a.category }}
+
+        </span>
+
+    </td>
+
+    <!-- SERVICE -->
+    <td data-label="Service">
+
+        <span class="badge-service">
+
+            {{ a.service_name }}
+
+        </span>
+
+    </td>
+
+    <!-- TASK -->
+    <td data-label="Task">
+
+        {{ a.task_type }}
+
+    </td>
+
+    <!-- DYNAMIC FIELDS -->
+    {% for key, value in a.dynamic_data.items %}
+
+        <td data-label="{{ key|title }}">
+
+            {% if "http://" in value or "https://" in value %}
+
+                <a href="{{ value }}"
+                target="_blank"
+                class="text-primary proof-link">
+
+                    {{ value|truncatechars:40 }}
+
+                </a>
+
+            {% else %}
+
+                {{ value }}
+
+            {% endif %}
+
+        
+
+        </td>
+
+    {% endfor %}
+
+    <!-- STATUS -->
+    <td data-label="Status">
+
+        <span class="badge
+
+            {% if a.status == 'approved' %}
+                badge-approved
+            {% elif a.status == 'rejected' %}
+                badge-rejected
+            {% else %}
+                badge-pending
+            {% endif %}
+        ">
+
+            {{ a.status|title }}
+
+        </span>
+
+    </td>
+
+    <!-- ACTION -->
+    <td data-label="Action"
+        class="text-end">
+
+        {% if a.status == "pending" %}
+
+            <button
+
+                onclick="
+                    updateStatus(
+                        {{ a.id }},
+                        'approved'
+                    )
+                "
+
+                class="
+                    btn
+                    btn-success
+                    btn-sm
+                    btn-action
+                ">
+
+                ✔
+
+            </button>
+
+            <button
+
+                onclick="
+                    updateStatus(
+                        {{ a.id }},
+                        'rejected'
+                    )
+                "
+
+                class="
+                    btn
+                    btn-danger
+                    btn-sm
+                    btn-action
+                ">
+
+                ✖
+
+            </button>
+
+        {% else %}
+
+            -
+
+        {% endif %}
+
+    </td>
 
 </tr>
 
 {% empty %}
+
 <tr>
-<td colspan="8" class="text-center p-4">No pending tasks</td>
+
+<td colspan="20"
+    class="text-center p-4">
+
+    No pending tasks
+
+</td>
+
 </tr>
+
 {% endfor %}
 
 </tbody>
@@ -204,42 +406,81 @@ class="btn btn-danger btn-sm btn-action">
 </table>
 
 </div>
+
+</div>
+
 </div>
 
 </div>
 
 <script>
 
-// 🔥 STATUS UPDATE
+// =====================================
+// STATUS UPDATE
+// =====================================
 function updateStatus(id, status){
 
     fetch(`/activities/api/approve/${id}/`, {
+
         method: "POST",
+
         headers: {
+
             "Content-Type": "application/json",
-            "X-CSRFToken": getCookie('csrftoken')
+
+            "X-CSRFToken":
+                getCookie('csrftoken')
         },
-        body: JSON.stringify({ status: status })
+
+        body: JSON.stringify({
+            status: status
+        })
     })
+
     .then(res => res.json())
+
     .then(data => {
+
         if(data.success){
+
             location.reload();
+
         } else {
-            alert("Error updating status");
+
+            alert(
+                "Error updating status"
+            );
         }
     });
 }
 
-// 🔥 CSRF
+// =====================================
+// CSRF
+// =====================================
 function getCookie(name){
-    let v=null;
-    document.cookie.split(';').forEach(c=>{
-        c=c.trim();
-        if(c.startsWith(name+'=')){
-            v=decodeURIComponent(c.substring(name.length+1));
-        }
-    });
+
+    let v = null;
+
+    document.cookie
+        .split(';')
+        .forEach(c => {
+
+            c = c.trim();
+
+            if(
+                c.startsWith(
+                    name + '='
+                )
+            ){
+
+                v = decodeURIComponent(
+                    c.substring(
+                        name.length + 1
+                    )
+                );
+            }
+        });
+
     return v;
 }
 

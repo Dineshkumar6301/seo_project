@@ -1,38 +1,45 @@
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import Project,ChecklistTemplate
+from .models import (
+    ProjectService,
+    ChecklistTemplate
+)
+
+from activities.models import Checklist
 
 
+@receiver(post_save, sender=ProjectService)
+def create_project_checklists(
+    sender,
+    instance,
+    created,
+    **kwargs
+):
 
+    if not created:
+        return
 
-@receiver(m2m_changed, sender=Project.services.through)
-def create_checklist_on_service_add(sender, instance, action, pk_set, **kwargs):
+    service = instance.service
+    project = instance.project
 
-    # Only trigger when services are added
-    if action == 'post_add':
+    templates = ChecklistTemplate.objects.filter(
+        service=service,
+        is_active=True
+    )
 
-        for service_id in pk_set:
+    for template in templates:
 
-            templates = ChecklistTemplate.objects.filter(
-                service_id=service_id,
-                is_active=True
-            )
+        Checklist.objects.get_or_create(
 
-            for template in templates:
+            project=project,
 
-                # 🔒 Prevent duplicates
-                exists = ChecklistTemplate.objects.filter(
-                    project=instance,
-                    service_id=service_id,
-                    item=template.title
-                ).exists()
+            service=service,
 
-                if not exists:
-                    ChecklistTemplate.objects.create(
-                        project=instance,
-                        service_id=service_id,
-                        item=template.title,
-                        order=template.order,
-                        status='pending'
-                    )
+            item=template.item,
+
+            defaults={
+                "order": template.order,
+                "status": "pending"
+            }
+        )

@@ -192,6 +192,73 @@ def dashboard(request):
 
     activities_paginated = page_obj.object_list
 
+    for a in activities_paginated:
+
+        data = a.dynamic_data or {}
+
+        a.keyword = data.get(
+            "keyword",
+            ""
+        )
+
+        a.submitted_url = (
+
+            data.get("submitted_url")
+
+            or
+
+            data.get("Submitted URL")
+
+            or
+
+            data.get("submitted url")
+
+            or
+
+            data.get("url")
+
+            or
+
+            ""
+        )
+        # TOP ACTIVITIES ALSO
+    for a in activities:
+
+        data = a.dynamic_data or {}
+
+        a.keyword = (
+
+            data.get("keyword")
+
+            or
+
+            data.get("Keyword")
+
+            or
+
+            ""
+        )
+
+        a.submitted_url = (
+
+            data.get("submitted_url")
+
+            or
+
+            data.get("Submitted URL")
+
+            or
+
+            data.get("submitted url")
+
+            or
+
+            data.get("url")
+
+            or
+
+            ""
+        )
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 
         html = render_to_string(
@@ -207,6 +274,8 @@ def dashboard(request):
             'has_next': page_obj.has_next(),
             'has_prev': page_obj.has_previous(),
         })
+        
+    
 
     context = {
 
@@ -283,12 +352,29 @@ def employee_dashboard(request):
 def qa_dashboard(request):
 
     activities = Activity.objects.select_related(
-        'user', 'project', 'service', 'project__client'
-    ).filter(status='pending')
 
-    return render(request, 'frontend/qa_dashboard.html', {
-        'activities': activities
-    })
+        'user',
+
+        'project',
+
+        'project__client'
+
+    ).filter(
+
+        status='pending'
+
+    ).order_by('-created_at')
+
+    return render(
+
+        request,
+
+        'frontend/qa_dashboard.html',
+
+        {
+            'activities': activities
+        }
+    )
 
 @login_required
 def client_dashboard(request):
