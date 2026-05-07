@@ -286,12 +286,12 @@ def project_dashboard(request):
             f'/projects/project-dashboard/?project={project_id}'
         )
 
-    # =====================================================
-    # ALL GLOBAL SERVICES
-    # =====================================================
     all_services = Service.objects.select_related(
         'category'
-    ).all()
+    ).order_by(
+        'category__name',
+        'name'
+    )
 
     return render(
         request,
