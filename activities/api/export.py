@@ -380,12 +380,38 @@ class ExportExcelAPI(APIView):
             )
         )
 
+        # =================================
+            # DYNAMIC FILE NAME
+            # =================================
+        parts = ["SEO_Report"]
+
+        if start and end:
+
+            parts.append(f"{start}_to_{end}")
+
+        elif filter_type:
+
+            parts.append(filter_type)
+
+        if service:
+
+            parts.append(service.replace(" ", "_"))
+
+        if task:
+
+            parts.append(task.replace(" ", "_"))
+
+        if status:
+
+            parts.append(status)
+
+        filename = "_".join(parts) + ".xlsx"
+
         response[
-            "Content-Disposition"
-        ] = (
-            'attachment; '
-            'filename=seo_report.xlsx'
-        )
+                "Content-Disposition"
+            ] = (
+                f'attachment; filename="{filename}"'
+            )
 
         wb.save(response)
 
