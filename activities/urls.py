@@ -23,6 +23,7 @@ from activities.api.export import ExportExcelAPI
 from activities.api.project_services import ProjectServiceAPI
 from activities.api.forget_password import ForgotPasswordAPI
 from activities.api.reset_password import ResetPasswordAPI
+from activities.api.activity_detail import ActivityDetailAPI
 
 urlpatterns = [
 
@@ -53,4 +54,8 @@ urlpatterns = [
     path('reset_password/', ResetPasswordAPI.as_view()),
     path('api/assigned_work/', AssignedWorkAPI.as_view(), name='assigned_work'),
     path('api/assign-service/', AssignServiceAPI.as_view(), name='assign_service'),
+    path(
+    "api/detail/<int:pk>/",
+    ActivityDetailAPI.as_view()
+),
 ]

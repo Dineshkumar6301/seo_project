@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from django.utils.dateparse import parse_date
-from datetime import timedelta
+from datetime import timedelta, date
 
 from activities.models import Activity
 
@@ -14,19 +14,24 @@ class ActivityListAPI(APIView):
 
     def get(self, request):
 
+        # =====================================
+        # GET PARAMS
+        # =====================================
+
         date_str = request.GET.get("date")
 
-        type_filter = request.GET.get("type")
+        filter_type = request.GET.get("filter")
 
-        start_date = request.GET.get("start_date")
+        start_date = request.GET.get("start")
 
-        end_date = request.GET.get("end_date")
+        end_date = request.GET.get("end")
 
         project = request.GET.get("project")
 
         # =====================================
         # BASE QUERY
         # =====================================
+
         qs = Activity.objects.filter(
             user=request.user
         )
@@ -34,73 +39,106 @@ class ActivityListAPI(APIView):
         # =====================================
         # PROJECT FILTER
         # =====================================
-        if project:
+
+        if project and project != "all":
 
             qs = qs.filter(
                 project_id=project
             )
 
         # =====================================
-        # DATE FILTERS
+        # BASE DATE
         # =====================================
-        base_date = (
-            parse_date(date_str)
-            if date_str else None
-        )
 
-        # CUSTOM RANGE
-        if start_date or end_date:
+        if date_str:
 
-            if start_date:
-
-                qs = qs.filter(
-                    date__gte=start_date
-                )
-
-            if end_date:
-
-                qs = qs.filter(
-                    date__lte=end_date
-                )
+            base_date = parse_date(date_str)
 
         else:
 
-            # TODAY
-            if type_filter == "today" and base_date:
+            base_date = date.today()
 
-                qs = qs.filter(
-                    date=base_date
-                )
+        # =====================================
+        # CUSTOM RANGE FILTER
+        # =====================================
 
-            # LAST WEEK
-            elif type_filter == "week" and base_date:
+        if start_date:
 
-                qs = qs.filter(
-                    date__gte=base_date - timedelta(days=7)
-                )
+            qs = qs.filter(
+                date__gte=start_date
+            )
 
-            # LAST MONTH
-            elif type_filter == "month" and base_date:
+        if end_date:
 
-                qs = qs.filter(
-                    date__month=base_date.month
-                )
+            qs = qs.filter(
+                date__lte=end_date
+            )
 
-            # SINGLE DATE
-            elif base_date:
+        # =====================================
+        # NORMAL FILTERS
+        # =====================================
 
-                qs = qs.filter(
-                    date=base_date
-                )
+        elif filter_type == "today":
+
+            qs = qs.filter(
+                date=base_date
+            )
+
+        elif filter_type == "week":
+
+            start_week = (
+                base_date -
+                timedelta(days=base_date.weekday())
+            )
+
+            end_week = (
+                start_week +
+                timedelta(days=6)
+            )
+
+            qs = qs.filter(
+                date__range=[
+                    start_week,
+                    end_week
+                ]
+            )
+
+        elif filter_type == "month":
+
+            qs = qs.filter(
+                date__month=base_date.month,
+                date__year=base_date.year
+            )
+
+        elif filter_type == "year":
+
+            qs = qs.filter(
+                date__year=base_date.year
+            )
+
+        # =====================================
+        # DEFAULT TODAY
+        # =====================================
+
+        else:
+
+            qs = qs.filter(
+                date=base_date
+            )
 
         # =====================================
         # ORDERING
         # =====================================
-        qs = qs.order_by("-id")
+
+        qs = qs.order_by(
+            "-date",
+            "-id"
+        )
 
         # =====================================
         # RESPONSE
         # =====================================
+
         response_data = []
 
         for a in qs:

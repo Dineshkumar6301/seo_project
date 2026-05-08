@@ -90,13 +90,17 @@ label{
 /* ============================= */
 /* TABLE */
 /* ============================= */
-.table-responsive{
+.table-scroll-wrapper{
     width:100%;
     overflow-x:auto;
+    border-radius:10px;
+    border:1px solid #dee2e6;
 }
 
 table{
+    min-width:1000px;
     width:100%;
+    border-collapse:collapse;
 }
 
 .table thead{
@@ -106,13 +110,35 @@ table{
 
 .table th,
 .table td{
-    vertical-align:top;
+    vertical-align:middle;
     font-size:14px;
+    padding:10px 12px;
+    border-bottom:1px solid #f0f0f0;
+    white-space:nowrap;
 }
 
-.table td{
-    max-width:220px;
-    word-break:break-word;
+.table tbody tr:last-child td{
+    border-bottom:none;
+}
+
+.table tbody tr:hover td{
+    background:#f8f9ff;
+}
+
+/* URL columns — allow wrap */
+.col-url{
+    white-space:normal;
+    word-break:break-all;
+    min-width:200px;
+    max-width:260px;
+}
+
+/* Truncated columns */
+.col-trunc{
+    max-width:160px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 }
 
 /* ============================= */
@@ -143,6 +169,27 @@ table{
     min-width:40px;
 }
 
+/* ============================= */
+/* DELETE BUTTON */
+/* ============================= */
+.btn-delete{
+    padding:4px 10px;
+    font-size:13px;
+    border-radius:8px;
+    color:#dc3545;
+    border:1px solid #f5c6cb;
+    background:transparent;
+    cursor:pointer;
+    transition:.2s;
+    line-height:1;
+}
+
+.btn-delete:hover{
+    background:#dc3545;
+    color:#fff;
+    border-color:#dc3545;
+}
+
 </style>
 
 <div class="container-fluid">
@@ -156,8 +203,16 @@ table{
 <div class="section-title">
 Projects
 </div>
+<div
+    class="project-item project-active"
+    onclick="clearProject(this)">
+
+    All Projects
+
+</div>
 
 {% for p in projects %}
+
 
 <div
     class="project-item"
@@ -295,17 +350,17 @@ Fill Details
 <form id="dynamicForm"></form>
 
 </div>
-</div>
-<!-- TABLE -->
-<div class="card card-soft p-3">
+
+<!-- TABLE — placed AFTER form -->
+<div class="card card-soft p-3 mb-3">
 
 <div class="section-title">
 Saved Data
 </div>
 
-<div class="table-responsive">
+<div class="table-scroll-wrapper">
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover mb-0">
 
 <thead>
 <tr id="tableHead"></tr>
@@ -319,7 +374,7 @@ Saved Data
 
 <div
     id="paginationContainer"
-    class="d-flex justify-content-center mt-3">
+    class="d-flex justify-content-center mt-3 flex-wrap gap-1">
 </div>
 
 </div>
@@ -329,6 +384,12 @@ Saved Data
 </div>
 
 <script>
+
+/* columns that should display FULL (no truncation) */
+const FULL_COLS = ['url', 'submitted_url'];
+
+/* max chars for all other columns */
+const TRUNC_LEN = 30;
 
 let fullData = {};
 
@@ -348,7 +409,7 @@ async function selectProject(projectId, el){
 
     selectedProject = projectId;
 
-    currentPage = 1;
+    
 
     document.querySelectorAll(".project-item")
         .forEach(e => e.classList.remove("project-active"));
@@ -359,15 +420,53 @@ async function selectProject(projectId, el){
 
     try{
 
+        fullData = {};
+
         let res = await fetch(
-            `/activities/api/project-services/${projectId}/`
+            `/activities/api/project-services/${selectedProject}/`
         );
 
         fullData = await res.json();
 
-        renderCategories();
+        renderCategories(false);
 
-        loadData();
+        await loadDataFast();
+
+    }catch(err){
+
+        console.log(err);
+
+        alert("Error loading services");
+    }
+}
+
+// =====================================
+// PROJECT SELECT
+// =====================================
+async function selectProject(projectId, el){
+
+    selectedProject = projectId;
+
+    document.querySelectorAll(".project-item")
+        .forEach(e => e.classList.remove("project-active"));
+
+    el.classList.add("project-active");
+
+    resetUI();
+
+    try{
+
+        fullData = {};
+
+        let res = await fetch(
+            `/activities/api/project-services/${selectedProject}/`
+        );
+
+        fullData = await res.json();
+
+        renderCategories(false);
+
+        await loadDataFast();
 
     }catch(err){
 
@@ -379,8 +478,32 @@ async function selectProject(projectId, el){
 
 
 // =====================================
-// RESET UI
+// CLEAR PROJECT
 // =====================================
+async function clearProject(el){
+
+    selectedProject = null;
+
+    selectedCategory = null;
+
+    selectedService = null;
+
+    selectedTask = null;
+
+    editId = null;
+
+    fullData = {};
+
+    document.querySelectorAll(".project-item")
+        .forEach(e => e.classList.remove("project-active"));
+
+    el.classList.add("project-active");
+
+    resetUI();
+
+    await loadDataFast();
+}
+
 function resetUI(){
 
     document.getElementById(
@@ -395,20 +518,22 @@ function resetUI(){
         "taskTypes"
     ).innerHTML = "";
 
-    document.getElementById(
-        "dynamicForm"
-    ).innerHTML = "";
+    document.querySelectorAll(
+        "#dynamicForm input, #dynamicForm textarea, #dynamicForm select"
+    ).forEach(el => {
 
+        if(el.type !== "button"){
+            el.value = "";
+        }
+    });
     selectedCategory = null;
     selectedService = null;
     selectedTask = null;
 }
 
 
-// =====================================
-// RENDER CATEGORIES
-// =====================================
-function renderCategories(){
+
+function renderCategories(autoSelect = true){
 
     let c = document.getElementById(
         "categoriesContainer"
@@ -430,19 +555,22 @@ function renderCategories(){
         </span>`;
     });
 
-    // AUTO SELECT FIRST
-    let firstCategory =
-        Object.keys(fullData)[0];
+    // =====================================
+    // AUTO SELECT FIRST CATEGORY
+    // =====================================
+    if(autoSelect){
 
-    if(firstCategory){
+        let firstCategory = Object.keys(fullData)[0];
 
-        selectCategory(
-            firstCategory,
-            document.querySelector(".category-badge")
-        );
+        if(firstCategory){
+
+            selectCategory(
+                firstCategory,
+                document.querySelector(".category-badge")
+            );
+        }
     }
 }
-
 
 // =====================================
 // CATEGORY SELECT
@@ -509,6 +637,7 @@ function selectService(service){
     Object.keys(tasks)
     .sort((a, b) => a.localeCompare(b))
     .forEach(task => {
+
         taskBox.innerHTML += `
         <button
             type="button"
@@ -548,7 +677,7 @@ function selectTask(task){
 
         let input = "";
 
-        // TEXTAREA
+        /* TEXTAREA */
         if(field.field_type === "textarea"){
 
             input = `
@@ -558,7 +687,7 @@ function selectTask(task){
             </textarea>`;
         }
 
-        // SELECT
+        /* SELECT */
         else if(field.field_type === "select"){
 
             input = `
@@ -576,7 +705,7 @@ function selectTask(task){
             </select>`;
         }
 
-        // FILE
+        /* FILE */
         else if(field.field_type === "file"){
 
             input = `
@@ -587,7 +716,7 @@ function selectTask(task){
             `;
         }
 
-        // NORMAL
+        /* NORMAL */
         else{
 
             input = `
@@ -623,107 +752,39 @@ function selectTask(task){
 
 
 // =====================================
-// SAVE DATA
+// DELETE ROW
 // =====================================
-async function saveData(){
+async function deleteRow(id){
 
-    if(!selectedProject){
-
-        alert("Select Project");
+    if(!confirm("Are you sure you want to delete this entry?")){
         return;
     }
-
-    if(!selectedCategory){
-
-        alert("Select Category");
-        return;
-    }
-
-    if(!selectedService){
-
-        alert("Select Service");
-        return;
-    }
-
-    if(!selectedTask){
-
-        alert("Select Task");
-        return;
-    }
-
-    let payload = {
-
-        project: selectedProject,
-
-        category: selectedCategory,
-
-        service: selectedService,
-
-        task: selectedTask,
-
-        date: new Date()
-            .toISOString()
-            .split("T")[0],
-
-        data: {}
-    };
-
-    let inputs = document.querySelectorAll(
-        "#dynamicForm input, #dynamicForm textarea, #dynamicForm select"
-    );
-
-    inputs.forEach(i => {
-
-        if(i.type === "file"){
-
-            payload.data[i.name] =
-                i.files[0]
-                ? i.files[0].name
-                : "";
-
-        }else{
-
-            payload.data[i.name] = i.value;
-        }
-    });
 
     try{
 
         let res = await fetch(
-            "/activities/api/upsert/",
+            `/activities/api/delete/${id}/`,
             {
-                method: "POST",
-
+                method: "DELETE",
                 headers: {
-                    "Content-Type": "application/json",
                     "X-CSRFToken": getCSRF()
-                },
-
-                body: JSON.stringify(payload)
+                }
             }
         );
 
         let result = await res.json();
 
         if(result.error){
-
             alert(result.error);
             return;
         }
 
-        alert("Saved Successfully");
-
-        document.getElementById(
-            "dynamicForm"
-        ).reset();
-
-        loadData();
+        await loadDataFast();
 
     }catch(err){
 
         console.log(err);
-
-        alert("Save failed");
+        alert("Delete failed");
     }
 }
 
@@ -736,22 +797,31 @@ async function loadData(){
     let url = `/activities/api/list/?`;
 
     if(selectedProject){
-
         url += `project=${selectedProject}&`;
     }
+
+    let filterType =
+        document.getElementById("filterType").value;
+
+    let startDate =
+        document.getElementById("startDate").value;
+
+    let endDate =
+        document.getElementById("endDate").value;
+
+    url += `filter=${filterType}&`;
+    url += `start=${startDate}&`;
+    url += `end=${endDate}`;
 
     try{
 
         let res = await fetch(url);
-
         let data = await res.json();
-
         renderTable(data);
 
     }catch(err){
 
         console.log(err);
-
         alert("Error loading table");
     }
 }
@@ -762,17 +832,9 @@ async function loadData(){
 // =====================================
 function renderTable(data){
 
-    let head = document.getElementById(
-        "tableHead"
-    );
-
-    let body = document.getElementById(
-        "tableBody"
-    );
-
-    let pagination = document.getElementById(
-        "paginationContainer"
-    );
+    let head       = document.getElementById("tableHead");
+    let body       = document.getElementById("tableBody");
+    let pagination = document.getElementById("paginationContainer");
 
     if(!data.length){
 
@@ -781,11 +843,9 @@ function renderTable(data){
         body.innerHTML = `
         <tr>
             <td colspan="20">
-
                 <div class="empty-box">
                     No activities found
                 </div>
-
             </td>
         </tr>`;
 
@@ -794,144 +854,134 @@ function renderTable(data){
         return;
     }
 
-    // =====================================
-    // DYNAMIC KEYS
-    // =====================================
+    /* ---- COLLECT DYNAMIC KEYS ---- */
     let dynamicKeys = new Set();
 
     data.forEach(r => {
-
         Object.keys(r.data || {})
             .forEach(k => dynamicKeys.add(k));
     });
 
     dynamicKeys = [...dynamicKeys];
 
-    // =====================================
-    // PRIORITY SORT
-    // =====================================
-    const priority = [
-        "keyword",
-        "url",
-        "submitted_url"
-    ];
+    /* ---- PRIORITY SORT ---- */
+    const priority = ["keyword", "url", "submitted_url"];
 
     dynamicKeys.sort((a, b) => {
-
         let ai = priority.indexOf(a);
         let bi = priority.indexOf(b);
-
         ai = ai === -1 ? 999 : ai;
         bi = bi === -1 ? 999 : bi;
-
         return ai - bi;
     });
 
-    // =====================================
-    // TABLE HEAD
-    // =====================================
+    /* ---- TABLE HEAD ---- */
     head.innerHTML = `
-        <th>S.No</th>
+        <th>#</th>
         <th>Project</th>
         <th>Category</th>
         <th>Service</th>
         <th>Task</th>
-
-        ${dynamicKeys.map(
-            k => `<th>${formatLabel(k)}</th>`
+        ${dynamicKeys.map(k =>
+            `<th>${formatLabel(k)}</th>`
         ).join("")}
+        <th>Action</th>
     `;
 
-    // =====================================
-    // PAGINATION
-    // =====================================
-    let start = (currentPage - 1)
-                * rowsPerPage;
-
-    let end = start + rowsPerPage;
-
+    /* ---- PAGINATION SLICE ---- */
+    let start         = (currentPage - 1) * rowsPerPage;
+    let end           = start + rowsPerPage;
     let paginatedData = data.slice(start, end);
 
     body.innerHTML = "";
 
-    // =====================================
-    // TABLE BODY
-    // =====================================
+    /* ---- TABLE BODY ---- */
     paginatedData.forEach((r, index) => {
 
-        body.innerHTML += `
+        let cells = dynamicKeys.map(k => {
 
-        <tr>
+            let val    = r.data?.[k] || "";
+            let isFull = FULL_COLS.includes(k);
 
-            <td>${start + index + 1}</td>
+            if(typeof val === "string"){
 
-            <td>${r.project_name || ""}</td>
+                /* split by comma to support multiple links */
+                let parts = val.split(",");
 
-            <td>${r.category || ""}</td>
+                let rendered = parts.map(part => {
 
-            <td>${r.service || ""}</td>
+                    part = part.trim();
 
-            <td>${r.task || ""}</td>
-
-            ${dynamicKeys.map(k => {
-
-                let val =
-                    r.data?.[k] || "";
-
-                // MULTIPLE LINKS
-                if(typeof val === "string"){
-
-                    let possibleLinks =
-                        val.split(",");
-
-                    let allLinks =
-                        possibleLinks.map(link => {
-
-                        link = link.trim();
-
-                        if(
-                            link.startsWith("http://") ||
-                            link.startsWith("https://")
-                        ){
-
-                            return `
-                            <div class="mb-1">
-
-                                <a href="${link}"
-                                   target="_blank"
-                                   title="${link}">
-
-                                   ${link.length > 35
-                                        ? link.substring(0,35) + "..."
-                                        : link}
-
-                                </a>
-
-                            </div>`;
-                        }
-
+                    if(
+                        part.startsWith("http://") ||
+                        part.startsWith("https://")
+                    ){
+                        /* links always shown full */
                         return `
-                        <div>
-                            ${link}
+                        <div class="mb-1">
+                            <a href="${part}"
+                               target="_blank"
+                               title="${part}">
+                               ${part}
+                            </a>
                         </div>`;
-                    }).join("");
+                    }
 
-                    return `<td>${allLinks}</td>`;
-                }
+                    if(isFull){
+                        /* non-link full column — show everything */
+                        return `<div>${part}</div>`;
+                    }
 
-                return `<td>${val}</td>`;
+                    /* truncate to TRUNC_LEN characters */
+                    let display = part.length > TRUNC_LEN
+                        ? part.substring(0, TRUNC_LEN) + "…"
+                        : part;
 
-            }).join("")}
+                    return `<div title="${part}">${display}</div>`;
 
+                }).join("");
+
+                let cls = isFull ? "col-url" : "col-trunc";
+
+                return `<td class="${cls}">${rendered}</td>`;
+            }
+
+            return `<td>${val}</td>`;
+
+        }).join("");
+
+        body.innerHTML += `
+        <tr>
+            <td>${start + index + 1}</td>
+            <td style="white-space:nowrap;">${r.project_name || ""}</td>
+            <td style="white-space:nowrap;">${r.category   || ""}</td>
+            <td style="white-space:nowrap;">${r.service_name || r.service || ""}</td>
+            <td style="white-space:nowrap;">${r.task_type || r.task || ""}</td>
+            ${cells}
+            <td>
+                <div class="d-flex gap-1">
+
+                    <button
+                        class="btn btn-sm btn-primary"
+                        onclick="editRow(${r.id})"
+                        title="Edit">
+                        ✏️
+                    </button>
+
+                    <button
+                        class="btn-delete"
+                        onclick="deleteRow(${r.id})"
+                        title="Delete">
+                        🗑
+                    </button>
+
+                </div>
+            </td>
         </tr>`;
     });
 
-    // =====================================
-    // PAGINATION BUTTONS
-    // =====================================
-    let totalPages = Math.ceil(
-        data.length / rowsPerPage
-    );
+    /* ---- PAGINATION BUTTONS ---- */
+    let totalPages = Math.ceil(data.length / rowsPerPage);
 
     pagination.innerHTML = "";
 
@@ -939,7 +989,7 @@ function renderTable(data){
 
         pagination.innerHTML += `
         <button
-            class="btn btn-sm mx-1 pagination-btn
+            class="btn btn-sm pagination-btn
             ${i === currentPage
                 ? 'btn-primary'
                 : 'btn-outline-primary'}"
@@ -980,29 +1030,17 @@ function formatLabel(text){
 // =====================================
 function handleFilterChange(){
 
-    let type = document.getElementById(
-        "filterType"
-    ).value;
+    let type = document.getElementById("filterType").value;
 
     if(type === "custom"){
 
-        document.getElementById(
-            "startBox"
-        ).style.display = "block";
-
-        document.getElementById(
-            "endBox"
-        ).style.display = "block";
+        document.getElementById("startBox").style.display = "block";
+        document.getElementById("endBox").style.display   = "block";
 
     }else{
 
-        document.getElementById(
-            "startBox"
-        ).style.display = "none";
-
-        document.getElementById(
-            "endBox"
-        ).style.display = "none";
+        document.getElementById("startBox").style.display = "none";
+        document.getElementById("endBox").style.display   = "none";
     }
 }
 
@@ -1012,42 +1050,43 @@ function handleFilterChange(){
 // =====================================
 function downloadExcel(){
 
+    // =====================================
+    // EMPLOYEE MUST SELECT PROJECT
+    // =====================================
+    const isAdmin =
+        "{{ request.user.is_superuser|yesno:'true,false' }}" === "true"
+        ||
+        "{{ request.user.is_staff|yesno:'true,false' }}" === "true";
+
+    if(!isAdmin && !selectedProject){
+
+        alert("Please select project first");
+
+        return;
+    }
+
     let filterType =
-        document.getElementById(
-            "filterType"
-        ).value;
+        document.getElementById("filterType").value;
 
     let startDate =
-        document.getElementById(
-            "startDate"
-        ).value;
+        document.getElementById("startDate").value;
 
     let endDate =
-        document.getElementById(
-            "endDate"
-        ).value;
+        document.getElementById("endDate").value;
 
-    let url = `/activities/api/export/?`;
+    let url = `/activities/api/export/?type=daily&`;
 
-    if(selectedProject){
-
+    if(selectedProject)
         url += `project=${selectedProject}&`;
-    }
 
-    if(selectedCategory){
-
+    if(selectedCategory)
         url += `category=${selectedCategory}&`;
-    }
 
-    if(selectedService){
-
+    if(selectedService)
         url += `service=${selectedService}&`;
-    }
 
-    if(selectedTask){
-
+    if(selectedTask)
         url += `task=${selectedTask}&`;
-    }
 
     url += `filter=${filterType}&`;
 
@@ -1057,11 +1096,343 @@ function downloadExcel(){
 
     window.open(url, "_blank");
 }
+let editId = null;
 
 
 // =====================================
-// CSRF
+// EDIT ROW
 // =====================================
+async function editRow(id){
+
+    try{
+
+        // =====================================
+        // GET ACTIVITY DETAILS
+        // =====================================
+        const response = await fetch(
+            `/activities/api/detail/${id}/`
+        );
+
+        const data = await response.json();
+
+        console.log("EDIT DATA:", data);
+
+        if(!data.success){
+
+            alert("Activity not found");
+            return;
+        }
+
+        editId = id;
+
+        currentPage = 1;
+
+        // =====================================
+        // SET GLOBALS
+        // =====================================
+        selectedProject  = data.project;
+        selectedCategory = data.category;
+        selectedService  = data.service_name || data.service;
+        selectedTask     = data.task_type || data.task;
+
+        // =====================================
+        // PROJECT ACTIVE UI
+        // =====================================
+        document.querySelectorAll(".project-item")
+            .forEach(e => {
+
+                e.classList.remove("project-active");
+
+                if(
+                    e.getAttribute("onclick")
+                    ?.includes(`(${selectedProject},`)
+                ){
+                    e.classList.add("project-active");
+                }
+            });
+
+        // =====================================
+        // ALWAYS LOAD CORRECT PROJECT SERVICES
+        // =====================================
+        const serviceResponse = await fetch(
+            `/activities/api/project-services/${selectedProject}/`
+        );
+
+        fullData = await serviceResponse.json();
+
+        // =====================================
+        // RENDER CATEGORIES
+        // =====================================
+        renderCategories(false);
+
+        // =====================================
+        // FIND CATEGORY ELEMENT
+        // =====================================
+        const categoryEl =
+            [...document.querySelectorAll(".category-badge")]
+            .find(el =>
+                el.innerText.trim() === selectedCategory
+            );
+
+        if(categoryEl){
+
+            selectCategory(
+                selectedCategory,
+                categoryEl
+            );
+        }
+
+        // =====================================
+        // SELECT SERVICE
+        // =====================================
+        selectService(selectedService);
+
+        // =====================================
+        // SELECT TASK
+        // =====================================
+        selectTask(selectedTask);
+
+        // =====================================
+        // WAIT FOR FORM RENDER
+        // =====================================
+        await new Promise(resolve =>
+            setTimeout(resolve, 50)
+        );
+
+        // =====================================
+        // SET OLD VALUES
+        // =====================================
+        const dynamicData =
+            data.dynamic_data || {};
+
+        Object.keys(dynamicData).forEach(key => {
+
+            const field = document.querySelector(
+                `[name="${key}"]`
+            );
+
+            if(field){
+
+                field.value = dynamicData[key];
+            }
+        });
+
+        // =====================================
+        // UPDATE BUTTON UI
+        // =====================================
+        const btn = document.querySelector(
+            "#dynamicForm button"
+        );
+
+        if(btn){
+
+            btn.innerText = "Update";
+
+            btn.classList.remove("btn-success");
+
+            btn.classList.add("btn-primary");
+        }
+        document.querySelector(
+            ".table-scroll-wrapper"
+        ).scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+
+    }
+    catch(error){
+
+        console.log(error);
+
+        alert("Failed to load edit data");
+    }
+}
+
+
+async function saveData(){
+
+    if(!selectedProject){
+        alert("Select Project");
+        return;
+    }
+
+    if(!selectedCategory){
+        alert("Select Category");
+        return;
+    }
+
+    if(!selectedService){
+        alert("Select Service");
+        return;
+    }
+
+    if(!selectedTask){
+        alert("Select Task");
+        return;
+    }
+
+    let payload = {
+
+        project: selectedProject,
+
+        category: selectedCategory,
+
+        service_name: selectedService,
+
+        task_type: selectedTask,
+
+        dynamic_data: {}
+    };
+
+    // =====================================
+    // FORM VALUES
+    // =====================================
+    let inputs = document.querySelectorAll(
+        "#dynamicForm input, #dynamicForm textarea, #dynamicForm select"
+    );
+
+    inputs.forEach(i => {
+
+        if(i.type === "file"){
+
+            payload.dynamic_data[i.name] =
+                i.files[0]
+                ? i.files[0].name
+                : "";
+
+        }else{
+
+            payload.dynamic_data[i.name] = i.value;
+        }
+    });
+
+    try{
+
+        let url = "/activities/api/upsert/";
+        let method = "POST";
+
+        // =====================================
+        // UPDATE MODE
+        // =====================================
+        if(editId){
+
+            url = `/activities/api/update/${editId}/`;
+            method = "PUT";
+        }
+
+        const res = await fetch(url, {
+
+            method: method,
+
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRF()
+            },
+
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        console.log(result);
+
+        if(result.error){
+
+            alert(result.error);
+            return;
+        }
+
+        showToast(
+            editId
+            ? "Updated Successfully"
+            : "Saved Successfully"
+        );
+
+        // =====================================
+        // RESET
+        // =====================================
+        editId = null;
+
+        currentPage = 1;
+
+        await loadDataFast();
+
+        // =====================================
+        // RESET FORM
+        // =====================================
+        document.querySelectorAll(
+    "#dynamicForm input, #dynamicForm textarea, #dynamicForm select"
+            ).forEach(el => {
+
+                if(el.type !== "button"){
+                    el.value = "";
+                }
+            });
+        // =====================================
+        // RESET BUTTON
+        // =====================================
+        const btn = document.querySelector(
+            '#dynamicForm button'
+        );
+
+        if(btn){
+
+            btn.innerText = "Save";
+
+            btn.classList.remove("btn-primary");
+            btn.classList.add("btn-success");
+        }
+
+    }
+    catch(err){
+
+        console.log(err);
+
+        alert("Save failed");
+    }
+}
+
+
+let cachedTableData = [];
+
+// =====================================
+// FAST LOAD
+// =====================================
+async function loadDataFast(){
+
+    let url = `/activities/api/list/?`;
+
+    if(selectedProject){
+        url += `project=${selectedProject}&`;
+    }
+
+    let filterType =
+        document.getElementById("filterType").value;
+
+    let startDate =
+        document.getElementById("startDate").value;
+
+    let endDate =
+        document.getElementById("endDate").value;
+
+    url += `filter=${filterType}&`;
+    url += `start=${startDate}&`;
+    url += `end=${endDate}`;
+
+    try{
+
+        const res = await fetch(url);
+
+        cachedTableData = await res.json();
+
+        renderTable(cachedTableData);
+
+    }catch(err){
+
+        console.log(err);
+    }
+}
 function getCSRF(){
 
     return document.cookie
@@ -1069,7 +1440,32 @@ function getCSRF(){
         .find(r => r.startsWith('csrftoken'))
         ?.split('=')[1];
 }
+// =====================================
+// TOAST
+// =====================================
+function showToast(message){
 
+    let toast = document.createElement("div");
+
+    toast.innerText = message;
+
+    toast.style.position = "fixed";
+    toast.style.top = "20px";
+    toast.style.right = "20px";
+    toast.style.background = "#198754";
+    toast.style.color = "#fff";
+    toast.style.padding = "12px 18px";
+    toast.style.borderRadius = "10px";
+    toast.style.zIndex = "99999";
+    toast.style.fontWeight = "600";
+    toast.style.boxShadow = "0 6px 20px rgba(0,0,0,.15)";
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 2500);
+}
 </script>
 
 {% endblock %}

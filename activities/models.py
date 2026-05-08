@@ -2,9 +2,7 @@ from django.db import models
 from django.conf import settings
 from projects.models import Project, Service
 
-# =========================================================
-# ACTIVITY
-# =========================================================
+
 class Activity(models.Model):
 
     STATUS_CHOICES = [
@@ -13,9 +11,7 @@ class Activity(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    # ==========================================
-    # BASIC INFO
-    # ==========================================
+  
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -30,9 +26,6 @@ class Activity(models.Model):
 
     date = models.DateField()
 
-    # ==========================================
-    # DYNAMIC STRUCTURE
-    # ==========================================
     category = models.CharField(
         max_length=100,
         blank=True,
@@ -47,26 +40,19 @@ class Activity(models.Model):
         max_length=100
     )
 
-    # ==========================================
-    # DYNAMIC FORM DATA
-    # ==========================================
+
     dynamic_data = models.JSONField(
         default=dict,
         blank=True
     )
 
-    # ==========================================
-    # STATUS
-    # ==========================================
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending'
     )
 
-    # ==========================================
-    # TIMESTAMPS
-    # ==========================================
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -75,9 +61,7 @@ class Activity(models.Model):
         auto_now=True
     )
 
-    # ==========================================
-    # META
-    # ==========================================
+
     class Meta:
 
         ordering = ['-date', '-created_at']
@@ -90,9 +74,7 @@ class Activity(models.Model):
             models.Index(fields=['status']),
         ]
 
-    # ==========================================
-    # STRING
-    # ==========================================
+
     def __str__(self):
 
         return (
@@ -102,9 +84,7 @@ class Activity(models.Model):
         )
 
 
-# =========================================================
-# CHECKLIST
-# =========================================================
+
 class Checklist(models.Model):
 
     STATUS_CHOICES = [

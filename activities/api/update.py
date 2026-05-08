@@ -1,23 +1,50 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
 from activities.models import Activity
 
 
 class ActivityUpdateAPI(APIView):
 
-    def post(self, request, pk):
+    permission_classes = [IsAuthenticated]
 
-        obj = Activity.objects.filter(id=pk).first()
+    def put(self, request, pk):
 
-        if not obj:
-            return Response({"error": "Not found"}, status=404)
+        try:
 
-        obj.task_title = request.data.get("task_title", obj.task_title)
-        obj.planned_work = request.data.get("planned_work", obj.planned_work)
-        obj.completed_work = request.data.get("completed_work", obj.completed_work)
-        obj.proof_link = request.data.get("proof_link", obj.proof_link)
-        obj.remarks = request.data.get("remarks", obj.remarks)
+            activity = Activity.objects.get(id=pk)
 
-        obj.save()
+        except Activity.DoesNotExist:
 
-        return Response({"success": True})
+            return Response({
+                "error": "Activity not found"
+            }, status=404)
+
+        data = request.data
+
+        # =====================================
+        # UPDATE VALUES ONLY
+        # =====================================
+        activity.project_id = data.get("project")
+
+        activity.category = data.get("category")
+
+        activity.service_name = data.get("service_name")
+
+        activity.task_type = data.get("task_type")
+
+        activity.dynamic_data = data.get(
+            "dynamic_data",
+            {}
+        )
+
+        # =====================================
+        # SAVE
+        # =====================================
+        activity.save()
+
+        return Response({
+            "success": True,
+            "message": "Updated successfully"
+        })

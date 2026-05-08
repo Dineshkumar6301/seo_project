@@ -104,19 +104,21 @@ class ClientDashboardAPI(APIView):
                 date=today
             )
 
-        elif filter_type == "week":
-
-            qs = qs.filter(
-                date__gte=today - timedelta(days=7)
-            )
-
         elif filter_type == "month":
 
             qs = qs.filter(
                 date__month=today.month,
                 date__year=today.year
             )
+        elif filter_type == "week":
 
+            start_week = today - timedelta(days=today.weekday())
+
+            end_week = start_week + timedelta(days=6)
+
+            qs = qs.filter(
+                date__range=[start_week, end_week]
+            )
         elif filter_type == "year":
 
             qs = qs.filter(

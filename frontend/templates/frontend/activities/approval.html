@@ -489,15 +489,6 @@
     .toolbar { flex-direction: column; align-items: stretch; }
     .search-wrap, .select-input, .date-input { max-width: 100%; min-width: unset; width: 100%; }
     .export-btn { justify-content: center; }
-    .table-card { display: none; }
-    .mobile-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-    .m-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      position: relative;
-    }
     .m-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
     .m-card-body { display: flex; flex-direction: column; gap: 8px; }
     .m-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
@@ -508,6 +499,43 @@
     .pill { padding: 6px 13px; font-size: 12px; }
   }
 
+  /* ======================================
+   MOBILE RESPONSIVE TABLE
+====================================== */
+
+.table-card{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+table{
+    min-width:1100px;
+}
+
+@media (max-width:768px){
+
+    .table-card{
+        display:block !important;
+        overflow-x:auto;
+        border-radius:12px;
+    }
+
+    table{
+        min-width:1100px;
+    }
+
+    .mobile-cards{
+        display:none !important;
+    }
+
+    th,
+    td{
+        white-space:nowrap;
+        font-size:13px;
+        padding:10px 12px;
+    }
+}
   @media (max-width: 400px) {
     .status-row { grid-template-columns: 1fr; }
   }
@@ -630,6 +658,7 @@ let currentPage = 1;
 let dateFilter = "{{ date_filter|default:'all' }}";
 let statusFilter = "{{ current_status|default:'' }}";
 let searchTimer = null;
+
 
 // =====================================
 // GET FILTERS
@@ -1141,6 +1170,197 @@ function updateTable(rows) {
         `;
     });
 }
+
+// =====================================
+// MOBILE CARDS
+// =====================================
+function updateMobileCards(rows) {
+
+    const container =
+        document.getElementById(
+            "mobileCards"
+        );
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (!rows || !rows.length) {
+
+        container.innerHTML = `
+
+        <div class="m-card">
+
+            <div class="empty-state">
+
+                <span class="empty-icon">
+                    📭
+                </span>
+
+                No records found
+
+            </div>
+
+        </div>
+        `;
+
+        return;
+    }
+
+    rows.forEach(r => {
+
+        const badge = `
+            <span class="
+                badge
+                badge-${r.status}
+            ">
+                ${capitalize(r.status)}
+            </span>
+        `;
+
+        const actions =
+
+            r.status === "pending"
+
+            ? `
+
+                <button
+                    class="btn-approve"
+                    onclick="
+                        updateStatus(
+                            ${r.id},
+                            'approved'
+                        )
+                    ">
+
+                    ✔
+
+                </button>
+
+                <button
+                    class="btn-reject"
+                    onclick="
+                        updateStatus(
+                            ${r.id},
+                            'rejected'
+                        )
+                    ">
+
+                    ✖
+
+                </button>
+            `
+
+            : "";
+
+        let dynamicHtml = "";
+
+        Object.entries(
+            r.dynamic_data || {}
+        ).forEach(([key, value]) => {
+
+            dynamicHtml += `
+
+            <div class="m-row">
+
+                <div class="m-label">
+                    ${formatLabel(key)}
+                </div>
+
+                <div style="
+                    text-align:right;
+                    max-width:60%;
+                    word-break:break-word;
+                ">
+                    ${value || "-"}
+                </div>
+
+            </div>
+            `;
+        });
+
+        container.innerHTML += `
+
+        <div class="m-card">
+
+            <div class="m-card-header">
+
+                <div>
+
+                    <div class="user-name">
+
+                        ${r.user__first_name || ""}
+                        ${r.user__last_name || ""}
+
+                    </div>
+
+                    <div class="user-role">
+
+                        ${r.project__name || ""}
+
+                    </div>
+
+                </div>
+
+                ${badge}
+
+            </div>
+
+            <div class="m-card-body">
+
+                <div class="m-row">
+
+                    <div class="m-label">
+                        Category
+                    </div>
+
+                    <div>
+                        ${r.category || "-"}
+                    </div>
+
+                </div>
+
+                <div class="m-row">
+
+                    <div class="m-label">
+                        Service
+                    </div>
+
+                    <div>
+                        ${r.service_name || "-"}
+                    </div>
+
+                </div>
+
+                <div class="m-row">
+
+                    <div class="m-label">
+                        Task
+                    </div>
+
+                    <div>
+                        ${r.task_type || "-"}
+                    </div>
+
+                </div>
+
+                ${dynamicHtml}
+
+            </div>
+
+            <div class="m-actions">
+
+                ${actions}
+
+            </div>
+
+        </div>
+        `;
+    });
+    console.log(
+    document.getElementById("mobileCards")
+);
+}
 // =====================================
 function updatePagination(p) {
 
@@ -1240,7 +1460,7 @@ function exportExcel() {
     });
 
     window.open(
-        `/activities/api/export/?${query}`,
+        `/activities/api/export/?type=approval&${query}`,
         "_blank"
     );
 }

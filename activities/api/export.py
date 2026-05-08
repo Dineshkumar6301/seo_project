@@ -14,25 +14,44 @@ from datetime import timedelta
 from django.utils.timezone import now
 
 from activities.models import Activity
+from rest_framework.permissions import IsAuthenticated
 
 
 class ExportExcelAPI(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         qs = Activity.objects.select_related(
             "user",
             "project"
-        ).all().order_by("-date")
+        ).order_by("-date")
 
-        # =================================
-        # FILTERS
-        # =================================
+        export_type = request.GET.get("type")
+
+
+        if export_type == "daily":
+
+            qs = qs.filter(
+                user=request.user
+            )
+
+
+        elif export_type == "approval":
+
+            if not (
+                request.user.is_superuser
+                or request.user.is_staff
+            ):
+
+                qs = qs.filter(
+                    user=request.user
+        )
+       
         project = request.GET.get("project")
         service = request.GET.get("service")
         task = request.GET.get("task")
 
-        # OLD SUPPORT
+    
         filter_type = (
             request.GET.get("type")
             or request.GET.get("filter")
@@ -64,16 +83,12 @@ class ExportExcelAPI(APIView):
 
             qs = qs.filter(task_type=task)
 
-        # =================================
-        # STATUS
-        # =================================
+    
         if status:
 
             qs = qs.filter(status=status)
 
-        # =================================
-        # SEARCH
-        # =================================
+      
         if search:
 
             qs = qs.filter(
@@ -94,16 +109,21 @@ class ExportExcelAPI(APIView):
 
             qs = qs.filter(date=today)
 
-        elif filter_type == "week":
-
-            qs = qs.filter(
-                date__gte=today - timedelta(days=7)
-            )
-
         elif filter_type == "month":
 
             qs = qs.filter(
-                date__gte=today - timedelta(days=30)
+                date__month=today.month,
+                date__year=today.year
+            )
+
+        elif filter_type == "week":
+
+            start_week = today - timedelta(days=today.weekday())
+
+            end_week = start_week + timedelta(days=6)
+
+            qs = qs.filter(
+                date__range=[start_week, end_week]
             )
 
         elif filter_type == "year":
