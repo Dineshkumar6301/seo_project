@@ -437,7 +437,7 @@ class ExportExcelAPI(APIView):
             )
         )
 
-        parts = ["SEO_Report"]
+        parts = ["Report"]
 
         if start and end:
 
