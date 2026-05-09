@@ -117,6 +117,8 @@ class ExportExcelAPI(APIView):
                 Q(task_type__icontains=search)
                 |
                 Q(service_name__icontains=search)
+                |
+                Q(category__icontains=search)
             )
 
         today = now().date()
