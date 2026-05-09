@@ -238,7 +238,7 @@
             <i class="bi bi-list"></i>
         </button>
         <div>
-            Welcome, <strong>{{ request.user.first_name }}</strong>
+            Welcome, <strong>{{ request.user.first_name }} {{ request.user.last_name }}</strong>
             <span class="role-badge">{{ request.user.role }}</span>
         </div>
     </div>
