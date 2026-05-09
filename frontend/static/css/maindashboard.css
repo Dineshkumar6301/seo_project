@@ -1,0 +1,215 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+* { box-sizing: border-box; }
+
+body {
+    background: #f0f4ff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Page header */
+h3.mb-4 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+}
+
+/* Download button override */
+.btn.btn-success {
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    transition: opacity 0.2s, transform 0.2s;
+}
+.btn.btn-success:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+/* === CARD BOX === */
+.card-box {
+    background: #ffffff;
+    padding: 22px 20px;
+    border-radius: 18px;
+    border: 1.5px solid #e8edf8;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+    transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
+    position: relative;
+    overflow: hidden;
+}
+.card-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #0ea5e9);
+    opacity: 0;
+    transition: opacity 0.25s;
+    border-radius: 18px 18px 0 0;
+}
+.card-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(99,102,241,0.12);
+    border-color: #c7d2fe;
+}
+.card-box:hover::before { opacity: 1; }
+
+/* === KPI === */
+.kpi {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -1px;
+    line-height: 1.1;
+}
+.kpi-title {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 6px;
+}
+
+/* Semantic KPI colors */
+.text-primary  { color: #6366f1 !important; }
+.text-warning  { color: #f59e0b !important; }
+.text-success  { color: #10b981 !important; }
+.text-danger   { color: #ef4444 !important; }
+
+/* KPI row — subtle color accent per card */
+.row.g-3 .col-md-3:nth-child(1) .card-box::before,
+.row.g-3 .col-md-4:nth-child(1) .card-box::before {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+.row.g-3 .col-md-3:nth-child(2) .card-box::before,
+.row.g-3 .col-md-4:nth-child(2) .card-box::before {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+.row.g-3 .col-md-3:nth-child(3) .card-box::before,
+.row.g-3 .col-md-4:nth-child(3) .card-box::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+.row.g-3 .col-md-3:nth-child(4) .card-box::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+/* Icon accent per KPI card */
+.card-box .kpi-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* === CHART BOX === */
+.chart-box {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 18px;
+    border: 1.5px solid #e8edf8;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+}
+.chart-box h6 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 18px;
+    letter-spacing: -0.2px;
+}
+
+/* === BADGE === */
+.badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.badge.bg-success { background: #d1fae5 !important; color: #065f46 !important; }
+.badge.bg-warning { background: #fef3c7 !important; color: #92400e !important; }
+.badge.bg-danger  { background: #fee2e2 !important; color: #991b1b !important; }
+.badge.bg-primary { background: #e0e7ff !important; color: #3730a3 !important; }
+
+/* === TABLE === */
+.table { font-size: 13.5px; color: #1e293b; }
+.table thead.table-light th {
+    background: #f8faff;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    border-bottom: 1.5px solid #e8edf8;
+    padding: 12px 16px;
+}
+.table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.table-hover tbody tr:hover td { background: #f8faff; }
+.fw-semibold { font-weight: 600; color: #0f172a; }
+
+/* Recent activities card */
+.card-box h5 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+}
+
+/* === PAGINATION === */
+.pagination .page-link {
+    border-radius: 8px !important;
+    margin: 0 2px;
+    border: 1.5px solid #e8edf8;
+    color: #6366f1;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 13px;
+    transition: all 0.2s;
+}
+.pagination .page-link:hover {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+}
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #6366f1, #0ea5e9);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(99,102,241,0.3);
+}
+
+/* Section label */
+.section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
+/* Insight cards — truncate long text */
+.card-box .kpi-insight {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+}
