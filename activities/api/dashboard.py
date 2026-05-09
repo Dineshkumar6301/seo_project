@@ -46,9 +46,7 @@ class ClientDashboardAPI(APIView):
             page = 1
             limit = 10
 
-        # =====================================
-        # FILTERS
-        # =====================================
+     
         filter_type = request.GET.get(
             "type",
             ""
@@ -86,9 +84,7 @@ class ClientDashboardAPI(APIView):
 
         today = now().date()
 
-        # =====================================
-        # DATE FILTERS
-        # =====================================
+
         if start_date and end_date:
 
             qs = qs.filter(
@@ -160,27 +156,18 @@ class ClientDashboardAPI(APIView):
 
             )
 
-        # =====================================
-        # PROJECT
-        # =====================================
         if project:
 
             qs = qs.filter(
                 project__id=project
             )
 
-        # =====================================
-        # SERVICE
-        # =====================================
         if service:
 
             qs = qs.filter(
                 service_name__iexact=service
             )
 
-        # =====================================
-        # KPI BASE QUERY
-        # =====================================
         base_qs = qs
 
         total = base_qs.count()
@@ -225,9 +212,7 @@ class ClientDashboardAPI(APIView):
             for row in chart_qs
         ]
 
-        # =====================================
-        # STATUS FILTER
-        # =====================================
+
         if status:
 
             qs = qs.filter(
@@ -276,9 +261,7 @@ class ClientDashboardAPI(APIView):
             )[start:end]
 
         )
-        # =====================================
-        # FORMAT TABLE DATA
-        # =====================================
+      
 
         for row in table:
 
@@ -290,9 +273,7 @@ class ClientDashboardAPI(APIView):
             # FRONTEND SUPPORT
             row["data"] = dynamic_data
 
-            # =================================
-            # PROOF LINKS
-            # =================================
+          
             row["SUBMITTED_URL"] = (
 
                 dynamic_data.get(
@@ -316,9 +297,7 @@ class ClientDashboardAPI(APIView):
                 ""
             )
 
-        # =================================
-        # DATE FORMAT
-        # =================================
+
         if row.get("date"):
 
             row["date"] = str(

@@ -173,19 +173,11 @@ class ExportExcelAPI(APIView):
                 date__range=[start, end]
             )
 
-        # =====================================
-        # WORKBOOK
-        # =====================================
-
         wb = Workbook()
 
         ws = wb.active
 
         ws.title = "SEO Report"
-
-        # =====================================
-        # HEADERS
-        # =====================================
 
         headers = [
             "S.No",
@@ -203,9 +195,6 @@ class ExportExcelAPI(APIView):
 
         ws.append(headers)
 
-        # =====================================
-        # HEADER STYLE
-        # =====================================
 
         header_fill = PatternFill(
             start_color="1F4E78",
@@ -228,17 +217,10 @@ class ExportExcelAPI(APIView):
                 wrap_text=True
             )
 
-        # =====================================
-        # DATA ROWS
-        # =====================================
 
         for i, a in enumerate(qs, start=1):
 
             data = a.dynamic_data or {}
-
-            # =====================================
-            # EMPLOYEE
-            # =====================================
 
             employee = ""
 
@@ -253,9 +235,6 @@ class ExportExcelAPI(APIView):
 
                     employee = a.user.email
 
-            # =====================================
-            # KEYWORD
-            # =====================================
 
             keyword = (
                 data.get("keyword")
@@ -264,9 +243,6 @@ class ExportExcelAPI(APIView):
                 or ""
             )
 
-            # =====================================
-            # SUBMITTED URLS
-            # =====================================
 
             submitted_urls = (
                 data.get("submitted_url")
@@ -286,9 +262,7 @@ class ExportExcelAPI(APIView):
                     if x.strip()
                 ])
 
-            # =====================================
-            # TARGET URLS
-            # =====================================
+        
 
             target_urls = (
                 data.get("target_url")
@@ -308,10 +282,6 @@ class ExportExcelAPI(APIView):
                     .split("\n")
                     if x.strip()
                 ])
-
-            # =====================================
-            # OTHER DATA
-            # =====================================
 
             other_data_parts = []
 
@@ -351,10 +321,6 @@ class ExportExcelAPI(APIView):
                 other_data_parts
             )
 
-            # =====================================
-            # FINAL ROW
-            # =====================================
-
             row = [
                 i,
                 str(a.date),
@@ -373,9 +339,6 @@ class ExportExcelAPI(APIView):
 
             current_row = ws.max_row
 
-            # =====================================
-            # SUBMITTED URL LINK
-            # =====================================
 
             if submitted_urls:
 
@@ -397,9 +360,6 @@ class ExportExcelAPI(APIView):
                     cell.hyperlink = first_link
                     cell.style = "Hyperlink"
 
-            # =====================================
-            # TARGET URL LINK
-            # =====================================
 
             if target_urls:
 
@@ -421,9 +381,7 @@ class ExportExcelAPI(APIView):
                     cell.hyperlink = first_link
                     cell.style = "Hyperlink"
 
-        # =====================================
-        # CELL STYLING
-        # =====================================
+
 
         for row in ws.iter_rows():
 
@@ -434,9 +392,6 @@ class ExportExcelAPI(APIView):
                     vertical="top"
                 )
 
-        # =====================================
-        # COLUMN WIDTH
-        # =====================================
 
         for column_cells in ws.columns:
 
@@ -465,9 +420,7 @@ class ExportExcelAPI(APIView):
                 get_column_letter(column)
             ].width = adjusted_width
 
-        # =====================================
-        # ROW HEIGHT
-        # =====================================
+  
 
         for row in range(
             2,
@@ -476,15 +429,9 @@ class ExportExcelAPI(APIView):
 
             ws.row_dimensions[row].height = 60
 
-        # =====================================
-        # FREEZE HEADER
-        # =====================================
 
         ws.freeze_panes = "A2"
 
-        # =====================================
-        # RESPONSE
-        # =====================================
 
         response = HttpResponse(
             content_type=(
@@ -492,10 +439,6 @@ class ExportExcelAPI(APIView):
                 "officedocument.spreadsheetml.sheet"
             )
         )
-
-        # =====================================
-        # FILE NAME
-        # =====================================
 
         parts = ["SEO_Report"]
 
