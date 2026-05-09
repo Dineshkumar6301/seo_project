@@ -404,6 +404,75 @@ body {
 </tbody>
 
 </table>
+<div class="d-flex justify-content-center p-3 flex-wrap gap-2">
+
+    {% if page_obj.has_previous %}
+
+        <a href="?page=1"
+           class="btn btn-sm btn-outline-primary">
+
+            First
+
+        </a>
+
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="btn btn-sm btn-outline-primary">
+
+            ← Prev
+
+        </a>
+
+    {% endif %}
+
+    {% for num in paginator.page_range %}
+
+        {% if num == page_obj.number %}
+
+            <span class="
+                btn
+                btn-sm
+                btn-primary
+                disabled">
+
+                {{ num }}
+
+            </span>
+
+        {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+
+            <a href="?page={{ num }}"
+               class="
+                   btn
+                   btn-sm
+                   btn-outline-primary">
+
+                {{ num }}
+
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="btn btn-sm btn-outline-primary">
+
+            Next →
+
+        </a>
+
+        <a href="?page={{ paginator.num_pages }}"
+           class="btn btn-sm btn-outline-primary">
+
+            Last
+
+        </a>
+
+    {% endif %}
+
+</div>
 
 </div>
 

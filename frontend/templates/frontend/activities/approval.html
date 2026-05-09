@@ -911,11 +911,6 @@ function updateKPIs(kpi) {
         kpi.rejected ?? "—";
 }
 
-// =====================================
-// TABLE
-// =====================================
-// TABLE
-// =====================================
 function updateTable(rows) {
 
     const tbody =
@@ -957,46 +952,10 @@ function updateTable(rows) {
         return;
     }
 
-    // =====================================
-    // DYNAMIC KEYS
-    // =====================================
-    let dynamicKeys = new Set();
+    /* =====================================
+       FIXED HEADERS
+    ===================================== */
 
-    rows.forEach(r => {
-
-        Object.keys(
-            r.dynamic_data || {}
-        ).forEach(k => {
-
-            dynamicKeys.add(k);
-        });
-    });
-
-    dynamicKeys = [...dynamicKeys];
-
-    // =====================================
-    // PRIORITY SORT
-    // =====================================
-    const priority = [
-        "keyword",
-        "url",
-        "submitted_url"
-    ];
-
-    dynamicKeys.sort((a, b) => {
-
-        let ai = priority.indexOf(a);
-        let bi = priority.indexOf(b);
-
-        ai = ai === -1 ? 999 : ai;
-        bi = bi === -1 ? 999 : bi;
-
-        return ai - bi;
-    });
-
-    // =====================================
-    // TABLE HEAD
-    // =====================================
     thead.innerHTML = `
 
         <th>User</th>
@@ -1009,18 +968,27 @@ function updateTable(rows) {
 
         <th>Task</th>
 
-        ${dynamicKeys.map(
-            k => `<th>${formatLabel(k)}</th>`
-        ).join("")}
+        <th>Keyword</th>
+
+        <th>Submitted URL</th>
+
+        <th>Target URL</th>
+
+        <th style="
+            min-width:420px;
+        ">
+            Other Data
+        </th>
 
         <th>Status</th>
 
         <th>Action</th>
     `;
 
-    // =====================================
-    // TABLE BODY
-    // =====================================
+    /* =====================================
+       TABLE BODY
+    ===================================== */
+
     rows.forEach(r => {
 
         const badge = `
@@ -1067,6 +1035,202 @@ function updateTable(rows) {
 
             : `—`;
 
+        /* =====================================
+           DYNAMIC DATA
+        ===================================== */
+
+        const data =
+            r.dynamic_data || {};
+
+        /* =====================================
+           KEYWORD
+        ===================================== */
+
+        const keyword =
+
+            data.KEYWORD
+            ||
+            data.keyword
+            ||
+            data.Keyword
+            ||
+            "-";
+
+        /* =====================================
+           SUBMITTED URL
+        ===================================== */
+
+        const submitted =
+
+            data.SUBMITTED_URL
+            ||
+            data.submitted_url
+            ||
+            "";
+
+        let submittedHTML = "-";
+
+        if(submitted){
+
+            submittedHTML = String(submitted)
+
+            .split(/[\n,]+/)
+
+            .filter(x => x.trim())
+
+            .map(link => `
+
+                <div style="
+                    margin-bottom:6px;
+                ">
+
+                    <a href="${link.trim()}"
+                       target="_blank"
+                       class="proof-link"
+                       style="
+                          display:block;
+                          max-width:220px;
+                          white-space:nowrap;
+                          overflow:hidden;
+                          text-overflow:ellipsis;
+                       ">
+
+                        ${link.trim()}
+
+                    </a>
+
+                </div>
+
+            `).join("");
+        }
+
+        /* =====================================
+           TARGET URL
+        ===================================== */
+
+        const target =
+
+            data.Target_url
+            ||
+            data.target_url
+            ||
+            "";
+
+        let targetHTML = "-";
+
+        if(target){
+
+            targetHTML = String(target)
+
+            .split(/[\n,]+/)
+
+            .filter(x => x.trim())
+
+            .map(link => `
+
+                <div style="
+                    margin-bottom:6px;
+                ">
+
+                    <a href="${link.trim()}"
+                       target="_blank"
+                       class="proof-link"
+                       style="
+                          display:block;
+                          max-width:220px;
+                          white-space:nowrap;
+                          overflow:hidden;
+                          text-overflow:ellipsis;
+                       ">
+
+                        ${link.trim()}
+
+                    </a>
+
+                </div>
+
+            `).join("");
+        }
+
+        /* =====================================
+           OTHER DATA
+        ===================================== */
+
+        let otherHTML = "";
+
+        Object.entries(data)
+
+        .forEach(([key, value]) => {
+
+            let lower =
+                key.toLowerCase();
+
+            /* skip separate cols */
+
+            if(
+
+                lower === "keyword"
+                ||
+                lower === "submitted_url"
+                ||
+                lower === "target_url"
+
+            ){
+                return;
+            }
+
+            if(
+                value === null
+                ||
+                value === ""
+            ){
+                return;
+            }
+
+            otherHTML += `
+
+                <div style="
+                    margin-bottom:8px;
+                    padding:8px 10px;
+                    background:#f8fafc;
+                    border:1px solid #e2e8f0;
+                    border-radius:8px;
+                    font-size:13px;
+                ">
+
+                    <strong style="
+                        display:block;
+                        margin-bottom:4px;
+                        color:#334155;
+                    ">
+
+                        ${formatLabel(key)}
+
+                    </strong>
+
+                    <div style="
+                        color:#0f172a;
+                        word-break:break-word;
+                        white-space:normal;
+                    ">
+
+                        ${value}
+
+                    </div>
+
+                </div>
+            `;
+        });
+
+        if(!otherHTML){
+
+            otherHTML = "-";
+        }
+
+        /* =====================================
+           FINAL ROW
+        ===================================== */
+
         tbody.innerHTML += `
 
         <tr>
@@ -1097,6 +1261,7 @@ function updateTable(rows) {
                 ${r.category || ""}
 
             </td>
+
             <td>
 
                 ${r.service_name || ""}
@@ -1109,68 +1274,57 @@ function updateTable(rows) {
 
             </td>
 
-            ${dynamicKeys.map(k => {
+            <td style="
+                min-width:180px;
+            ">
 
-                let val =
-                    r.dynamic_data?.[k] || "";
+                ${keyword}
 
-                if(typeof val === "string"){
+            </td>
 
-                    let possibleLinks =
-                        val.split(",");
+            <td style="
+                min-width:220px;
+                max-width:260px;
+            ">
 
-                    let allLinks =
-                        possibleLinks.map(link => {
+                ${submittedHTML}
 
-                        link = link.trim();
+            </td>
 
-                        if(
-                            link.startsWith("http://") ||
-                            link.startsWith("https://")
-                        ){
+            <td style="
+                min-width:220px;
+                max-width:260px;
+            ">
 
-                            return `
-                            <div class="mb-1">
+                ${targetHTML}
 
-                                <a href="${link}"
-                                   target="_blank"
-                                   class="proof-link">
+            </td>
 
-                                   ${link.length > 35
-                                        ? link.substring(0,35) + "..."
-                                        : link}
+            <td style="
+                min-width:420px;
+                max-width:520px;
+            ">
 
-                                </a>
+                ${otherHTML}
 
-                            </div>`;
-                        }
-
-                        return `
-                        <div>
-                            ${link}
-                        </div>`;
-                    }).join("");
-
-                    return `<td>${allLinks}</td>`;
-                }
-
-                return `<td>${val}</td>`;
-
-            }).join("")}
+            </td>
 
             <td>
+
                 ${badge}
+
             </td>
 
             <td class="action-cell">
+
                 ${actions}
+
             </td>
 
         </tr>
         `;
     });
 }
-
 // =====================================
 // MOBILE CARDS
 // =====================================
@@ -1460,7 +1614,7 @@ function exportExcel() {
     });
 
     window.open(
-        `/activities/api/export/?type=approval&${query}`,
+        `/activities/api/export/?export_type=approval&${query}`,
         "_blank"
     );
 }

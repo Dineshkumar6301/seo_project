@@ -309,61 +309,136 @@ def dashboard(request):
 
     return render(request, 'frontend/dashboard.html', context)
 
+
+
 @login_required
 def employee_dashboard(request):
 
     user = request.user
 
-    activities = Activity.objects.filter(user=user).order_by('-date')
-    total = activities.count()
-    pending = activities.filter(status='pending').count()
-    approved = activities.filter(status='approved').count()
-    rejected = activities.filter(status='rejected').count()
+    activities_qs = (
+        Activity.objects
+        .filter(user=user)
+        .select_related("project")
+        .order_by("-date")
+    )
 
+    # KPI
+    total = activities_qs.count()
+
+    pending = activities_qs.filter(
+        status='pending'
+    ).count()
+
+    approved = activities_qs.filter(
+        status='approved'
+    ).count()
+
+    rejected = activities_qs.filter(
+        status='rejected'
+    ).count()
+
+    # PAGINATION
+    paginator = Paginator(
+        activities_qs,
+        10
+    )
+
+    page_number = request.GET.get(
+        'page'
+    )
+
+    page_obj = paginator.get_page(
+        page_number
+    )
+
+    # CHART
     today = date.today()
-    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
 
-    chart_labels = [d.strftime("%d %b") for d in last_7_days]
+    last_7_days = [
+        today - timedelta(days=i)
+        for i in range(6, -1, -1)
+    ]
+
+    chart_labels = [
+        d.strftime("%d %b")
+        for d in last_7_days
+    ]
 
     day_map = (
-        activities
+        activities_qs
         .exclude(date__isnull=True)
         .values('date')
         .annotate(count=Count('id'))
     )
 
-    day_dict = {x['date']: x['count'] for x in day_map}
+    day_dict = {
+        x['date']: x['count']
+        for x in day_map
+    }
 
-    chart_data = [day_dict.get(d, 0) for d in last_7_days]
+    chart_data = [
+        day_dict.get(d, 0)
+        for d in last_7_days
+    ]
 
-    return render(request, 'frontend/employee_dashboard.html', {
-        'activities': activities,
-        'total': total,
-        'pending': pending,
-        'approved': approved,
-        'rejected': rejected,
-        'chart_labels': chart_labels,
-        'chart_data': chart_data,
-    })
+    return render(
+        request,
+        'frontend/employee_dashboard.html',
+        {
 
+            # IMPORTANT
+            'activities': page_obj,
 
+            'page_obj': page_obj,
+
+            'paginator': paginator,
+
+            # KPI
+            'total': total,
+            'pending': pending,
+            'approved': approved,
+            'rejected': rejected,
+
+            # CHART
+            'chart_labels': chart_labels,
+            'chart_data': chart_data,
+        }
+    )
 
 @login_required
 def qa_dashboard(request):
 
-    activities = Activity.objects.select_related(
+    activities_qs = (
 
-        'user',
+        Activity.objects
 
-        'project',
+        .select_related(
+            'user',
+            'project',
+            'project__client'
+        )
 
-        'project__client'
+        .filter(
+            status='pending'
+        )
 
-    ).filter(
+        .order_by('-created_at')
+    )
+    paginator = Paginator(
+        activities_qs,
+        20
+    )
 
-        status='pending'
+    page_number = request.GET.get(
+        'page'
+    )
 
-    ).order_by('-created_at')
+    activities = paginator.get_page(
+        page_number
+    )
+
+  
 
     return render(
 
@@ -372,34 +447,151 @@ def qa_dashboard(request):
         'frontend/qa_dashboard.html',
 
         {
-            'activities': activities
+
+            'activities': activities,
+
+            'page_obj': activities,
+
+            'paginator': paginator,
         }
     )
+
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from django.shortcuts import render
+
+from activities.models import Activity
+
 
 @login_required
 def client_dashboard(request):
 
     client = request.user.client
-    activities = Activity.objects.filter(
-        project__client=client
+
+    # =====================================
+    # BASE QUERYSET
+    # =====================================
+
+    activities_qs = (
+
+        Activity.objects
+
+        .select_related(
+            'project',
+            'project__client',
+            'user'
+        )
+
+        .filter(
+            project__client=client
+        )
+
+        .order_by('-created_at')
     )
+
+    # =====================================
+    # KPI COUNTS
+    # =====================================
+
+    total = activities_qs.count()
+
+    approved = (
+        activities_qs
+        .filter(status='approved')
+        .count()
+    )
+
+    pending = (
+        activities_qs
+        .filter(status='pending')
+        .count()
+    )
+
+    rejected = (
+        activities_qs
+        .filter(status='rejected')
+        .count()
+    )
+
+    # =====================================
+    # PAGINATION
+    # =====================================
+
+    paginator = Paginator(
+        activities_qs,
+        20
+    )
+
+    page_number = request.GET.get(
+        'page'
+    )
+
+    activities = paginator.get_page(
+        page_number
+    )
+
+    # =====================================
+    # CHART DATA
+    # =====================================
+
     chart_qs = (
-        activities
-        .annotate(day=TruncDate('created_at'))
+
+        activities_qs
+
+        .annotate(
+            day=TruncDate('created_at')
+        )
+
         .values('day')
-        .annotate(count=Count('id'))
+
+        .annotate(
+            count=Count('id')
+        )
+
         .order_by('day')
     )
 
-    chart_labels = [str(x['day']) for x in chart_qs]
-    chart_data = [x['count'] for x in chart_qs]
+    chart_labels = [
+        str(x['day'])
+        for x in chart_qs
+    ]
 
-    return render(request, 'frontend/client_dashboard.html', {
-        'activities': activities,
-        'chart_labels': chart_labels,
-        'chart_data': chart_data,
-    })
+    chart_data = [
+        x['count']
+        for x in chart_qs
+    ]
 
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+    return render(
+
+        request,
+
+        'frontend/client_dashboard.html',
+
+        {
+
+            'activities': activities,
+
+            'page_obj': activities,
+
+            'paginator': paginator,
+
+            # KPI
+            'total': total,
+            'approved': approved,
+            'pending': pending,
+            'rejected': rejected,
+
+            # Chart
+            'chart_labels': chart_labels,
+            'chart_data': chart_data,
+        }
+    )
 
 
 @login_required

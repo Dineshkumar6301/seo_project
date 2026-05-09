@@ -224,9 +224,7 @@ h3.mb-4 {
 
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <h3 class="mb-0 fw-bold">📊 Analytics Dashboard</h3>
-    <a href="{% url 'export_report' %}" class="btn btn-success mb-0">
-        📥 Download Monthly Report
-    </a>
+  
 </div>
 
 <!-- Section label -->
@@ -370,7 +368,13 @@ h3.mb-4 {
 
             <th>Task</th>
 
+            <th>Keyword</th>
+
             <th>Submitted URL</th>
+
+            <th>Target URL</th>
+
+            <th>Other Data</th>
 
             <th>Status</th>
 
@@ -378,102 +382,309 @@ h3.mb-4 {
 
         </thead>
 
+
         <tbody>
 
-        {% for a in activities %}
+        <tbody>
 
-        <tr>
+{% for a in page_obj %}
 
-            <!-- EMPLOYEE -->
-            <td data-label="Employee">
+<tr>
 
-                {{ a.user.first_name }} {{ a.user.last_name }}
+    <!-- EMPLOYEE -->
+    <td data-label="Employee">
 
-            </td>
+        {{ a.user.first_name }} {{ a.user.last_name }}
 
-            <!-- PROJECT -->
-            <td data-label="Project">
+    </td>
 
-                {{ a.project.name }}
+    <!-- PROJECT -->
+    <td data-label="Project">
 
-            </td>
+        {{ a.project.name }}
 
-            <!-- CATEGORY -->
-            <td data-label="Category">
+    </td>
 
-                {{ a.category }}
+    <!-- CATEGORY -->
+    <td data-label="Category">
 
-            </td>
+        {{ a.category }}
 
-            <!-- SERVICE -->
-            <td data-label="Service">
+    </td>
 
-                {{ a.service_name }}
+    <!-- SERVICE -->
+    <td data-label="Service">
 
-            </td>
+        {{ a.service_name }}
 
-            <!-- TASK -->
-            <td data-label="Task">
+    </td>
 
-                {{ a.task_type }}
+    <!-- TASK -->
+    <td data-label="Task">
 
-            </td>
+        {{ a.task_type }}
 
-            <!-- SUBMITTED URL -->
-            <td data-label="Submitted URL">
+    </td>
 
-                {% for key, value in a.dynamic_data.items %}
+    <!-- KEYWORD -->
+    <td data-label="Keyword">
 
-                    {% if "http://" in value or "https://" in value %}
+       {% if a.dynamic_data.KEYWORD %}
 
-                        <a href="{{ value }}"
-                        target="_blank"
-                        class="text-primary">
+            {{ a.dynamic_data.KEYWORD }}
 
-                            View Link
+        {% elif a.dynamic_data.keyword %}
+
+            {{ a.dynamic_data.keyword }}
+
+        {% elif a.dynamic_data.Keyword %}
+
+            {{ a.dynamic_data.Keyword }}
+
+        {% else %}
+
+            -
+
+        {% endif %}
+    </td>
+
+    <!-- SUBMITTED URL -->
+<td data-label="Submitted URL">
+
+    {% if a.dynamic_data.SUBMITTED_URL %}
+
+        {% with submitted=a.dynamic_data.SUBMITTED_URL %}
+
+            {% for link in submitted.splitlines %}
+
+                {% if link %}
+
+                    <div style="margin-bottom:6px;">
+
+                        <a href="{{ link }}"
+                           target="_blank"
+                           style="
+                              color:#2563eb;
+                              text-decoration:none;
+                              display:block;
+                              max-width:220px;
+                              white-space:nowrap;
+                              overflow:hidden;
+                              text-overflow:ellipsis;
+                           ">
+
+                            {{ link }}
 
                         </a>
 
-                        <br>
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endwith %}
+
+    {% elif a.dynamic_data.submitted_url %}
+
+        {% with submitted=a.dynamic_data.submitted_url %}
+
+            {% for link in submitted.splitlines %}
+
+                {% if link %}
+
+                    <div style="margin-bottom:6px;">
+
+                        <a href="{{ link }}"
+                           target="_blank"
+                           style="
+                              color:#2563eb;
+                              text-decoration:none;
+                              display:block;
+                              max-width:220px;
+                              white-space:nowrap;
+                              overflow:hidden;
+                              text-overflow:ellipsis;
+                           ">
+
+                            {{ link }}
+
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endwith %}
+
+    {% else %}
+
+        -
+
+    {% endif %}
+
+</td>
+    <!-- TARGET URL -->
+<td data-label="Target URL">
+
+    {% if a.dynamic_data.Target_url %}
+
+        {% with target=a.dynamic_data.Target_url %}
+
+            {% for link in target.splitlines %}
+
+                {% if link %}
+
+                    <div style="margin-bottom:6px;">
+
+                        <a href="{{ link }}"
+                           target="_blank"
+                           style="
+                              color:#059669;
+                              text-decoration:none;
+                              display:block;
+                              max-width:220px;
+                              white-space:nowrap;
+                              overflow:hidden;
+                              text-overflow:ellipsis;
+                           ">
+
+                            {{ link }}
+
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endwith %}
+
+    {% elif a.dynamic_data.target_url %}
+
+        {% with target=a.dynamic_data.target_url %}
+
+            {% for link in target.splitlines %}
+
+                {% if link %}
+
+                    <div style="margin-bottom:6px;">
+
+                        <a href="{{ link }}"
+                           target="_blank"
+                           style="
+                              color:#059669;
+                              text-decoration:none;
+                              display:block;
+                              max-width:220px;
+                              white-space:nowrap;
+                              overflow:hidden;
+                              text-overflow:ellipsis;
+                           ">
+
+                            {{ link }}
+
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endwith %}
+
+    {% else %}
+
+        -
+
+    {% endif %}
+
+</td>
+    <!-- OTHER DATA -->
+    <td data-label="Other Data"
+    style="
+      min-width:420px;
+      max-width:520px;
+      width:520px;
+    ">
+        {% for key, value in a.dynamic_data.items %}
+
+            {% with lower_key=key|lower %}
+
+                {% if lower_key != "keyword" and lower_key != "submitted_url" and lower_key != "submitted_urls" and lower_key != "target_url" and lower_key != "target_urls" %}
+
+                    {% if value %}
+
+                        <div style="
+                            margin-bottom:8px;
+                            padding:6px 8px;
+                            background:#f8fafc;
+                            border:1px solid #e2e8f0;
+                            border-radius:6px;
+                            font-size:12px;
+                        ">
+
+                            <strong style="display:block;color:#334155;">
+
+                                {{ key|title }}
+
+                            </strong>
+
+                            <div style="
+                                color:#0f172a;
+                                word-break:break-word;
+                            ">
+
+                                {{ value }}
+
+                            </div>
+
+                        </div>
 
                     {% endif %}
 
-                {% empty %}
+                {% endif %}
 
-                    -
-
-                {% endfor %}
-
-            </td>
-
-            <!-- STATUS -->
-            <td data-label="Status">
-
-                {{ a.status }}
-
-            </td>
-
-        </tr>
+            {% endwith %}
 
         {% empty %}
 
-        <tr>
-
-            <td colspan="7"
-                class="text-center p-4">
-
-                No activities found
-
-            </td>
-
-        </tr>
+            -
 
         {% endfor %}
 
-        </tbody>
+    </td>
 
-        </table>
-                                
+    <!-- STATUS -->
+    <td data-label="Status">
+
+        {{ a.status }}
+
+    </td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+
+    <td colspan="10"
+        class="text-center p-4">
+
+        No activities found
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
             
 
         <!-- PAGINATION -->

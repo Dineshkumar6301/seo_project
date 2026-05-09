@@ -282,11 +282,12 @@
     border-radius: 0 0 var(--radius) var(--radius);
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 520px;
-  }
+ table {
+    width:100%;
+    border-collapse:collapse;
+    min-width:1800px;
+    table-layout:auto;
+}
 
   thead th {
     background: var(--surface2);
@@ -479,6 +480,27 @@
   @media (max-width: 380px) {
     .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   }
+.proof-box{
+  margin-top:6px;
+  padding:6px 8px;
+  background:#f8fafc;
+  border-radius:6px;
+  font-size:12px;
+  line-height:1.5;
+  word-break:break-word;
+}
+
+.proof-link-ui{
+  margin-bottom:6px;
+}
+
+.proof-link-ui a{
+  word-break:break-word;
+  color:#2563eb;
+  text-decoration:none;
+  font-size:13px;
+}
+
 </style>
 
 <div class="dash">
@@ -592,13 +614,27 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>Project</th>
-            <th>Task</th>
-            <th>Proof</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
+         <tr>
+
+            <th style="min-width:220px;">Project</th>
+
+            <th style="min-width:180px;">Service</th>
+
+            <th style="min-width:220px;">Task</th>
+
+            <th style="min-width:260px;">Keyword</th>
+
+            <th style="min-width:520px;">Other Data</th>
+
+            <th style="min-width:320px;">Submitted URLs</th>
+
+            <th style="min-width:320px;">Target URLs</th>
+
+            <th style="min-width:140px;">Status</th>
+
+            <th style="min-width:160px;">Date</th>
+
+        </tr>
         </thead>
         <tbody id="taskTableBody">
           <tr class="loading-row">
@@ -609,6 +645,76 @@
           </tr>
         </tbody>
       </table>
+      <div class="pagination-wrap">
+
+    {% if page_obj.has_previous %}
+
+        <a href="?page=1"
+           class="pill">
+
+            First
+
+        </a>
+
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="pill">
+
+            ← Prev
+
+        </a>
+
+    {% endif %}
+
+    {% for num in paginator.page_range %}
+
+        {% if num == page_obj.number %}
+
+            <span class="pill active">
+
+                {{ num }}
+
+            </span>
+
+        {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+
+            <a href="?page={{ num }}"
+               class="pill">
+
+                {{ num }}
+
+            </a>
+
+        {% endif %}
+
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="pill">
+
+            Next →
+
+        </a>
+
+        <a href="?page={{ paginator.num_pages }}"
+           class="pill">
+
+            Last
+
+        </a>
+
+    {% endif %}
+
+    <span class="page-info">
+
+        Page {{ page_obj.number }}
+        of
+        {{ paginator.num_pages }}
+
+    </span>
+
+</div>
     </div>
 
     <!-- PAGINATION: outside table-wrap to avoid clipping -->
@@ -684,39 +790,321 @@
     document.getElementById('kpiRejected').textContent = kpi.rejected != null ? kpi.rejected : '0';
   }
 
-  /* ─── RENDER TABLE ───────────────────── */
-  function renderTable(rows) {
-    if (!rows || !rows.length) {
-      tableBody.innerHTML =
-        '<tr class="empty-row"><td colspan="5">📋 No tasks found for this period</td></tr>';
-      return;
-    }
+ /* ─── RENDER TABLE ───────────────────── */
+function renderTable(rows) {
 
-    var html = '';
-    rows.forEach(function(r) {
-      var proofHTML = 'No proof';
-      if (r.proof_link) {
-        var links = r.proof_link.split('\n').filter(function(l){ return l.trim(); });
-        if (links.length) {
-         proofHTML = links.map(function(l, i) {
-            return '<div><a href="' + escHtml(l.trim()) + '" target="_blank" rel="noopener noreferrer" class="proof-link">View ' + (i + 1) + '</a></div>';
-          }).join('');
-        }
-      }
+  if (!rows || !rows.length) {
 
-      html +=
-        '<tr>' +
-        '<td class="cell-project">' + escHtml(r.project__name || '—') + '</td>' +
-        '<td class="cell-task">'    + escHtml(r.task_title    || '—') + '</td>' +
-        '<td>'                      + proofHTML                       + '</td>' +
-        '<td><span class="badge '  + badgeClass(r.status) + '">'     + escHtml(r.status) + '</span></td>' +
-        '<td class="cell-date">'   + escHtml(r.date         || '—') + '</td>' +
-        '</tr>';
-    });
-    tableBody.innerHTML = html;
+    tableBody.innerHTML =
+      '<tr class="empty-row"><td colspan="9">📋 No tasks found for this period</td></tr>';
+
+    return;
   }
 
-  /* ─── RENDER CHART ───────────────────── */
+  let html = '';
+
+  rows.forEach(function(r) {
+
+    /* =========================
+       KEYWORD
+    ========================== */
+
+    let keywordHTML = '-';
+
+    let keywordValue =
+      r.keyword ||
+      r.KEYWORD ||
+      (r.data && (
+        r.data.keyword ||
+        r.data.KEYWORD ||
+        r.data.Keyword
+      ));
+
+    if (keywordValue) {
+
+      keywordHTML = `
+        <div style="
+          font-size:13px;
+          color:#0f172a;
+          word-break:break-word;
+        ">
+          ${escHtml(String(keywordValue))}
+        </div>
+      `;
+    }
+
+    /* =========================
+       SUBMITTED URLS
+    ========================== */
+
+    let submittedHTML = '-';
+
+    let submittedValue =
+      r.SUBMITTED_URL ||
+      r.submitted_url ||
+      (r.data && (
+        r.data.submitted_url ||
+        r.data.SUBMITTED_URL
+      ));
+
+    if (submittedValue) {
+
+      let submittedLinks = String(submittedValue)
+        .split(/[\n,]+/)
+        .filter(l => l.trim());
+
+      if (submittedLinks.length) {
+
+        submittedHTML = submittedLinks.map(function(link){
+
+          link = link.trim();
+
+          return `
+            <div class="proof-link-ui" style="margin-bottom:8px;">
+
+              <a href="${escHtml(link)}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 style="
+                    color:#2563eb;
+                    text-decoration:none;
+                    font-size:13px;
+                    display:block;
+                    white-space:nowrap;
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    width:100%;
+                 ">
+
+                 ${escHtml(link)}
+
+              </a>
+
+            </div>
+          `;
+
+        }).join('');
+      }
+    }
+
+    /* =========================
+       TARGET URLS
+    ========================== */
+
+    let targetHTML = '-';
+
+    let targetValue =
+      r.TARGET_URL ||
+      r.target_url ||
+      r['Target url'] ||
+      r['target url'] ||
+      (r.data && (
+        r.data.target_url ||
+        r.data.TARGET_URL ||
+        r.data['Target url'] ||
+        r.data['target url']
+      ));
+
+    if (targetValue) {
+
+      let targetLinks = String(targetValue)
+        .split(/[\n,]+/)
+        .filter(l => l.trim());
+
+      if (targetLinks.length) {
+
+        targetHTML = targetLinks.map(function(link){
+
+          link = link.trim();
+
+          return `
+            <div class="proof-link-ui" style="margin-bottom:8px;">
+
+              <a href="${escHtml(link)}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 style="
+                    color:#059669;
+                    text-decoration:none;
+                    font-size:13px;
+                    display:block;
+                    white-space:nowrap;
+                    overflow:hidden;
+                    text-overflow:ellipsis;
+                    width:100%;
+                 ">
+
+                 ${escHtml(link)}
+
+              </a>
+
+            </div>
+          `;
+
+        }).join('');
+      }
+    }
+
+    /* =========================
+       OTHER DATA
+    ========================== */
+
+    let otherHTML = '-';
+
+    if (r.data) {
+
+      let tempHTML = '';
+
+      Object.entries(r.data).forEach(function([key, value]) {
+
+        let lowerKey = String(key).toLowerCase();
+
+        /* skip keyword + url fields */
+        if (
+
+          (
+            lowerKey.includes('submitted') &&
+            lowerKey.includes('url')
+          )
+
+          ||
+
+          (
+            lowerKey.includes('target') &&
+            lowerKey.includes('url')
+          )
+
+          ||
+
+          lowerKey === 'keyword'
+
+        ) {
+          return;
+        }
+
+        /* skip empty */
+        if (
+          value === null ||
+          value === undefined ||
+          value === ''
+        ) {
+          return;
+        }
+
+        /* array support */
+        if (Array.isArray(value)) {
+
+          value = value.join(', ');
+        }
+
+        tempHTML += `
+          <div style="
+            margin-bottom:8px;
+            padding:7px 9px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:8px;
+            font-size:12px;
+          ">
+
+            <strong style="
+              color:#334155;
+              display:block;
+              margin-bottom:3px;
+            ">
+
+              ${escHtml(
+                String(key).replaceAll('_', ' ')
+              )}
+
+            </strong>
+
+            <div style="
+              color:#0f172a;
+              word-break:break-word;
+            ">
+
+              ${escHtml(String(value))}
+
+            </div>
+
+          </div>
+        `;
+      });
+
+      if (tempHTML) {
+
+        otherHTML = tempHTML;
+      }
+    }
+
+    /* =========================
+       ROW
+    ========================== */
+
+    html += `
+      <tr>
+
+        <td class="cell-project">
+          ${escHtml(r.project__name || '—')}
+        </td>
+
+        <td class="cell-task">
+          ${escHtml(r.service_name || '—')}
+        </td>
+
+        <td class="cell-task">
+          ${escHtml(r.task_type || '—')}
+        </td>
+
+        <td style="
+          max-width:220px;
+          min-width:160px;
+        ">
+          ${keywordHTML}
+        </td>
+
+        <td style="
+          max-width:320px;
+          min-width:260px;
+        ">
+          ${otherHTML}
+        </td>
+
+        <td style="
+          max-width:180px;
+          min-width:120px;
+        ">
+          ${submittedHTML}
+        </td>
+
+        <td style="
+          max-width:180px;
+          min-width:120px;
+        ">
+          ${targetHTML}
+        </td>
+
+        <td>
+          <span class="badge ${badgeClass(r.status)}">
+            ${escHtml(r.status || 'pending')}
+          </span>
+        </td>
+
+        <td class="cell-date">
+          ${escHtml(r.date || '—')}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  requestAnimationFrame(function () {
+
+    tableBody.innerHTML = html;
+
+  });
+}
   function renderChart(labels, data) {
     var ctx = document.getElementById('chartCanvas');
     if (!ctx) return;
@@ -817,47 +1205,101 @@
     paginationWrap.style.display = 'flex';
   }
 
-  /* ─── MAIN FETCH ─────────────────────── */
-  function loadDashboard(silent) {
-    if (state.loading && !silent) return;
-    if (!silent) {
-      state.loading = true;
-      tableBody.innerHTML =
-        '<tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading data…</td></tr>';
-    }
+ /* ─── FAST LOAD DASHBOARD ───────────────────── */
+async function loadDashboard(silent = false) {
 
-    var query = buildQuery();
+  if (state.loading) return;
 
-    fetch('/activities/api/dashboard/?' + query, {
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function(res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    })
-    .then(function(data) {
-      if (data.kpi)        renderKPI(data.kpi);
-      if (data.table)      renderTable(data.table);
-      if (data.chart)      renderChart(data.chart.labels || [], data.chart.data || []);
-      if (data.pagination) renderPagination(data.pagination);
+  state.loading = true;
 
-      if (!state.servicesLoaded && data.services) {
-        state.servicesLoaded = true;
-      }
+  if (!silent) {
 
-      state.lastTotal = (data.kpi && data.kpi.total != null) ? data.kpi.total : state.lastTotal;
-      state.loading   = false;
-    })
-    .catch(function(err) {
-      console.error('[Dashboard] fetch error:', err);
-      state.loading = false;
-      if (!silent) {
-        tableBody.innerHTML =
-          '<tr class="empty-row"><td colspan="5">⚠️ Failed to load data. Please refresh.</td></tr>';
-      }
+    requestAnimationFrame(() => {
+
+      tableBody.innerHTML = `
+        <tr class="loading-row">
+          <td colspan="8">
+            <span class="spinner"></span>
+            Loading...
+          </td>
+        </tr>
+      `;
+
     });
   }
 
+  try {
+
+    const query = buildQuery();
+
+    const res = await fetch(
+      '/activities/api/dashboard/?' + query,
+      {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('HTTP ' + res.status);
+    }
+
+    const data = await res.json();
+
+    /* ─── FAST UI FIRST ─── */
+
+    requestAnimationFrame(() => {
+
+      if (data.kpi) {
+        renderKPI(data.kpi);
+      }
+
+      if (data.table) {
+        renderTable(data.table);
+      }
+
+      if (data.pagination) {
+        renderPagination(data.pagination);
+      }
+
+    });
+
+    /* ─── LOAD CHART LATER ─── */
+
+    setTimeout(() => {
+
+      if (data.chart) {
+
+        renderChart(
+          data.chart.labels || [],
+          data.chart.data || []
+        );
+      }
+
+    }, 50);
+
+    state.lastTotal =
+      data.kpi?.total ?? state.lastTotal;
+
+  }
+  catch (err) {
+
+    console.error(err);
+
+    tableBody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="8">
+          ⚠️ Failed to load data
+        </td>
+      </tr>
+    `;
+  }
+  finally {
+
+    state.loading = false;
+  }
+}
   /* ─── SMART POLL (passes current filters) ── */
   function startPolling() {
     if (pollTimer) clearInterval(pollTimer);
@@ -870,11 +1312,11 @@
         if (!data) return;
         var newTotal = data.kpi && data.kpi.total != null ? data.kpi.total : null;
         if (state.lastTotal !== null && newTotal !== null && newTotal !== state.lastTotal) {
-          loadDashboard(false);
+          loadDashboard();
         }
       })
       .catch(function(){});
-    }, 5000);
+    }, 10000);
   }
 
   /* ─── EVENT: FILTER PILLS ────────────── */
@@ -886,7 +1328,7 @@
       btn.classList.add('active');
       state.type = btn.getAttribute('data-filter');
       state.page = 1;
-      loadDashboard(false);
+      loadDashboard();
     });
   });
 
@@ -894,7 +1336,7 @@
   perPageSelect.addEventListener('change', function() {
     state.limit = parseInt(this.value, 10) || 10;
     state.page  = 1;
-    loadDashboard(false);
+    loadDashboard();
   });
 
   /* ─── EVENT: PAGINATION (delegated) ──── */
@@ -904,7 +1346,7 @@
     var page = parseInt(btn.getAttribute('data-page'), 10);
     if (isNaN(page)) return;
     state.page = page;
-    loadDashboard(false);
+    loadDashboard();
   });
 
  exportBtn.addEventListener('click', function() {
@@ -924,7 +1366,8 @@
     .map(k => k + '=' + encodeURIComponent(params[k]))
     .join('&');
 
-  window.location.href = '/activities/api/export/?' + query;
+  window.location.href =
+    '/activities/api/export/?export_type=client&' + query;
 });
 
 var startInput = document.getElementById('startDate');
@@ -933,17 +1376,66 @@ var endInput   = document.getElementById('endDate');
 if (startInput) {
   startInput.addEventListener('change', function() {
     state.page = 1;
-    loadDashboard(false);
+    loadDashboard();
   });
 }
 
 if (endInput) {
   endInput.addEventListener('change', function() {
     state.page = 1;
-    loadDashboard(false);
+    loadDashboard();
   });
 }
 })();
+
+/* ─── LOAD KPI ONLY ─────────────────── */
+function loadKPI() {
+
+  fetch('/activities/api/dashboard-kpi/', {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(res => res.json())
+  .then(function(data){
+
+    if (data.kpi) {
+      renderKPI(data.kpi);
+    }
+
+    if (data.chart) {
+      renderChart(
+        data.chart.labels || [],
+        data.chart.data || []
+      );
+    }
+
+  })
+  .catch(console.error);
+}
+
+
+/* ─── LOAD TABLE ONLY ───────────────── */
+function loadTable() {
+
+  tableBody.innerHTML =
+    '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading...</td></tr>';
+
+  fetch('/activities/api/dashboard-table/?' + buildQuery(), {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(res => res.json())
+  .then(function(data){
+
+    renderTable(data.table || []);
+    renderPagination(data.pagination);
+
+  })
+  .catch(function(){
+
+    tableBody.innerHTML =
+      '<tr class="empty-row"><td colspan="6">Failed to load</td></tr>';
+
+  });
+}
 </script>
 
 {% endblock %}

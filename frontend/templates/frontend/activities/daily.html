@@ -758,140 +758,274 @@ function renderTable(data){
         return;
     }
 
-    /* ---- COLLECT DYNAMIC KEYS ---- */
-    let dynamicKeys = new Set();
+    /* =========================
+       TABLE HEAD
+    ========================== */
 
-    data.forEach(r => {
-        Object.keys(r.data || {})
-            .forEach(k => dynamicKeys.add(k));
-    });
-
-    dynamicKeys = [...dynamicKeys];
-
-    /* ---- PRIORITY SORT ---- */
-    const priority = ["keyword", "url", "submitted_url"];
-
-    dynamicKeys.sort((a, b) => {
-        let ai = priority.indexOf(a);
-        let bi = priority.indexOf(b);
-        ai = ai === -1 ? 999 : ai;
-        bi = bi === -1 ? 999 : bi;
-        return ai - bi;
-    });
-
-    /* ---- TABLE HEAD ---- */
     head.innerHTML = `
         <th>#</th>
         <th>Project</th>
         <th>Category</th>
         <th>Service</th>
         <th>Task</th>
-        ${dynamicKeys.map(k =>
-            `<th>${formatLabel(k)}</th>`
-        ).join("")}
+        <th>Keyword</th>
+        <th>Submitted URL</th>
+        <th>Target URL</th>
+        <th style="min-width:400px;">Other Data</th>
         <th>Action</th>
     `;
 
-    /* ---- PAGINATION SLICE ---- */
+    /* =========================
+       PAGINATION
+    ========================== */
+
     let start         = (currentPage - 1) * rowsPerPage;
     let end           = start + rowsPerPage;
     let paginatedData = data.slice(start, end);
 
     body.innerHTML = "";
 
-    /* ---- TABLE BODY ---- */
+    /* =========================
+       TABLE BODY
+    ========================== */
+
     paginatedData.forEach((r, index) => {
 
-        let cells = dynamicKeys.map(k => {
+        let rowData = r.data || {};
 
-            let val    = r.data?.[k] || "";
-            let isFull = FULL_COLS.includes(k);
+        /* =========================
+           KEYWORD
+        ========================== */
 
-            if(typeof val === "string"){
+        let keyword =
+            rowData.KEYWORD ||
+            rowData.keyword ||
+            rowData.Keyword ||
+            "-";
 
-                /* split by comma to support multiple links */
-                let parts = val.split(",");
+        /* =========================
+           SUBMITTED URL
+        ========================== */
 
-                let rendered = parts.map(part => {
+        let submitted =
+            rowData.SUBMITTED_URL ||
+            rowData.submitted_url ||
+            "";
 
-                    part = part.trim();
+        let submittedHTML = "-";
 
-                    if(
-                        part.startsWith("http://") ||
-                        part.startsWith("https://")
-                    ){
-                        /* links always shown full */
-                        return `
-                        <div class="mb-1">
-                            <a href="${part}"
-                               target="_blank"
-                               title="${part}">
-                               ${part}
-                            </a>
-                        </div>`;
-                    }
+        if(submitted){
 
-                    if(isFull){
-                        /* non-link full column — show everything */
-                        return `<div>${part}</div>`;
-                    }
+            submittedHTML = String(submitted)
+            .split(/[\n,]+/)
+            .filter(x => x.trim())
+            .map(link => `
 
-                    /* truncate to TRUNC_LEN characters */
-                    let display = part.length > TRUNC_LEN
-                        ? part.substring(0, TRUNC_LEN) + "…"
-                        : part;
+                <div class="mb-1">
 
-                    return `<div title="${part}">${display}</div>`;
+                    <a href="${link.trim()}"
+                       target="_blank"
+                       style="
+                         color:#2563eb;
+                         text-decoration:none;
+                         display:block;
+                         max-width:220px;
+                         white-space:nowrap;
+                         overflow:hidden;
+                         text-overflow:ellipsis;
+                       ">
 
-                }).join("");
+                        ${link.trim()}
 
-                let cls = isFull ? "col-url" : "col-trunc";
+                    </a>
 
-                return `<td class="${cls}">${rendered}</td>`;
+                </div>
+
+            `).join("");
+        }
+
+        /* =========================
+           TARGET URL
+        ========================== */
+
+        let target =
+            rowData.Target_url ||
+            rowData.target_url ||
+            "";
+
+        let targetHTML = "-";
+
+        if(target){
+
+            targetHTML = String(target)
+            .split(/[\n,]+/)
+            .filter(x => x.trim())
+            .map(link => `
+
+                <div class="mb-1">
+
+                    <a href="${link.trim()}"
+                       target="_blank"
+                       style="
+                         color:#059669;
+                         text-decoration:none;
+                         display:block;
+                         max-width:220px;
+                         white-space:nowrap;
+                         overflow:hidden;
+                         text-overflow:ellipsis;
+                       ">
+
+                        ${link.trim()}
+
+                    </a>
+
+                </div>
+
+            `).join("");
+        }
+
+        /* =========================
+           OTHER DATA
+        ========================== */
+
+        let otherHTML = "";
+
+        Object.entries(rowData).forEach(([key, value]) => {
+
+            let lower = key.toLowerCase();
+
+            /* skip separate columns */
+            if(
+                lower === "keyword" ||
+                lower === "submitted_url" ||
+                lower === "target_url"
+            ){
+                return;
             }
 
-            return `<td>${val}</td>`;
+            if(value === null || value === ""){
+                return;
+            }
 
-        }).join("");
+            otherHTML += `
+
+                <div style="
+                    margin-bottom:8px;
+                    padding:8px 10px;
+                    background:#f8fafc;
+                    border:1px solid #e2e8f0;
+                    border-radius:8px;
+                    font-size:13px;
+                ">
+
+                    <strong style="
+                        display:block;
+                        margin-bottom:4px;
+                        color:#334155;
+                    ">
+
+                        ${formatLabel(key)}
+
+                    </strong>
+
+                    <div style="
+                        color:#0f172a;
+                        word-break:break-word;
+                        white-space:normal;
+                    ">
+
+                        ${value}
+
+                    </div>
+
+                </div>
+            `;
+        });
+
+        if(!otherHTML){
+            otherHTML = "-";
+        }
+
+        /* =========================
+           FINAL ROW
+        ========================== */
 
         body.innerHTML += `
+
         <tr>
+
             <td>${start + index + 1}</td>
-            <td style="white-space:nowrap;">${r.project_name || ""}</td>
-            <td style="white-space:nowrap;">${r.category   || ""}</td>
-            <td style="white-space:nowrap;">${r.service_name || r.service || ""}</td>
-            <td style="white-space:nowrap;">${r.task_type || r.task || ""}</td>
-            ${cells}
+
+            <td>${r.project_name || ""}</td>
+
+            <td>${r.category || ""}</td>
+
+            <td>${r.service_name || r.service || ""}</td>
+
+            <td>${r.task_type || r.task || ""}</td>
+
+            <td style="min-width:180px;">
+                ${keyword}
+            </td>
+
+            <td class="col-url">
+                ${submittedHTML}
+            </td>
+
+            <td class="col-url">
+                ${targetHTML}
+            </td>
+
+            <td style="
+                min-width:420px;
+                max-width:520px;
+            ">
+                ${otherHTML}
+            </td>
+
             <td>
+
                 <div class="d-flex gap-1">
 
                     <button
                         class="btn btn-sm btn-primary"
-                        onclick="editRow(${r.id})"
-                        title="Edit">
+                        onclick="editRow(${r.id})">
+
                         ✏️
+
                     </button>
 
                     <button
                         class="btn-delete"
-                        onclick="deleteRow(${r.id})"
-                        title="Delete">
+                        onclick="deleteRow(${r.id})">
+
                         🗑
+
                     </button>
 
                 </div>
+
             </td>
-        </tr>`;
+
+        </tr>
+        `;
     });
 
-    /* ---- PAGINATION BUTTONS ---- */
-    let totalPages = Math.ceil(data.length / rowsPerPage);
+    /* =========================
+       PAGINATION BUTTONS
+    ========================== */
+
+    let totalPages = Math.ceil(
+        data.length / rowsPerPage
+    );
 
     pagination.innerHTML = "";
 
     for(let i = 1; i <= totalPages; i++){
 
         pagination.innerHTML += `
+
         <button
             class="btn btn-sm pagination-btn
             ${i === currentPage
@@ -902,11 +1036,10 @@ function renderTable(data){
 
             ${i}
 
-        </button>`;
+        </button>
+        `;
     }
 }
-
-
 function changePage(page){
 
     currentPage = page;
@@ -963,7 +1096,7 @@ function downloadExcel(){
     let endDate =
         document.getElementById("endDate").value;
 
-    let url = `/activities/api/export/?type=daily&`;
+    let url = `/activities/api/export/?export_type=daily&`;
 
     if(selectedProject)
         url += `project=${selectedProject}&`;

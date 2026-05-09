@@ -15,43 +15,62 @@ from django.utils.timezone import now
 
 from activities.models import Activity
 from rest_framework.permissions import IsAuthenticated
+from clients.models import Client
 
 
 class ExportExcelAPI(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+
         qs = Activity.objects.select_related(
             "user",
             "project"
         ).order_by("-date")
 
-        export_type = request.GET.get("type")
+        export_type = (
+            request.GET.get("export_type")
+            or request.GET.get("type")
+        )
 
+        try:
 
-        if export_type == "daily":
-
-            qs = qs.filter(
+            client = Client.objects.get(
                 user=request.user
             )
 
+            qs = qs.filter(
+                project__client=client
+            )
 
-        elif export_type == "approval":
+        except Client.DoesNotExist:
 
-            if not (
-                request.user.is_superuser
-                or request.user.is_staff
-            ):
+            if export_type == "daily":
 
                 qs = qs.filter(
                     user=request.user
-        )
-       
+                )
+
+            elif export_type == "approval":
+
+                if not (
+                    request.user.is_superuser
+                    or request.user.is_staff
+                ):
+
+                    qs = qs.filter(
+                        user=request.user
+                    )
+
+        # =====================================
+        # FILTERS
+        # =====================================
+
         project = request.GET.get("project")
         service = request.GET.get("service")
         task = request.GET.get("task")
 
-    
         filter_type = (
             request.GET.get("type")
             or request.GET.get("filter")
@@ -67,7 +86,6 @@ class ExportExcelAPI(APIView):
             or request.GET.get("end")
         )
 
-        # NEW OPTIONAL FILTERS
         status = request.GET.get("status")
         search = request.GET.get("search")
 
@@ -83,12 +101,10 @@ class ExportExcelAPI(APIView):
 
             qs = qs.filter(task_type=task)
 
-    
         if status:
 
             qs = qs.filter(status=status)
 
-      
         if search:
 
             qs = qs.filter(
@@ -118,12 +134,21 @@ class ExportExcelAPI(APIView):
 
         elif filter_type == "week":
 
-            start_week = today - timedelta(days=today.weekday())
+            start_week = (
+                today - timedelta(
+                    days=today.weekday()
+                )
+            )
 
-            end_week = start_week + timedelta(days=6)
+            end_week = (
+                start_week + timedelta(days=6)
+            )
 
             qs = qs.filter(
-                date__range=[start_week, end_week]
+                date__range=[
+                    start_week,
+                    end_week
+                ]
             )
 
         elif filter_type == "year":
@@ -140,59 +165,26 @@ class ExportExcelAPI(APIView):
                     date__range=[start, end]
                 )
 
-        # =================================
-        # CUSTOM DATE RANGE
-        # =================================
         if start and end:
 
             qs = qs.filter(
                 date__range=[start, end]
             )
 
-        # =================================
+        # =====================================
         # WORKBOOK
-        # =================================
+        # =====================================
+
         wb = Workbook()
 
         ws = wb.active
 
         ws.title = "SEO Report"
 
-        # =================================
-        # DYNAMIC KEYS
-        # =================================
-        dynamic_keys = set()
-
-        for a in qs:
-
-            data = a.dynamic_data or {}
-
-            for key in data.keys():
-
-                dynamic_keys.add(key)
-
-        # =================================
-        # PRIORITY SORT
-        # =================================
-        priority = [
-            "keyword",
-            "url",
-            "submitted_url"
-        ]
-
-        dynamic_keys = list(dynamic_keys)
-
-        dynamic_keys.sort(
-            key=lambda x: (
-                priority.index(x)
-                if x in priority else 999,
-                x
-            )
-        )
-
-        # =================================
+        # =====================================
         # HEADERS
-        # =================================
+        # =====================================
+
         headers = [
             "S.No",
             "Date",
@@ -201,16 +193,18 @@ class ExportExcelAPI(APIView):
             "Category",
             "Service",
             "Task",
-        ] + [
-            k.replace("_", " ").title()
-            for k in dynamic_keys
+            "Keyword",
+            "Submitted URLs",
+            "Target URLs",
+            "Proof / Other Data",
         ]
 
         ws.append(headers)
 
-        # =================================
-        # HEADER DESIGN
-        # =================================
+        # =====================================
+        # HEADER STYLE
+        # =====================================
+
         header_fill = PatternFill(
             start_color="1F4E78",
             end_color="1F4E78",
@@ -232,16 +226,18 @@ class ExportExcelAPI(APIView):
                 wrap_text=True
             )
 
-        # =================================
-        # DATA
-        # =================================
+        # =====================================
+        # DATA ROWS
+        # =====================================
+
         for i, a in enumerate(qs, start=1):
 
             data = a.dynamic_data or {}
 
-            # =================================
-            # SUBMITTED BY
-            # =================================
+            # =====================================
+            # EMPLOYEE
+            # =====================================
+
             employee = ""
 
             if a.user:
@@ -255,9 +251,108 @@ class ExportExcelAPI(APIView):
 
                     employee = a.user.email
 
-            # =================================
-            # BASE ROW
-            # =================================
+            # =====================================
+            # KEYWORD
+            # =====================================
+
+            keyword = (
+                data.get("keyword")
+                or data.get("KEYWORD")
+                or data.get("Keyword")
+                or ""
+            )
+
+            # =====================================
+            # SUBMITTED URLS
+            # =====================================
+
+            submitted_urls = (
+                data.get("submitted_url")
+                or data.get("submitted_urls")
+                or data.get("SUBMITTED_URL")
+                or data.get("Submitted url")
+                or ""
+            )
+
+            if isinstance(submitted_urls, str):
+
+                submitted_urls = "\n".join([
+                    x.strip()
+                    for x in submitted_urls
+                    .replace(",", "\n")
+                    .split("\n")
+                    if x.strip()
+                ])
+
+            # =====================================
+            # TARGET URLS
+            # =====================================
+
+            target_urls = (
+                data.get("target_url")
+                or data.get("target_urls")
+                or data.get("TARGET_URL")
+                or data.get("Target_url")
+                or data.get("TARGET_URL")
+                or ""
+            )
+
+            if isinstance(target_urls, str):
+
+                target_urls = "\n".join([
+                    x.strip()
+                    for x in target_urls
+                    .replace(",", "\n")
+                    .split("\n")
+                    if x.strip()
+                ])
+
+            # =====================================
+            # OTHER DATA
+            # =====================================
+
+            other_data_parts = []
+
+            for key, value in data.items():
+
+                lower_key = str(key).lower()
+
+                # skip separate columns
+                if lower_key in [
+                    "keyword",
+                    "submitted_url",
+                    "submitted_urls",
+                    "target_url",
+                    "target_urls"
+                ]:
+                    continue
+
+                # skip empty values
+                if (
+                    value is None or
+                    value == ""
+                ):
+                    continue
+
+                # list support
+                if isinstance(value, list):
+
+                    value = ", ".join(
+                        map(str, value)
+                    )
+
+                other_data_parts.append(
+                    f"{key}: {value}"
+                )
+
+            other_data = "\n".join(
+                other_data_parts
+            )
+
+            # =====================================
+            # FINAL ROW
+            # =====================================
+
             row = [
                 i,
                 str(a.date),
@@ -266,75 +361,68 @@ class ExportExcelAPI(APIView):
                 getattr(a, "category", ""),
                 a.service_name,
                 a.task_type,
+                keyword,
+                submitted_urls,
+                target_urls,
+                other_data,
             ]
-
-            # =================================
-            # DYNAMIC VALUES
-            # =================================
-            for key in dynamic_keys:
-
-                val = data.get(key, "")
-
-                # =================================
-                # MULTIPLE LINKS SUPPORT
-                # =================================
-                if isinstance(val, str):
-
-                    possible_links = [
-                        x.strip()
-                        for x in val.replace(",", "\n").split("\n")
-                        if x.strip()
-                    ]
-
-                    val = "\n".join(
-                        possible_links
-                    )
-
-                row.append(val)
 
             ws.append(row)
 
             current_row = ws.max_row
 
-            # =================================
-            # CLICKABLE LINKS
-            # =================================
-            for idx, key in enumerate(
-                dynamic_keys,
-                start=8
-            ):
+            # =====================================
+            # SUBMITTED URL LINK
+            # =====================================
 
-                val = data.get(key, "")
+            if submitted_urls:
 
-                if isinstance(val, str):
+                first_link = (
+                    submitted_urls
+                    .split("\n")[0]
+                    .strip()
+                )
 
-                    first_link = (
-                        val.split(",")[0]
-                        .strip()
+                if first_link.startswith(
+                    ("http://", "https://")
+                ):
+
+                    cell = ws.cell(
+                        current_row,
+                        9
                     )
 
-                    if (
-                        first_link.startswith("http://")
-                        or first_link.startswith("https://")
-                    ):
+                    cell.hyperlink = first_link
+                    cell.style = "Hyperlink"
 
-                        cell = ws.cell(
-                            current_row,
-                            idx
-                        )
+            # =====================================
+            # TARGET URL LINK
+            # =====================================
 
-                        cell.hyperlink = first_link
+            if target_urls:
 
-                        cell.style = "Hyperlink"
+                first_link = (
+                    target_urls
+                    .split("\n")[0]
+                    .strip()
+                )
 
-                        cell.alignment = Alignment(
-                            wrap_text=True,
-                            vertical="top"
-                        )
+                if first_link.startswith(
+                    ("http://", "https://")
+                ):
 
-        # =================================
+                    cell = ws.cell(
+                        current_row,
+                        10
+                    )
+
+                    cell.hyperlink = first_link
+                    cell.style = "Hyperlink"
+
+        # =====================================
         # CELL STYLING
-        # =================================
+        # =====================================
+
         for row in ws.iter_rows():
 
             for cell in row:
@@ -344,9 +432,10 @@ class ExportExcelAPI(APIView):
                     vertical="top"
                 )
 
-        # =================================
+        # =====================================
         # COLUMN WIDTH
-        # =================================
+        # =====================================
+
         for column_cells in ws.columns:
 
             length = 0
@@ -363,7 +452,6 @@ class ExportExcelAPI(APIView):
                     )
 
                 except:
-
                     pass
 
             adjusted_width = min(
@@ -375,9 +463,10 @@ class ExportExcelAPI(APIView):
                 get_column_letter(column)
             ].width = adjusted_width
 
-        # =================================
+        # =====================================
         # ROW HEIGHT
-        # =================================
+        # =====================================
+
         for row in range(
             2,
             ws.max_row + 1
@@ -385,14 +474,16 @@ class ExportExcelAPI(APIView):
 
             ws.row_dimensions[row].height = 60
 
-        # =================================
+        # =====================================
         # FREEZE HEADER
-        # =================================
+        # =====================================
+
         ws.freeze_panes = "A2"
 
-        # =================================
+        # =====================================
         # RESPONSE
-        # =================================
+        # =====================================
+
         response = HttpResponse(
             content_type=(
                 "application/vnd.openxmlformats-"
@@ -400,14 +491,17 @@ class ExportExcelAPI(APIView):
             )
         )
 
-        # =================================
-            # DYNAMIC FILE NAME
-            # =================================
+        # =====================================
+        # FILE NAME
+        # =====================================
+
         parts = ["SEO_Report"]
 
         if start and end:
 
-            parts.append(f"{start}_to_{end}")
+            parts.append(
+                f"{start}_to_{end}"
+            )
 
         elif filter_type:
 
@@ -415,23 +509,30 @@ class ExportExcelAPI(APIView):
 
         if service:
 
-            parts.append(service.replace(" ", "_"))
+            parts.append(
+                service.replace(" ", "_")
+            )
 
         if task:
 
-            parts.append(task.replace(" ", "_"))
+            parts.append(
+                task.replace(" ", "_")
+            )
 
         if status:
 
             parts.append(status)
 
-        filename = "_".join(parts) + ".xlsx"
+        filename = (
+            "_".join(parts)
+            + ".xlsx"
+        )
 
         response[
-                "Content-Disposition"
-            ] = (
-                f'attachment; filename="{filename}"'
-            )
+            "Content-Disposition"
+        ] = (
+            f'attachment; filename="{filename}"'
+        )
 
         wb.save(response)
 

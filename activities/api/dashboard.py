@@ -125,12 +125,7 @@ class ClientDashboardAPI(APIView):
                 date__year=today.year
             )
 
-        # =====================================
-        # SEARCH
-        # =====================================
-        # =====================================
-# SEARCH
-# =====================================
+    
         if search:
 
             search = search.strip()
@@ -202,9 +197,7 @@ class ClientDashboardAPI(APIView):
             status="rejected"
         ).count()
 
-        # =====================================
-        # CHART
-        # =====================================
+
         chart_qs = (
 
             base_qs
@@ -241,14 +234,9 @@ class ClientDashboardAPI(APIView):
                 status=status
             )
 
-        # =====================================
-        # ORDER
-        # =====================================
         qs = qs.order_by("-date")
 
-        # =====================================
-        # PAGINATION
-        # =====================================
+     
         total_count = qs.count()
 
         start = (page - 1) * limit
@@ -260,9 +248,7 @@ class ClientDashboardAPI(APIView):
             (total_count + limit - 1) // limit
         )
 
-        # =====================================
-        # TABLE
-        # =====================================
+
         table = list(
 
             qs.values(
@@ -290,28 +276,55 @@ class ClientDashboardAPI(APIView):
             )[start:end]
 
         )
-
         # =====================================
         # FORMAT TABLE DATA
         # =====================================
+
         for row in table:
 
-            # IMPORTANT:
-            # FRONTEND EXPECTS "data"
-            row["data"] = row.get(
-                "dynamic_data"
-            ) or {}
+            dynamic_data = (
+                row.get("dynamic_data")
+                or {}
+            )
 
-            # DATE STRING
-            if row.get("date"):
+            # FRONTEND SUPPORT
+            row["data"] = dynamic_data
 
-                row["date"] = str(
-                    row["date"]
+            # =================================
+            # PROOF LINKS
+            # =================================
+            row["SUBMITTED_URL"] = (
+
+                dynamic_data.get(
+                    "submitted_url"
                 )
 
-        # =====================================
-        # RESPONSE
-        # =====================================
+                or
+
+                dynamic_data.get(
+                    "SUBMITTED_URL"
+                )
+
+                or
+
+                dynamic_data.get(
+                    "proof_links"
+                )
+
+                or
+
+                ""
+            )
+
+        # =================================
+        # DATE FORMAT
+        # =================================
+        if row.get("date"):
+
+            row["date"] = str(
+                row["date"]
+            )
+            
         return Response({
 
             "kpi": {
