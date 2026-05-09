@@ -113,9 +113,7 @@ def project_dashboard(request):
         is_active=True
     ).exclude(role='client')
 
-    projects = Project.objects.select_related(
-        'client'
-    ).all()
+    projects = Project.objects.select_related('client').order_by('name')
 
     selected_project = None
     project_services = []
