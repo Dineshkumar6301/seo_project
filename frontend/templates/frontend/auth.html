@@ -554,28 +554,87 @@
     }
   });
 
-  // ── LOGIN ──
-  document.getElementById("loginForm").addEventListener("submit", async function(e){
+  document
+.getElementById("loginForm")
+
+.addEventListener(
+    "submit",
+
+async function(e){
+
     e.preventDefault();
 
-    const res = await fetch("/api/accounts/login/", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        email:    this.email.value,
-        password: this.password.value
-      })
-    });
+    try {
 
-    const data = await res.json();
+        const res = await fetch(
 
-    if(res.status === 200){
-      
-      window.location.href = data.redirect;
-    } else {
-      showToast("❌ Login failed. Check your credentials.", "error");
+            "/api/accounts/login/",
+
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                    "application/json"
+                },
+
+                credentials: "same-origin",
+
+                body: JSON.stringify({
+
+                    email:
+                        this.email.value,
+
+                    password:
+                        this.password.value
+                })
+            }
+        );
+
+        const data = await res.json();
+
+        // SUCCESS
+        if (res.ok && data.status === "success") {
+
+            showToast(
+                "✅ Login successful",
+                "success"
+            );
+
+            setTimeout(() => {
+
+                window.location.href =
+                    data.redirect;
+
+            }, 300);
+
+            return;
+        }
+
+        // FAILED
+        showToast(
+
+            "❌ " +
+
+            (
+                data.message ||
+
+                "Invalid email or password"
+            ),
+
+            "error"
+        );
+
+    } catch(err){
+
+        console.log(err);
+
+        showToast(
+            "❌ Network error",
+            "error"
+        );
     }
-  });
+});
 function openForgotModal(){
   document.getElementById("forgotModal").style.display = "flex";
 }
@@ -650,7 +709,7 @@ async function sendResetLink(){
 
     } else {
       showToast("❌ " + (data.error || "Failed to send"), "error");
-      lastRequestTime = 0; // allow retry if failed
+      lastRequestTime = 0; 
     }
 
   } catch (err){

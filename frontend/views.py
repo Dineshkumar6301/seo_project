@@ -29,7 +29,7 @@ def login_view(request):
             return redirect('home')
 
         return render(request, 'frontend/auth.html', {
-            'error': 'Invalid email or password'
+            "message": "Invalid email or password"
         })
 
     return redirect('home')
