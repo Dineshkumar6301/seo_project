@@ -45,10 +45,6 @@ from activities.models import Activity
 from projects.models import Project
 
 
-
-# =====================================
-# APPROVAL DASHBOARD
-# =====================================
 @login_required
 def activity_approval(request):
 
@@ -74,17 +70,11 @@ def activity_approval(request):
 
     today = timezone.now().date()
 
-    # =====================================
-    # QUERYSET
-    # =====================================
     queryset = Activity.objects.select_related(
         'user',
         'project'
     )
 
-    # =====================================
-    # DATE FILTERS
-    # =====================================
     if date_filter == "today":
 
         queryset = queryset.filter(
@@ -133,9 +123,6 @@ def activity_approval(request):
 
                 pass
 
-    # =====================================
-    # SEARCH
-    # =====================================
     if search:
 
         search = search.strip()
@@ -169,18 +156,14 @@ def activity_approval(request):
         Q(task_type__iregex=rf".*{search}.*")
 
     )
-    # =====================================
-    # PROJECT FILTER
-    # =====================================
+ 
     if project_id:
 
         queryset = queryset.filter(
             project_id=project_id
         )
 
-    # =====================================
-    # COUNTS
-    # =====================================
+
     counts = queryset.values(
         'status'
     ).annotate(
@@ -207,9 +190,7 @@ def activity_approval(request):
         0
     )
 
-    # =====================================
-    # EXPORT EXCEL
-    # =====================================
+   
     if request.GET.get('export') == "excel":
 
         wb = openpyxl.Workbook()
@@ -218,9 +199,7 @@ def activity_approval(request):
 
         ws.title = "Activity Report"
 
-        # =====================================
-        # HEADERS
-        # =====================================
+   
         headers = [
 
             "S.No",
@@ -246,9 +225,6 @@ def activity_approval(request):
 
         ws.append(headers)
 
-        # =====================================
-        # STYLES
-        # =====================================
         header_font = Font(
             bold=True,
             color="FFFFFF"
@@ -278,9 +254,6 @@ def activity_approval(request):
             bottom=thin
         )
 
-        # =====================================
-        # HEADER STYLE
-        # =====================================
         for cell in ws[1]:
 
             cell.font = header_font
@@ -291,9 +264,7 @@ def activity_approval(request):
 
             cell.border = border
 
-        # =====================================
-        # DATA
-        # =====================================
+    
         row_num = 2
 
         serial = 1
@@ -442,9 +413,6 @@ def activity_approval(request):
 
             end_row = row_num - 1
 
-            # =====================================
-            # MERGE CELLS
-            # =====================================
             if end_row > start_row:
 
                 for col in [
@@ -470,9 +438,7 @@ def activity_approval(request):
                         end_column=col
                     )
 
-            # =====================================
-            # STATUS COLORS
-            # =====================================
+   
             status_cell = ws.cell(
                 row=start_row,
                 column=9
@@ -501,9 +467,7 @@ def activity_approval(request):
 
             serial += 1
 
-        # =====================================
-        # COLUMN WIDTHS
-        # =====================================
+    
         widths = [
 
             8,
@@ -527,16 +491,12 @@ def activity_approval(request):
                 chr(64 + i)
             ].width = w
 
-        # =====================================
-        # FILTER + FREEZE
-        # =====================================
+  
         ws.auto_filter.ref = "A1:J1"
 
         ws.freeze_panes = "A2"
 
-        # =====================================
-        # RESPONSE
-        # =====================================
+   
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
@@ -549,9 +509,6 @@ def activity_approval(request):
 
         return response
 
-    # =====================================
-    # ACTIVITIES
-    # =====================================
     activities = queryset.filter(
         status=status
     ).order_by('-created_at')
@@ -562,9 +519,7 @@ def activity_approval(request):
         user=request.user
     ).first()
 
-    # =====================================
-    # RENDER
-    # =====================================
+
     return render(
 
         request,
@@ -596,9 +551,6 @@ def activity_approval(request):
     )
 
 
-# =====================================
-# REPORT PAGE
-# =====================================
 @login_required
 def activity_reports(request):
 
@@ -638,9 +590,7 @@ def export_report(request):
 
     now = datetime.now()
 
-    # =====================================
-    # ACTIVITIES
-    # =====================================
+
     activities = Activity.objects.filter(
 
         date__month=now.month,
@@ -653,18 +603,14 @@ def export_report(request):
 
     )
 
-    # =====================================
-    # WORKBOOK
-    # =====================================
+
     wb = Workbook()
 
     ws = wb.active
 
     ws.title = "Activities"
 
-    # =====================================
-    # HEADERS
-    # =====================================
+
     headers = [
 
         "S.No",
@@ -690,9 +636,6 @@ def export_report(request):
 
     ws.append(headers)
 
-    # =====================================
-    # STYLES
-    # =====================================
     header_font = Font(
         bold=True,
         color="FFFFFF"
@@ -713,9 +656,7 @@ def export_report(request):
         vertical="top"
     )
 
-    # =====================================
-    # HEADER STYLE
-    # =====================================
+
     for cell in ws[1]:
 
         cell.font = header_font
@@ -724,9 +665,6 @@ def export_report(request):
 
         cell.alignment = center_align
 
-    # =====================================
-    # ROWS
-    # =====================================
     row_num = 2
 
     serial = 1
@@ -847,9 +785,6 @@ def export_report(request):
 
         end_row = row_num - 1
 
-        # =====================================
-        # MERGE
-        # =====================================
         if end_row > start_row:
 
             for col in [
@@ -877,9 +812,6 @@ def export_report(request):
 
         serial += 1
 
-    # =====================================
-    # BORDER
-    # =====================================
     thin = Side(style="thin")
 
     border = Border(
@@ -903,9 +835,7 @@ def export_report(request):
 
                 cell.alignment = center_align
 
-    # =====================================
-    # STATUS COLORS
-    # =====================================
+
     for row in ws.iter_rows(min_row=2):
 
         status_cell = row[8]
@@ -931,9 +861,7 @@ def export_report(request):
                 fill_type="solid"
             )
 
-    # =====================================
-    # WIDTHS
-    # =====================================
+
     widths = [
         8,
         24,
@@ -953,16 +881,10 @@ def export_report(request):
             chr(64 + i)
         ].width = w
 
-    # =====================================
-    # FILTER
-    # =====================================
     ws.auto_filter.ref = "A1:J1"
 
     ws.freeze_panes = "A2"
 
-    # =====================================
-    # SUMMARY SHEET
-    # =====================================
     summary = wb.create_sheet("Summary")
 
     total = activities.count()
@@ -1019,9 +941,7 @@ def export_report(request):
 
         cell.alignment = center_align
 
-    # =====================================
-    # RESPONSE
-    # =====================================
+
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )

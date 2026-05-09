@@ -13,19 +13,12 @@ class ClientDashboardAPI(APIView):
     def get(self, request):
 
         qs = Activity.objects.all()
-
-        # =====================================
-        # CLIENT FILTER
-        # =====================================
         if hasattr(request.user, "client"):
 
             qs = qs.filter(
                 project__client=request.user.client
             )
 
-        # =====================================
-        # PAGINATION
-        # =====================================
         try:
 
             page = max(
@@ -270,7 +263,7 @@ class ClientDashboardAPI(APIView):
                 or {}
             )
 
-            # FRONTEND SUPPORT
+        
             row["data"] = dynamic_data
 
           

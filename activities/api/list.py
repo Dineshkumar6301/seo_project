@@ -14,10 +14,6 @@ class ActivityListAPI(APIView):
 
     def get(self, request):
 
-        # =====================================
-        # GET PARAMS
-        # =====================================
-
         date_str = request.GET.get("date")
 
         filter_type = request.GET.get("filter")
@@ -28,27 +24,15 @@ class ActivityListAPI(APIView):
 
         project = request.GET.get("project")
 
-        # =====================================
-        # BASE QUERY
-        # =====================================
-
         qs = Activity.objects.filter(
             user=request.user
         )
-
-        # =====================================
-        # PROJECT FILTER
-        # =====================================
 
         if project and project != "all":
 
             qs = qs.filter(
                 project_id=project
             )
-
-        # =====================================
-        # BASE DATE
-        # =====================================
 
         if date_str:
 
@@ -57,10 +41,6 @@ class ActivityListAPI(APIView):
         else:
 
             base_date = date.today()
-
-        # =====================================
-        # CUSTOM RANGE FILTER
-        # =====================================
 
         if start_date:
 
@@ -73,10 +53,6 @@ class ActivityListAPI(APIView):
             qs = qs.filter(
                 date__lte=end_date
             )
-
-        # =====================================
-        # NORMAL FILTERS
-        # =====================================
 
         elif filter_type == "today":
 
@@ -116,28 +92,16 @@ class ActivityListAPI(APIView):
                 date__year=base_date.year
             )
 
-        # =====================================
-        # DEFAULT TODAY
-        # =====================================
-
         else:
 
             qs = qs.filter(
                 date=base_date
             )
 
-        # =====================================
-        # ORDERING
-        # =====================================
-
         qs = qs.order_by(
             "-date",
             "-id"
         )
-
-        # =====================================
-        # RESPONSE
-        # =====================================
 
         response_data = []
 

@@ -163,7 +163,7 @@ body { background:#f4f6fb; }
 
   });
 
-  // UPDATE
+  
   document.getElementById('editForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -183,7 +183,7 @@ body { background:#f4f6fb; }
     }).then(() => location.reload());
   });
 
-  // CSRF helper
+
   function getCookie(name) {
     let v = null;
     document.cookie.split(';').forEach(c => {

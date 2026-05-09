@@ -22,10 +22,6 @@ class ActivityUpdateAPI(APIView):
             }, status=404)
 
         data = request.data
-
-        # =====================================
-        # UPDATE VALUES ONLY
-        # =====================================
         activity.project_id = data.get("project")
 
         activity.category = data.get("category")
@@ -39,9 +35,6 @@ class ActivityUpdateAPI(APIView):
             {}
         )
 
-        # =====================================
-        # SAVE
-        # =====================================
         activity.save()
 
         return Response({

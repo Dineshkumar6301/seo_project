@@ -177,7 +177,7 @@
 
 <script>
 
-// SEARCH
+
 function filterProjects(input){
   let val = input.value.toLowerCase();
   document.querySelectorAll(".list-group-item").forEach(el=>{
@@ -185,7 +185,7 @@ function filterProjects(input){
   });
 }
 
-// ADD SERVICE
+
 function addServiceInstant(){
 
   let name = document.getElementById("serviceName").value.trim();
@@ -215,7 +215,7 @@ function addServiceInstant(){
   .then(data => {
 
     if(data.success){
-      location.reload(); // 🔥 clean refresh
+      location.reload(); 
     }else{
       alert(data.error);
     }
@@ -223,7 +223,7 @@ function addServiceInstant(){
   });
 }
 
-// CSRF
+
 function getCookie(name){
   let value = null;
   document.cookie.split(';').forEach(c=>{

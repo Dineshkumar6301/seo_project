@@ -63,9 +63,6 @@ class ExportExcelAPI(APIView):
                         user=request.user
                     )
 
-        # =====================================
-        # FILTERS
-        # =====================================
 
         project = request.GET.get("project")
         service = request.GET.get("service")
@@ -289,7 +286,7 @@ class ExportExcelAPI(APIView):
 
                 lower_key = str(key).lower()
 
-                # skip separate columns
+            
                 if lower_key in [
                     "keyword",
                     "submitted_url",
@@ -299,14 +296,14 @@ class ExportExcelAPI(APIView):
                 ]:
                     continue
 
-                # skip empty values
+                
                 if (
                     value is None or
                     value == ""
                 ):
                     continue
 
-                # list support
+                
                 if isinstance(value, list):
 
                     value = ", ".join(

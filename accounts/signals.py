@@ -11,8 +11,6 @@ def create_user_log(sender, instance, created, **kwargs):
     if created:
         print(f"New user created: {instance.email}")
 
-
-# 🔹 Auto create Client profile
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from accounts.models import User
@@ -25,14 +23,11 @@ def create_client_profile(sender, instance, created, **kwargs):
         Client.objects.create(
             user=instance,
             name=instance.first_name or instance.email,
-            contact_email=instance.email,   # ✅ correct field
-            website="",                     # optional default
-            industry=""                     # optional default
+            contact_email=instance.email,  
+            website="",                    
+            industry=""                    
         )
 
-# accounts/signals.py
-
-# accounts/signals.py
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver

@@ -2,9 +2,6 @@ from django.contrib import admin
 from .models import Activity, Checklist
 
 
-# =========================================================
-# ACTIVITY ADMIN
-# =========================================================
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
 
@@ -86,10 +83,6 @@ class ActivityAdmin(admin.ModelAdmin):
         }),
     )
 
-
-# =========================================================
-# CHECKLIST ADMIN
-# =========================================================
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
 

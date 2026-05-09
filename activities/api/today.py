@@ -34,18 +34,11 @@ class TodayActivityAPI(APIView):
                 "error": "Invalid date format"
             }, status=400)
 
-        # =====================================
-        # FETCH ACTIVITIES
-        # =====================================
-
+   
         activities = Activity.objects.filter(
             user=request.user,
             date=date
         ).select_related("project")
-
-        # =====================================
-        # RESPONSE
-        # =====================================
 
         response_data = []
 

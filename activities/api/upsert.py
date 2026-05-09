@@ -15,10 +15,6 @@ class ActivityUpsertAPI(APIView):
     def post(self, request):
 
         data = request.data
-
-        # =====================================
-        # VALIDATIONS
-        # =====================================
         if not data.get("project"):
             return Response(
                 {"error": "Project required"},
@@ -56,10 +52,6 @@ class ActivityUpsertAPI(APIView):
                 {"error": "Date required"},
                 status=400
             )
-
-        # =====================================
-        # DATE FIX
-        # =====================================
         if isinstance(raw_date, str):
 
             parsed_date = parse_date(raw_date)
@@ -84,9 +76,6 @@ class ActivityUpsertAPI(APIView):
                 status=400
             )
 
-        # =====================================
-        # UPDATE OR CREATE
-        # =====================================
         id_value = data.get("id")
 
         if id_value and str(id_value).isdigit():
@@ -107,9 +96,6 @@ class ActivityUpsertAPI(APIView):
 
             obj = Activity()
 
-        # =====================================
-        # SAVE DATA
-        # =====================================
         obj.user = request.user
 
         obj.project_id = data.get("project")
@@ -127,10 +113,6 @@ class ActivityUpsertAPI(APIView):
         obj.status = "pending"
 
         obj.save()
-
-        # =====================================
-        # FETCH SAVED DATA
-        # =====================================
         activities = Activity.objects.filter(
             user=request.user,
             project_id=data.get("project")

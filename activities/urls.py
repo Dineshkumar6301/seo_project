@@ -27,12 +27,11 @@ from activities.api.activity_detail import ActivityDetailAPI
 
 urlpatterns = [
 
-    # 🔥 UI ROUTES (IMPORTANT FIX)
+
     path('daily/', views.activity_daily, name='activity_daily'),
     path('approval/', views.activity_approval, name='activity_approval'),
     path('reports/', views.activity_reports, name='activity_reports'),
 
-    # 🔹 API ROUTES
     path('api/create/', ActivityCreateAPI.as_view()),
     path('api/list/', ActivityListAPI.as_view()),
     path('api/update/<int:pk>/', ActivityUpdateAPI.as_view()),
