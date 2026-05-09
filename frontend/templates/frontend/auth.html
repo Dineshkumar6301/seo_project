@@ -570,8 +570,8 @@
     const data = await res.json();
 
     if(res.status === 200){
-      localStorage.setItem("user", JSON.stringify(data));
-      window.location.href = "/dashboard/";
+      
+      window.location.href = data.redirect;
     } else {
       showToast("❌ Login failed. Check your credentials.", "error");
     }

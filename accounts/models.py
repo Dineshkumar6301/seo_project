@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -36,7 +38,12 @@ class User(AbstractUser):
         ('client', 'Client'),
     ]
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='employee',
+        db_index=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -74,13 +81,58 @@ class Profile(models.Model):
 
 
 from django.db import models
-from django.db import models
+
 
 class PasswordResetToken(models.Model):
-    email = models.EmailField()
-    token = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-class PasswordResetRequestLog(models.Model):
     email = models.EmailField()
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    token = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    @property
+    def is_expired(self):
+
+        return (
+
+            timezone.now()
+
+            >
+
+            self.created_at + timedelta(minutes=15)
+
+        )
+
+    class Meta:
+
+        indexes = [
+
+            models.Index(fields=['email']),
+
+            models.Index(fields=['created_at']),
+        ]
+class PasswordResetRequestLog(models.Model):
+
+    email = models.EmailField(
+        db_index=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+
+        indexes = [
+
+            models.Index(fields=['email']),
+
+            models.Index(fields=['created_at']),
+        ]

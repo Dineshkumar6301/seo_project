@@ -10,6 +10,16 @@ class RegisterAPI(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
+        if User.objects.filter(email=request.data.get("email")).exists():
+
+            return Response({
+
+                "status": "error",
+
+                "message": "Email already exists"
+
+            }, status=400)
+
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -72,6 +82,7 @@ class LoginAPI(APIView):
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Profile
+from django.http import HttpResponse
 @login_required
 def profile_view(request):
     user = request.user
@@ -102,6 +113,28 @@ def profile_view(request):
         profile.website = request.POST.get('website')
         profile.industry = request.POST.get('industry')
 
+        photo = request.FILES.get('photo')
+
+        if photo:
+
+            if photo.size > 5 * 1024 * 1024:
+
+                return HttpResponse(
+                    "Image too large"
+                )
+
+            allowed = [
+                'image/jpeg',
+                'image/png',
+                'image/webp'
+            ]
+
+            if photo.content_type not in allowed:
+
+                return HttpResponse(
+                    "Invalid image type"
+                )
+
         if request.FILES.get('photo'):
             new_photo = request.FILES.get('photo')
             if profile.photo:
@@ -115,3 +148,14 @@ def profile_view(request):
         'user': user,
         'profile': profile
     })
+
+
+
+from django.contrib.auth import logout
+
+@login_required
+def logout_view(request):
+
+    logout(request)
+
+    return redirect("/")
