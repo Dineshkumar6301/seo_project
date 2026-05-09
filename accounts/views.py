@@ -101,11 +101,11 @@ def profile_view(request):
         profile.designation = request.POST.get('designation')
         profile.department = request.POST.get('department')
 
-        # ✅ FIXED HERE
         experience = request.POST.get('experience')
-        try:
-            profile.experience = int(experience) if experience else 0
-        except (ValueError, TypeError):
+
+        if experience and str(experience).isdigit():
+            profile.experience = int(experience)
+        else:
             profile.experience = 0
 
         profile.skills = request.POST.get('skills')
