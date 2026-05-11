@@ -147,6 +147,11 @@ class ClientDashboardAPI(APIView):
 
                 Q(task_type__icontains=search)
 
+                |
+
+                Q(dynamic_data__Keyword__icontains=search)
+                
+
             )
 
         if project:

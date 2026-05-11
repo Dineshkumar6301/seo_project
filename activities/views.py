@@ -44,6 +44,9 @@ from openpyxl.styles import (
 from activities.models import Activity
 from projects.models import Project
 
+from django.db.models import Q
+from django.db.models.functions import Cast
+from django.db.models import CharField
 
 @login_required
 def activity_approval(request):
@@ -127,36 +130,22 @@ def activity_approval(request):
 
         search = search.strip()
 
-    queryset = queryset.filter(
+        queryset = queryset.filter(
 
-        Q(user__email__icontains=search)
+            Q(user__email__icontains=search) |
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(project__name__icontains=search) |
+            Q(category__icontains=search) |
+            Q(service_name__icontains=search) |
+            Q(task_type__icontains=search) |
 
-        |
+            Q(dynamic_data__keyword__icontains=search) |
+            Q(dynamic_data__Keyword__icontains=search) |
+            Q(dynamic_data__KEYWORD__icontains=search)
 
-        Q(user__first_name__icontains=search)
-
-        |
-
-        Q(user__last_name__icontains=search)
-
-        |
-
-        Q(project__name__icontains=search)
-
-        |
-
-        Q(category__iregex=rf".*{search}.*")
-
-        |
-
-        Q(service_name__iregex=rf".*{search}.*")
-
-        |
-
-        Q(task_type__iregex=rf".*{search}.*")
-
-    )
- 
+        )
+    # PROJECT FILTER
     if project_id:
 
         queryset = queryset.filter(
@@ -164,6 +153,7 @@ def activity_approval(request):
         )
 
 
+    # STATUS COUNTS
     counts = queryset.values(
         'status'
     ).annotate(
@@ -189,8 +179,7 @@ def activity_approval(request):
         'rejected',
         0
     )
-
-   
+    
     if request.GET.get('export') == "excel":
 
         wb = openpyxl.Workbook()
