@@ -164,7 +164,7 @@ function selectCategory(category, el){
         servicesBox.innerHTML += `
         <span
             class="service-badge"
-            onclick="selectService('${service}')">
+            onclick="selectService('${service}', this)">
 
             ${service}
 
@@ -179,10 +179,28 @@ function selectCategory(category, el){
         "dynamicForm"
     ).innerHTML = "";
 }
-
-function selectService(service){
+function selectService(service, el){
 
     selectedService = service;
+
+    document.querySelectorAll(".service-badge")
+        .forEach(e => {
+
+            e.classList.remove("active-service");
+
+            e.style.background = "";
+            e.style.color = "";
+            e.style.borderColor = "";
+        });
+
+    if(el){
+
+        el.classList.add("active-service");
+
+        el.style.background = "#2563eb";
+        el.style.color = "#fff";
+        el.style.borderColor = "#2563eb";
+    }
 
     let taskBox = document.getElementById(
         "taskTypes"
@@ -201,7 +219,7 @@ function selectService(service){
         <button
             type="button"
             class="btn btn-outline-primary m-1 task-btn"
-            onclick="selectTask('${task}')">
+            onclick="selectTask('${task}', this)">
 
             ${task}
 
@@ -212,10 +230,24 @@ function selectService(service){
         "dynamicForm"
     ).innerHTML = "";
 }
-
-function selectTask(task){
+function selectTask(task, el){
 
     selectedTask = task;
+
+    document.querySelectorAll(".task-btn")
+        .forEach(btn => {
+
+            btn.classList.remove("btn-primary");
+
+            btn.classList.add("btn-outline-primary");
+        });
+
+    if(el){
+
+        el.classList.remove("btn-outline-primary");
+
+        el.classList.add("btn-primary");
+    }
 
     let form = document.getElementById(
         "dynamicForm"
@@ -451,6 +483,7 @@ function renderTable(data){
         let submitted =
             rowData.SUBMITTED_URL ||
             rowData.submitted_url ||
+            rowData.Submitted_url ||
             "";
 
         let submittedHTML = "-";
