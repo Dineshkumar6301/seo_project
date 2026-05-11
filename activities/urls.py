@@ -47,7 +47,7 @@ urlpatterns = [
     path('api/export/', ExportExcelAPI.as_view()),
     path('api/dashboard/', ClientDashboardAPI.as_view()),
     path('api/assignment/delete/<int:id>/', DeleteAssignmentAPI.as_view()),
-    path('export-report/', views.export_report, name='export_report'),
+    
 
     path('forget_password/', ForgotPasswordAPI.as_view()),
     path('reset_password/', ResetPasswordAPI.as_view()),

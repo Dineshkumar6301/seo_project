@@ -404,7 +404,7 @@ function renderTable(data){
     ========================== */
 
     head.innerHTML = `
-        <th>#</th>
+        <th>S.no</th>
         <th>Project</th>
         <th>Category</th>
         <th>Service</th>
