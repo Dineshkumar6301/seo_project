@@ -42,7 +42,7 @@ def project_list(request):
     else:
         projects = Project.objects.select_related('client').all()
 
-    clients = Client.objects.all() 
+    clients = Client.objects.all().order_by('name') 
 
     return render(request, 'frontend/projects/list.html', {
         'projects': projects,
@@ -56,7 +56,7 @@ def project_create(request):
     if request.user.role not in ['admin', 'manager']:
         return redirect('dashboard')
 
-    clients = Client.objects.all()
+    clients = Client.objects.all().order_by('name')
 
     if request.method == "POST":
         name = request.POST.get('name')
