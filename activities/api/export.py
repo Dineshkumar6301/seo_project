@@ -245,7 +245,7 @@ class ExportExcelAPI(APIView):
                 data.get("submitted_url")
                 or data.get("submitted_urls")
                 or data.get("SUBMITTED_URL")
-                or data.get("Submitted url")
+                or data.get("Submitted_url")
                 or ""
             )
 
