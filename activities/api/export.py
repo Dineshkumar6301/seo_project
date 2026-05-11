@@ -63,7 +63,6 @@ class ExportExcelAPI(APIView):
                         user=request.user
                     )
 
-
         project = request.GET.get("project")
         service = request.GET.get("service")
         task = request.GET.get("task")
@@ -192,7 +191,6 @@ class ExportExcelAPI(APIView):
 
         ws.append(headers)
 
-
         header_fill = PatternFill(
             start_color="1F4E78",
             end_color="1F4E78",
@@ -214,7 +212,6 @@ class ExportExcelAPI(APIView):
                 wrap_text=True
             )
 
-
         for i, a in enumerate(qs, start=1):
 
             data = a.dynamic_data or {}
@@ -232,14 +229,12 @@ class ExportExcelAPI(APIView):
 
                     employee = a.user.email
 
-
             keyword = (
                 data.get("keyword")
                 or data.get("KEYWORD")
                 or data.get("Keyword")
                 or ""
             )
-
 
             submitted_urls = (
                 data.get("submitted_url")
@@ -249,36 +244,13 @@ class ExportExcelAPI(APIView):
                 or ""
             )
 
-            if isinstance(submitted_urls, str):
-
-                submitted_urls = "\n".join([
-                    x.strip()
-                    for x in submitted_urls
-                    .replace(",", "\n")
-                    .split("\n")
-                    if x.strip()
-                ])
-
-        
-
             target_urls = (
                 data.get("target_url")
                 or data.get("target_urls")
                 or data.get("TARGET_URL")
                 or data.get("Target_url")
-                or data.get("TARGET_URL")
                 or ""
             )
-
-            if isinstance(target_urls, str):
-
-                target_urls = "\n".join([
-                    x.strip()
-                    for x in target_urls
-                    .replace(",", "\n")
-                    .split("\n")
-                    if x.strip()
-                ])
 
             other_data_parts = []
 
@@ -286,7 +258,6 @@ class ExportExcelAPI(APIView):
 
                 lower_key = str(key).lower()
 
-            
                 if lower_key in [
                     "keyword",
                     "submitted_url",
@@ -296,14 +267,9 @@ class ExportExcelAPI(APIView):
                 ]:
                     continue
 
-                
-                if (
-                    value is None or
-                    value == ""
-                ):
+                if value is None or value == "":
                     continue
 
-                
                 if isinstance(value, list):
 
                     value = ", ".join(
@@ -318,77 +284,142 @@ class ExportExcelAPI(APIView):
                 other_data_parts
             )
 
-            row = [
-                i,
-                str(a.date),
-                employee,
-                a.project.name if a.project else "",
-                getattr(a, "category", ""),
-                a.service_name,
-                a.task_type,
-                keyword,
-                submitted_urls,
-                target_urls,
-                other_data,
-            ]
-
-            ws.append(row)
-
-            current_row = ws.max_row
-
+            submitted_list = []
 
             if submitted_urls:
 
-                first_link = (
-                    submitted_urls
-                    .split("\n")[0]
-                    .strip()
-                )
+                submitted_list = [
+                    x.strip()
+                    for x in str(submitted_urls)
+                        .replace(",", "\n")
+                        .splitlines()
+                    if x.strip()
+                ]
 
-                if first_link.startswith(
-                    ("http://", "https://")
-                ):
+            if not submitted_list:
+                submitted_list = [""]
 
-                    cell = ws.cell(
-                        current_row,
-                        9
-                    )
+            start_row = ws.max_row + 1
 
-                    cell.hyperlink = first_link
-                    cell.style = "Hyperlink"
+            for idx, link in enumerate(submitted_list):
 
+                row = [
 
-            if target_urls:
+                    i if idx == 0 else "",
 
-                first_link = (
+                    str(a.date) if idx == 0 else "",
+
+                    employee if idx == 0 else "",
+
+                    a.project.name
+                    if idx == 0 and a.project
+                    else "",
+
+                    getattr(a, "category", "")
+                    if idx == 0 else "",
+
+                    a.service_name
+                    if idx == 0 else "",
+
+                    a.task_type
+                    if idx == 0 else "",
+
+                    keyword
+                    if idx == 0 else "",
+
+                    link,
+
                     target_urls
-                    .split("\n")[0]
-                    .strip()
-                )
+                    if idx == 0 else "",
 
-                if first_link.startswith(
+                    other_data
+                    if idx == 0 else "",
+                ]
+
+                ws.append(row)
+
+                current_row = ws.max_row
+
+                link_cell = ws.cell(
+                    current_row,
+                    9
+                )
+                if link.startswith(
                     ("http://", "https://")
                 ):
 
-                    cell = ws.cell(
-                        current_row,
-                        10
+                    link_cell.hyperlink = link
+
+                    link_cell.style = "Hyperlink"
+
+                link_cell.alignment = Alignment(
+                    wrap_text=False,
+                    vertical="center",
+                    horizontal="left"
+                )
+
+                target_cell = ws.cell(
+                    current_row,
+                    10
+                )
+
+                if (
+                    idx == 0
+                    and str(target_urls).startswith(
+                        ("http://", "https://")
+                    )
+                ):
+
+                    target_cell.hyperlink = str(target_urls)
+
+                    target_cell.style = "Hyperlink"
+
+                target_cell.alignment = Alignment(
+                    wrap_text=False,
+                    vertical="center",
+                    horizontal="left"
+                )
+
+                                
+
+                
+            end_row = ws.max_row
+
+            if len(submitted_list) > 1:
+
+                merge_columns = [
+                    1, 2, 3, 4, 5,
+                    6, 7, 8, 10, 11
+                ]
+
+                for col in merge_columns:
+
+                    ws.merge_cells(
+                        start_row=start_row,
+                        start_column=col,
+                        end_row=end_row,
+                        end_column=col
                     )
 
-                    cell.hyperlink = first_link
-                    cell.style = "Hyperlink"
+                    merged_cell = ws.cell(
+                        start_row,
+                        col
+                    )
 
-
+                    merged_cell.alignment = Alignment(
+                        vertical="center",
+                        horizontal="left",
+                        wrap_text=True
+                    )
 
         for row in ws.iter_rows():
 
             for cell in row:
 
                 cell.alignment = Alignment(
-                    wrap_text=True,
+                    wrap_text=False,
                     vertical="top"
                 )
-
 
         for column_cells in ws.columns:
 
@@ -410,25 +441,24 @@ class ExportExcelAPI(APIView):
 
             adjusted_width = min(
                 length + 5,
-                60
+                80
             )
 
             ws.column_dimensions[
                 get_column_letter(column)
             ].width = adjusted_width
 
-  
+        ws.column_dimensions["I"].width = 120
+        ws.column_dimensions["J"].width = 80
 
         for row in range(
             2,
             ws.max_row + 1
         ):
 
-            ws.row_dimensions[row].height = 60
-
+            ws.row_dimensions[row].height = 22
 
         ws.freeze_panes = "A2"
-
 
         response = HttpResponse(
             content_type=(
