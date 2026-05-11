@@ -205,7 +205,7 @@
     rows.forEach(function(r){
 
       let keyword =
-        r.keyword ||
+        r.Keyword ||
         r.KEYWORD ||
         r.data?.keyword ||
         r.data?.KEYWORD ||
@@ -215,12 +215,12 @@
         r.SUBMITTED_URL ||
         r.submitted_url ||
         r.data?.SUBMITTED_URL ||
-        r.data?.submitted_url ||
+        r.data?.Submitted_url ||
         '';
 
       let target =
         r.TARGET_URL ||
-        r.target_url ||
+        r.Target_url ||
         r['Target url'] ||
         r.data?.TARGET_URL ||
         r.data?.target_url ||

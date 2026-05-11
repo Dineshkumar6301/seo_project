@@ -380,7 +380,7 @@ function updateTable(rows) {
 
             data.SUBMITTED_URL
             ||
-            data.submitted_url
+            data.Submitted_url
             ||
             "";
 
