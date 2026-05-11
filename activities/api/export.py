@@ -469,7 +469,7 @@ class ExportExcelAPI(APIView):
 
         parts = ["Report"]
 
-        # FILTER NAME
+        
         if filter_type == "today":
 
             parts.append(
@@ -512,23 +512,21 @@ class ExportExcelAPI(APIView):
                     f"{start}_to_{end}"
                 )
 
-        # SERVICE
+        
         if service:
 
             parts.append(
                 service.replace(" ", "_")
             )
 
-        # TASK
+        
         if task:
 
             parts.append(
                 task.replace(" ", "_")
             )
 
-        # REMOVE STATUS FROM FILENAME
-        # approved removed intentionally
-
+      
         filename = (
             "_".join(parts)
             + ".xlsx"
