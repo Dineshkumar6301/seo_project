@@ -749,18 +749,6 @@ function handleFilterChange(){
 
 function downloadExcel(){
 
-    const isAdmin =
-        "{{ request.user.is_superuser|yesno:'true,false' }}" === "true"
-        ||
-        "{{ request.user.is_staff|yesno:'true,false' }}" === "true";
-
-    if(!isAdmin && !selectedProject){
-
-        alert("Please select project first");
-
-        return;
-    }
-
     let filterType =
         document.getElementById("filterType").value;
 
@@ -772,18 +760,27 @@ function downloadExcel(){
 
     let url = `/activities/api/export/?export_type=daily&`;
 
-    if(selectedProject)
+    /* PROJECT */
+    if(selectedProject){
         url += `project=${selectedProject}&`;
+    }
 
-    if(selectedCategory)
+    /* CATEGORY */
+    if(selectedCategory){
         url += `category=${selectedCategory}&`;
+    }
 
-    if(selectedService)
+    /* SERVICE */
+    if(selectedService){
         url += `service=${selectedService}&`;
+    }
 
-    if(selectedTask)
+    /* TASK */
+    if(selectedTask){
         url += `task=${selectedTask}&`;
+    }
 
+    /* FILTERS */
     url += `filter=${filterType}&`;
 
     url += `start=${startDate}&`;
@@ -792,10 +789,8 @@ function downloadExcel(){
 
     window.open(url, "_blank");
 }
+
 let editId = null;
-
-
-
 async function editRow(id){
 
     try{
