@@ -469,31 +469,65 @@ class ExportExcelAPI(APIView):
 
         parts = ["Report"]
 
-        if start and end:
+        # FILTER NAME
+        if filter_type == "today":
 
             parts.append(
-                f"{start}_to_{end}"
+                now().strftime("%d-%m-%Y")
             )
 
-        elif filter_type:
+        elif filter_type == "week":
 
-            parts.append(filter_type)
+            start_week = (
+                today - timedelta(
+                    days=today.weekday()
+                )
+            )
 
+            end_week = (
+                start_week + timedelta(days=6)
+            )
+
+            parts.append(
+                f"{start_week}_to_{end_week}"
+            )
+
+        elif filter_type == "month":
+
+            parts.append(
+                now().strftime("%B-%Y")
+            )
+
+        elif filter_type == "year":
+
+            parts.append(
+                str(today.year)
+            )
+
+        elif filter_type == "custom":
+
+            if start and end:
+
+                parts.append(
+                    f"{start}_to_{end}"
+                )
+
+        # SERVICE
         if service:
 
             parts.append(
                 service.replace(" ", "_")
             )
 
+        # TASK
         if task:
 
             parts.append(
                 task.replace(" ", "_")
             )
 
-        if status:
-
-            parts.append(status)
+        # REMOVE STATUS FROM FILENAME
+        # approved removed intentionally
 
         filename = (
             "_".join(parts)
