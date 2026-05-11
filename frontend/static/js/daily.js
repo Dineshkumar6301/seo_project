@@ -854,8 +854,37 @@ async function editRow(id){
                 categoryEl
             );
         }
-        selectService(selectedService);
-        selectTask(selectedTask);
+        const serviceEl =
+                [...document.querySelectorAll("#servicesContainer .service-badge")]
+                .find(el =>
+                    el.innerText.trim() === selectedService
+                );
+
+            if(serviceEl){
+
+                selectService(
+                    selectedService,
+                    serviceEl
+                );
+            }
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 50)
+            );
+
+            const taskEl =
+                [...document.querySelectorAll(".task-btn")]
+                .find(el =>
+                    el.innerText.trim() === selectedTask
+                );
+
+            if(taskEl){
+
+                selectTask(
+                    selectedTask,
+                    taskEl
+                );
+            }
         await new Promise(resolve =>
             setTimeout(resolve, 50)
         );
@@ -935,6 +964,7 @@ async function saveData(){
         service_name: selectedService,
 
         task_type: selectedTask,
+        date: new Date().toISOString().split('T')[0],
 
         dynamic_data: {}
     };

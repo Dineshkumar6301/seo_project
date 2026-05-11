@@ -27,19 +27,19 @@ class ActivityUpsertAPI(APIView):
                 status=400
             )
 
-        if not data.get("service"):
+        if not data.get("service_name"):
             return Response(
                 {"error": "Service required"},
                 status=400
             )
 
-        if not data.get("task"):
+        if not data.get("task_type"):
             return Response(
                 {"error": "Task required"},
                 status=400
             )
 
-        if not data.get("data"):
+        if not data.get("dynamic_data"):
             return Response(
                 {"error": "Form data required"},
                 status=400
@@ -102,13 +102,13 @@ class ActivityUpsertAPI(APIView):
 
         obj.category = data.get("category")
 
-        obj.service_name = data.get("service")
+        obj.service_name = data.get("service_name")
 
-        obj.task_type = data.get("task")
+        obj.task_type = data.get("task_type")
 
         obj.date = final_date
 
-        obj.dynamic_data = data.get("data")
+        obj.dynamic_data = data.get("dynamic_data")
 
         obj.status = "pending"
 
