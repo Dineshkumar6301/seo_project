@@ -207,7 +207,7 @@ def dashboard(request):
 
             or
 
-            data.get("Submitted URL")
+            data.get("Submitted_url")
 
             or
 
@@ -245,7 +245,7 @@ def dashboard(request):
 
             or
 
-            data.get("Submitted URL")
+            data.get("Submitted_url")
 
             or
 

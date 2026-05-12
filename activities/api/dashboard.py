@@ -275,7 +275,7 @@ class ClientDashboardAPI(APIView):
             row["SUBMITTED_URL"] = (
 
                 dynamic_data.get(
-                    "submitted_url"
+                    "Submitted_url"
                 )
 
                 or
@@ -288,6 +288,52 @@ class ClientDashboardAPI(APIView):
 
                 dynamic_data.get(
                     "proof_links"
+                )
+
+                or
+
+                ""
+            )
+
+            row["Target_url"] = (
+
+                dynamic_data.get(
+                    "Target_url"
+                )
+
+                or
+
+                dynamic_data.get(
+                    "TARGET_URL"
+                )
+
+                or
+
+                dynamic_data.get(
+                    "target_links"
+                )
+
+                or
+
+                ""
+            )
+
+            row["Keyword"] = (
+
+                dynamic_data.get(
+                    "Keyword"
+                )
+
+                or
+
+                dynamic_data.get(
+                    "KEYWORD"
+                )
+
+                or
+
+                dynamic_data.get(
+                    "keyword"
                 )
 
                 or

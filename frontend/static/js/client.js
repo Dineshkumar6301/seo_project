@@ -178,222 +178,263 @@
       .join('');
   }
 
-  /* ───────────────── TABLE ───────────────── */
+ /* ───────────────── TABLE ───────────────── */
 
-  function renderTable(rows) {
+function renderTable(rows) {
 
-    if (!rows || !rows.length) {
+  if (!rows || !rows.length) {
 
-      tableBody.innerHTML = `
+    tableBody.innerHTML = `
 
-        <tr class="empty-row">
+      <tr class="empty-row">
 
-          <td colspan="9">
+        <td colspan="9">
 
-            📋 No tasks found
+          📋 No tasks found
 
-          </td>
+        </td>
 
-        </tr>
-      `;
+      </tr>
+    `;
 
-      return;
-    }
+    return;
+  }
 
-    let html = '';
+  let html = '';
 
-    rows.forEach(function(r){
+  rows.forEach(function(r){
 
-      let keyword =
-        r.Keyword ||
-        r.KEYWORD ||
-        r.data?.keyword ||
-        r.data?.KEYWORD ||
-        '-';
+    /* =========================
+       KEYWORD
+    ========================== */
 
-      let submitted =
-        r.SUBMITTED_URL ||
-        r.submitted_url ||
-        r.data?.SUBMITTED_URL ||
-        r.data?.Submitted_url ||
-        '';
+    let keyword =
 
-      let target =
-        r.TARGET_URL ||
-        r.Target_url ||
-        r['Target url'] ||
-        r.data?.TARGET_URL ||
-        r.data?.target_url ||
-        '';
+      r.Keyword ||
 
-      let otherHTML = '';
+      r.KEYWORD ||
 
-      Object.entries(
-        r.data || {}
-      ).forEach(function([k,v]){
+      r.data?.Keyword ||
 
-        let lower =
-          String(k).toLowerCase();
+      r.data?.keyword ||
 
-        if (
+      r.data?.KEYWORD ||
 
-          lower.includes('keyword')
+      '-';
 
-          ||
 
-          (
-            lower.includes('submitted') &&
-            lower.includes('url')
-          )
+    /* =========================
+       SUBMITTED URL
+    ========================== */
 
-          ||
+    let submitted =
 
-          (
-            lower.includes('target') &&
-            lower.includes('url')
-          )
+      r.SUBMITTED_URL ||
 
-        ) {
-          return;
-        }
+      r.submitted_url ||
 
-        if (!v) return;
+      r.Submitted_url ||
 
-        otherHTML += `
+      r.data?.Submitted_url ||
+
+      r.data?.submitted_url ||
+
+      r.data?.SUBMITTED_URL ||
+
+      '';
+
+
+    /* =========================
+       TARGET URL
+    ========================== */
+
+    let target =
+
+      r.TARGET_URL ||
+
+      r.Target_url ||
+
+      r.target_url ||
+
+      r['Target url'] ||
+
+      r.data?.Target_url ||
+
+      r.data?.target_url ||
+
+      r.data?.TARGET_URL ||
+
+      '';
+
+
+    let otherHTML = '';
+
+    Object.entries(
+      r.data || {}
+    ).forEach(function([k,v]){
+
+      let lower =
+        String(k).toLowerCase();
+
+      if (
+
+        lower.includes('keyword')
+
+        ||
+
+        (
+          lower.includes('submitted') &&
+          lower.includes('url')
+        )
+
+        ||
+
+        (
+          lower.includes('target') &&
+          lower.includes('url')
+        )
+
+      ) {
+        return;
+      }
+
+      if (!v) return;
+
+      otherHTML += `
+
+        <div style="
+          margin-bottom:8px;
+          padding:8px;
+          background:#f8fafc;
+          border:1px solid #e2e8f0;
+          border-radius:8px;
+          font-size:12px;
+        ">
+
+          <strong>
+
+            ${escHtml(
+              k.replaceAll('_',' ')
+            )}
+
+          </strong>
 
           <div style="
-            margin-bottom:8px;
-            padding:8px;
-            background:#f8fafc;
-            border:1px solid #e2e8f0;
-            border-radius:8px;
-            font-size:12px;
+            margin-top:3px;
+            word-break:break-word;
           ">
 
-            <strong>
-
-              ${escHtml(
-                k.replaceAll('_',' ')
-              )}
-
-            </strong>
-
-            <div style="
-              margin-top:3px;
-              word-break:break-word;
-            ">
-
-              ${escHtml(String(v))}
-
-            </div>
+            ${escHtml(String(v))}
 
           </div>
-        `;
-      });
 
-      html += `
-
-        <tr>
-
-          <td>
-
-            ${escHtml(
-              r.project__name || '—'
-            )}
-
-          </td>
-
-          <td>
-
-            ${escHtml(
-              r.service_name || '—'
-            )}
-
-          </td>
-
-          <td>
-
-            ${escHtml(
-              r.task_type || '—'
-            )}
-
-          </td>
-
-          <td style="
-            min-width:220px;
-            max-width:300px;
-          ">
-
-            ${escHtml(String(keyword))}
-
-          </td>
-
-          <td style="
-            min-width:260px;
-            max-width:360px;
-          ">
-
-            ${renderLinks(
-              submitted,
-              '#2563eb'
-            )}
-
-          </td>
-
-          <td style="
-            min-width:260px;
-            max-width:360px;
-          ">
-
-            ${renderLinks(
-              target,
-              '#059669'
-            )}
-
-          </td>
-
-          <td style="
-            min-width:320px;
-            max-width:420px;
-          ">
-
-            ${otherHTML || '-'}
-
-          </td>
-
-          <td>
-
-            <span class="
-              badge
-              ${badgeClass(r.status)}
-            ">
-
-              ${escHtml(
-                r.status || 'pending'
-              )}
-
-            </span>
-
-          </td>
-
-          <td>
-
-            ${escHtml(
-              r.date || '—'
-            )}
-
-          </td>
-
-        </tr>
+        </div>
       `;
     });
 
-    requestAnimationFrame(function(){
+    html += `
 
-      tableBody.innerHTML = html;
+      <tr>
 
-    });
-  }
+        <td>
+
+          ${escHtml(
+            r.project__name || '—'
+          )}
+
+        </td>
+
+        <td>
+
+          ${escHtml(
+            r.service_name || '—'
+          )}
+
+        </td>
+
+        <td>
+
+          ${escHtml(
+            r.task_type || '—'
+          )}
+
+        </td>
+
+        <td style="
+          min-width:220px;
+          max-width:300px;
+        ">
+
+          ${escHtml(String(keyword))}
+
+        </td>
+
+        <td style="
+          min-width:260px;
+          max-width:360px;
+        ">
+
+          ${renderLinks(
+            submitted,
+            '#2563eb'
+          )}
+
+        </td>
+
+        <td style="
+          min-width:260px;
+          max-width:360px;
+        ">
+
+          ${renderLinks(
+            target,
+            '#059669'
+          )}
+
+        </td>
+
+        <td style="
+          min-width:320px;
+          max-width:420px;
+        ">
+
+          ${otherHTML || '-'}
+
+        </td>
+
+        <td>
+
+          <span class="
+            badge
+            ${badgeClass(r.status)}
+          ">
+
+            ${escHtml(
+              r.status || 'pending'
+            )}
+
+          </span>
+
+        </td>
+
+        <td>
+
+          ${escHtml(
+            r.date || '—'
+          )}
+
+        </td>
+
+      </tr>
+    `;
+  });
+
+  requestAnimationFrame(function(){
+
+    tableBody.innerHTML = html;
+
+  });
+}
 
   /* ───────────────── CHART ───────────────── */
 
