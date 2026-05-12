@@ -342,11 +342,11 @@ class ClientDashboardAPI(APIView):
             )
 
 
-        if row.get("date"):
+            if row.get("date"):
 
-            row["date"] = str(
-                row["date"]
-            )
+                row["date"] = str(
+                    row["date"]
+                )
             
         return Response({
 
