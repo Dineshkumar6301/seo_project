@@ -148,31 +148,31 @@ function openForgotModal(){
 function closeForgotModal(){
   document.getElementById("forgotModal").style.display = "none";
 }
-/* CSRF */
+
 function getCSRFToken() {
   const match = document.cookie.match(/(^| )csrftoken=([^;]+)/);
   return match ? match[2] : "";
 }
 
-/* STATE */
+
 let lastRequestTime = 0;
 let isSending = false;
 
-/* SEND RESET LINK */
+
 async function sendResetLink(){
 
-  console.log("SEND CLICKED"); // debug
+  console.log("SEND CLICKED"); 
 
   const now = Date.now();
 
-  // 🚫 BLOCK FRONTEND SPAM (1 min)
+  
   if (now - lastRequestTime < 60000) {
     showToast("⏳ Already sent. Check your email.", "success");
     return;
   }
 
   if(isSending){
-    return; // prevent double click instantly
+    return;
   }
 
   const email = document.getElementById("forgotEmail").value.trim();
@@ -200,7 +200,7 @@ async function sendResetLink(){
 
     let data = {};
     try {
-      data = await res.json(); // safe parse
+      data = await res.json(); 
     } catch(e){
       console.warn("Invalid JSON response");
     }
@@ -221,13 +221,13 @@ async function sendResetLink(){
   } catch (err){
     console.error(err);
     showToast("❌ Network error", "error");
-    lastRequestTime = 0; // allow retry
+    lastRequestTime = 0; 
   }
 
   isSending = false;
 }
 
-/* AUTO OPEN FROM LINK */
+
 window.addEventListener("load", function () {
   const params = new URLSearchParams(window.location.search);
 
@@ -248,7 +248,7 @@ window.addEventListener("load", function () {
   }
 });
 
-/* RESET PASSWORD */
+
 async function resetPassword(){
 
   const password = document.getElementById("newPassword").value;

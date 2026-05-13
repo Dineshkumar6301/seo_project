@@ -1,7 +1,7 @@
 
 (function () {
 
-  // Only mobile/tablet
+
   if (window.innerWidth >= 992) return;
 
   document.addEventListener("DOMContentLoaded", init);
@@ -10,9 +10,7 @@
 
     document.body.style.overflowX = "hidden";
 
-    /* =====================================================
-       NAVBAR HEIGHT
-    ===================================================== */
+
     function getNavbarHeight() {
 
       const nav = document.querySelector(
@@ -46,15 +44,13 @@
 
       applyNavHeight();
 
-      // restore desktop view properly
+      
       if (window.innerWidth >= 992) {
         location.reload();
       }
     });
 
-    /* =====================================================
-       RENAME ORIGINAL IDS
-    ===================================================== */
+ 
     [
       "filterType",
       "startDate",
@@ -78,7 +74,7 @@
       }
     });
 
-    // desktop table wrappers
+  
     document.querySelectorAll(".table-scroll-wrapper")
       .forEach(el => {
 
@@ -86,9 +82,7 @@
         el.classList.add("_desktop_table_wrapper");
       });
 
-    /* =====================================================
-       CREATE PROJECT PANEL
-    ===================================================== */
+  
     const projectPanel = document.createElement("div");
 
     projectPanel.id = "mob-projects-panel";
@@ -145,9 +139,7 @@
       </div>
     `;
 
-    /* =====================================================
-       CREATE DETAIL PANEL
-    ===================================================== */
+
     const detailPanel = document.createElement("div");
 
     detailPanel.id = "mob-detail-panel";
@@ -318,15 +310,11 @@
       </div>
     `;
 
-    /* =====================================================
-       APPEND PANELS
-    ===================================================== */
+
     document.body.appendChild(projectPanel);
     document.body.appendChild(detailPanel);
 
-    /* =====================================================
-       PROJECT CLICK
-    ===================================================== */
+
     projectPanel.addEventListener("click", function (e) {
 
       const card = e.target.closest(".mob-proj-card");
@@ -346,7 +334,7 @@
 
       detailPanel.scrollTop = 0;
 
-      // reset cards
+    
       document.querySelectorAll(".mob-proj-card")
         .forEach(c => {
 
@@ -354,7 +342,7 @@
           c.style.background = "";
         });
 
-      // active card
+      
       card.style.borderColor = "#2563eb";
       card.style.background = "#eff6ff";
 
@@ -374,9 +362,6 @@
       }
     });
 
-    /* =====================================================
-       BACK BUTTON
-    ===================================================== */
     document.getElementById("mob-back-btn")
       .addEventListener("click", function () {
 
@@ -392,9 +377,7 @@
           });
       });
 
-    /* =====================================================
-       EDIT ROW WRAPPER
-    ===================================================== */
+
     if (window.editRow) {
 
       const originalEditRow = window.editRow;
@@ -425,9 +408,7 @@
       };
     }
 
-    /* =====================================================
-       INITIAL LOAD
-    ===================================================== */
+
     if (window.loadDataFast) {
       loadDataFast();
     }
@@ -447,9 +428,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (!menuBtn || !sidebar) return;
 
-  /* =====================================
-     TOGGLE MENU
-  ===================================== */
   menuBtn.addEventListener("click", function (e) {
 
     e.stopPropagation();
@@ -457,9 +435,7 @@ document.addEventListener("DOMContentLoaded", function () {
     body.classList.toggle("sidebar-open");
   });
 
-  /* =====================================
-     CLOSE WHEN CLICK OUTSIDE
-  ===================================== */
+
   document.addEventListener("click", function (e) {
 
     const clickedInsideSidebar =
@@ -477,9 +453,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  /* =====================================
-     CLOSE AFTER CLICKING MENU ITEM
-  ===================================== */
   sidebar.querySelectorAll("a, button")
     .forEach(item => {
 

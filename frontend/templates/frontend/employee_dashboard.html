@@ -466,9 +466,6 @@
 
 <script>
 
-// =====================================
-// FILTER
-// =====================================
 function filterData(type, btn){
 
     document
@@ -553,9 +550,6 @@ function filterData(type, btn){
     ).innerText = rejected;
 }
 
-// =====================================
-// CHART
-// =====================================
 new Chart(
 
     document.getElementById("chart"),
@@ -586,9 +580,7 @@ new Chart(
     }
 );
 
-// =====================================
-// LOAD DEFAULT
-// =====================================
+
 filterData(
     'all',
     document.querySelector('.filter-btn')
@@ -598,9 +590,6 @@ filterData(
 
 <script>
 
-// =====================================
-// PROJECT MAP
-// =====================================
 const projectMap = {
 
     {% for p in projects %}
@@ -611,9 +600,6 @@ const projectMap = {
     {% endfor %}
 };
 
-// =====================================
-// TABLE FALLBACK
-// =====================================
 function getProjectNameFromTable(pid){
 
     let rows =
@@ -635,9 +621,6 @@ function getProjectNameFromTable(pid){
     return null;
 }
 
-// =====================================
-// TODAY DATE
-// =====================================
 function getTodayDate(){
 
     let d = new Date();
@@ -646,9 +629,6 @@ function getTodayDate(){
         .slice(0,10);
 }
 
-// =====================================
-// FOCUS WORK
-// =====================================
 async function loadFocusWork(){
 
     const container =
@@ -800,9 +780,6 @@ async function loadFocusWork(){
     }
 }
 
-// =====================================
-// LOAD
-// =====================================
 document.addEventListener(
 
     'DOMContentLoaded',

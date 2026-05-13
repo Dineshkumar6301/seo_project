@@ -111,7 +111,7 @@ body { background:#f4f6fb; }
 
 <script>
 (function () {
-  // Ensure Bootstrap exists
+  
   if (typeof bootstrap === 'undefined') {
     console.error('Bootstrap JS not loaded');
     return;
@@ -120,10 +120,10 @@ body { background:#f4f6fb; }
   const editModalEl = document.getElementById('editModal');
   const editModal = new bootstrap.Modal(editModalEl);
 
-  // Attach events AFTER DOM ready
+
   document.addEventListener('DOMContentLoaded', function () {
 
-    // EDIT
+    
     document.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', function () {
 
@@ -136,7 +136,7 @@ body { background:#f4f6fb; }
         document.getElementById('edit_name').value = name;
         document.getElementById('edit_date').value = date;
 
-        // Reliable select set (no .value issues)
+        
         const select = document.getElementById('edit_client');
         Array.from(select.options).forEach(opt => {
           opt.selected = (opt.value == client);
@@ -146,7 +146,7 @@ body { background:#f4f6fb; }
       });
     });
 
-    // DELETE
+    
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         const id = this.dataset.id;

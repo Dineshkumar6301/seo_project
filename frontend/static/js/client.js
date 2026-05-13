@@ -132,7 +132,7 @@
     ).textContent = kpi.rejected || 0;
   }
 
-  /* ───────────────── LINKS ───────────────── */
+  
 
   function renderLinks(text, color) {
 
@@ -178,7 +178,7 @@
       .join('');
   }
 
- /* ───────────────── TABLE ───────────────── */
+
 
 function renderTable(rows) {
 
@@ -204,9 +204,6 @@ function renderTable(rows) {
 
   rows.forEach(function(r){
 
-    /* =========================
-       KEYWORD
-    ========================== */
 
     let keyword =
 
@@ -222,10 +219,6 @@ function renderTable(rows) {
 
       '-';
 
-
-    /* =========================
-       SUBMITTED URL
-    ========================== */
 
     let submitted =
 
@@ -244,9 +237,7 @@ function renderTable(rows) {
       '';
 
 
-    /* =========================
-       TARGET URL
-    ========================== */
+
 
     let target =
 
@@ -436,7 +427,6 @@ function renderTable(rows) {
   });
 }
 
-  /* ───────────────── CHART ───────────────── */
 
   function renderChart(labels, data) {
 
@@ -489,7 +479,7 @@ function renderTable(rows) {
     });
   }
 
-  /* ───────────────── PAGINATION ───────────────── */
+
 
   function renderPagination(p) {
 
@@ -552,7 +542,6 @@ function renderTable(rows) {
     paginationWrap.innerHTML = html;
   }
 
-  /* ───────────────── LOAD DASHBOARD ───────────────── */
 
   async function loadDashboard(silent=false) {
 
@@ -652,7 +641,7 @@ function renderTable(rows) {
     }
   }
 
-  /* ───────────────── POLLING ───────────────── */
+
 
   function startPolling() {
 
@@ -666,7 +655,7 @@ function renderTable(rows) {
     }, 10000);
   }
 
-  /* ───────────────── FILTER BUTTONS ───────────────── */
+  
 
   document
   .querySelectorAll(
@@ -707,7 +696,7 @@ function renderTable(rows) {
     );
   });
 
-  /* ───────────────── PAGINATION CLICK ───────────────── */
+
 
   paginationWrap.addEventListener(
 
@@ -731,7 +720,7 @@ function renderTable(rows) {
     }
   );
 
-  /* ───────────────── PER PAGE ───────────────── */
+ 
 
   if (perPageSelect) {
 
@@ -751,7 +740,7 @@ function renderTable(rows) {
     );
   }
 
-  /* ───────────────── DATE FILTERS ───────────────── */
+  
 
   ['startDate','endDate']
 
@@ -775,7 +764,7 @@ function renderTable(rows) {
     );
   });
 
-  /* ───────────────── EXPORT ───────────────── */
+
 
   if (exportBtn) {
 
@@ -794,7 +783,6 @@ function renderTable(rows) {
     );
   }
 
-  /* ───────────────── INITIAL LOAD ───────────────── */
 
   document.addEventListener(
 

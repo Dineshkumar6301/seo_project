@@ -344,9 +344,6 @@
 
 <script>
 
-// =====================================
-// STATUS UPDATE
-// =====================================
 function updateStatus(id, status){
 
     fetch(`/activities/api/approve/${id}/`, {
@@ -383,9 +380,6 @@ function updateStatus(id, status){
     });
 }
 
-// =====================================
-// CSRF
-// =====================================
 function getCookie(name){
 
     let v = null;
