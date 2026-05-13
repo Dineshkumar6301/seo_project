@@ -433,4 +433,62 @@
     }
   }
 
+document.addEventListener("DOMContentLoaded", function () {
+
+  const body = document.body;
+
+  const menuBtn = document.querySelector(
+    ".navbar-toggler, .menu-toggle, .sidebar-toggle"
+  );
+
+  const sidebar = document.querySelector(
+    ".offcanvas, .sidebar, .main-sidebar"
+  );
+
+  if (!menuBtn || !sidebar) return;
+
+  /* =====================================
+     TOGGLE MENU
+  ===================================== */
+  menuBtn.addEventListener("click", function (e) {
+
+    e.stopPropagation();
+
+    body.classList.toggle("sidebar-open");
+  });
+
+  /* =====================================
+     CLOSE WHEN CLICK OUTSIDE
+  ===================================== */
+  document.addEventListener("click", function (e) {
+
+    const clickedInsideSidebar =
+      sidebar.contains(e.target);
+
+    const clickedMenuButton =
+      menuBtn.contains(e.target);
+
+    if (
+      !clickedInsideSidebar &&
+      !clickedMenuButton
+    ) {
+
+      body.classList.remove("sidebar-open");
+    }
+  });
+
+  /* =====================================
+     CLOSE AFTER CLICKING MENU ITEM
+  ===================================== */
+  sidebar.querySelectorAll("a, button")
+    .forEach(item => {
+
+      item.addEventListener("click", function () {
+
+        body.classList.remove("sidebar-open");
+      });
+    });
+
+});
+
 })();

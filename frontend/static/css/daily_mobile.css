@@ -7,20 +7,30 @@
 
   html,
   body {
+    margin: 0;
+    padding: 0;
     overflow-x: hidden;
     background: #f1f5f9;
   }
 
-  .container-fluid {
+  /* =================================================
+     HIDE ONLY DESKTOP DAILY CONTENT
+  ================================================= */
+  .daily-page-wrapper > .row {
     display: none !important;
   }
 
+  /* =================================================
+     KEEP BASE.HTML NAVBAR / MOBILE MENU VISIBLE
+  ================================================= */
   nav,
   .navbar,
   header,
   .offcanvas,
   .modal,
-  .dropdown-menu {
+  .dropdown-menu,
+  .sidebar,
+  .main-sidebar {
     z-index: 99999 !important;
   }
 
@@ -29,6 +39,28 @@
     position: fixed !important;
   }
 
+
+@media (max-width: 991.98px) {
+
+  .offcanvas,
+  .sidebar,
+  .main-sidebar {
+
+    top: var(--mob-nav-h) !important;
+
+    height: calc(100dvh - var(--mob-nav-h)) !important;
+
+    width: 260px !important;
+
+    max-width: 80vw !important;
+  }
+
+}
+
+
+  /* =================================================
+     MOBILE PANELS
+  ================================================= */
   #mob-projects-panel,
   #mob-detail-panel {
 
@@ -43,11 +75,13 @@
     background: #f1f5f9;
 
     overflow-y: auto;
+    overflow-x: hidden;
+
     -webkit-overflow-scrolling: touch;
 
     overscroll-behavior: contain;
 
-    z-index: 9000;
+    z-index: 1000;
 
     transition: transform .3s ease;
 
@@ -56,10 +90,14 @@
 
   #mob-projects-panel {
     transform: translateX(0);
+    padding-bottom: 40px;
   }
 
   #mob-detail-panel {
     transform: translateX(100%);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 60px;
   }
 
   body.mob-detail-open #mob-projects-panel {
@@ -70,10 +108,9 @@
     transform: translateX(0);
   }
 
-  #mob-projects-panel {
-    padding-bottom: 40px;
-  }
-
+  /* =================================================
+     PROJECT HEADER
+  ================================================= */
   .mob-panel-header {
 
     position: sticky;
@@ -102,9 +139,12 @@
     color: #1e293b;
   }
 
+  /* =================================================
+     PROJECT LIST
+  ================================================= */
   .mob-proj-list {
 
-    padding: 12px;
+    padding: 14px;
 
     display: flex;
 
@@ -120,6 +160,8 @@
     align-items: center;
 
     justify-content: space-between;
+
+    min-height: 56px;
 
     background: #fff;
 
@@ -156,15 +198,9 @@
     font-size: 22px;
   }
 
-  #mob-detail-panel {
-
-    display: flex;
-
-    flex-direction: column;
-
-    padding-bottom: 60px;
-  }
-
+  /* =================================================
+     DETAIL TOPBAR
+  ================================================= */
   #mob-topbar {
 
     position: sticky;
@@ -226,6 +262,9 @@
     color: #475569;
   }
 
+  /* =================================================
+     CARDS
+  ================================================= */
   .mob-card {
 
     background: #fff;
@@ -254,6 +293,9 @@
     color: #94a3b8;
   }
 
+  /* =================================================
+     FILTERS
+  ================================================= */
   .mob-filter-row {
 
     display: flex;
@@ -332,6 +374,9 @@
     background: #059669;
   }
 
+  /* =================================================
+     PILLS
+  ================================================= */
   .mob-pills {
 
     display: flex;
@@ -341,6 +386,9 @@
     gap: 8px;
   }
 
+  /* =================================================
+     TABLE
+  ================================================= */
   .mob-table-wrap {
 
     overflow-x: auto;
@@ -357,6 +405,9 @@
     font-size: 12px;
   }
 
+  /* =================================================
+     PAGINATION
+  ================================================= */
   #paginationContainer {
 
     display: flex;
@@ -369,5 +420,5 @@
 
     margin-top: 12px;
   }
-}
 
+}
