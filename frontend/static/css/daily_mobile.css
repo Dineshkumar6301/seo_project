@@ -1,0 +1,373 @@
+
+:root {
+  --mob-nav-h: 56px;
+}
+
+@media (max-width: 991.98px) {
+
+  html,
+  body {
+    overflow-x: hidden;
+    background: #f1f5f9;
+  }
+
+  .container-fluid {
+    display: none !important;
+  }
+
+  nav,
+  .navbar,
+  header,
+  .offcanvas,
+  .modal,
+  .dropdown-menu {
+    z-index: 99999 !important;
+  }
+
+  .offcanvas,
+  .modal {
+    position: fixed !important;
+  }
+
+  #mob-projects-panel,
+  #mob-detail-panel {
+
+    position: fixed;
+
+    top: var(--mob-nav-h);
+    left: 0;
+
+    width: 100%;
+    height: calc(100dvh - var(--mob-nav-h));
+
+    background: #f1f5f9;
+
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    overscroll-behavior: contain;
+
+    z-index: 9000;
+
+    transition: transform .3s ease;
+
+    will-change: transform;
+  }
+
+  #mob-projects-panel {
+    transform: translateX(0);
+  }
+
+  #mob-detail-panel {
+    transform: translateX(100%);
+  }
+
+  body.mob-detail-open #mob-projects-panel {
+    transform: translateX(-100%);
+  }
+
+  body.mob-detail-open #mob-detail-panel {
+    transform: translateX(0);
+  }
+
+  #mob-projects-panel {
+    padding-bottom: 40px;
+  }
+
+  .mob-panel-header {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 10;
+
+    background: #fff;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid #e2e8f0;
+
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  .mob-panel-header h2 {
+
+    margin: 0;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    color: #1e293b;
+  }
+
+  .mob-proj-list {
+
+    padding: 12px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+  }
+
+  .mob-proj-card {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background: #fff;
+
+    border: 1.5px solid #e2e8f0;
+
+    border-radius: 14px;
+
+    padding: 14px 16px;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: #1e293b;
+
+    cursor: pointer;
+
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+
+    transition: .15s;
+  }
+
+  .mob-proj-card:active {
+
+    background: #eff6ff;
+
+    border-color: #2563eb;
+  }
+
+  .mob-arrow {
+
+    color: #94a3b8;
+
+    font-size: 22px;
+  }
+
+  #mob-detail-panel {
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding-bottom: 60px;
+  }
+
+  #mob-topbar {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 10;
+
+    background: #fff;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px 16px;
+
+    border-bottom: 1px solid #e2e8f0;
+
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+
+  #mob-back-btn {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    border: none;
+
+    background: none;
+
+    color: #2563eb;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  #mob-project-label {
+
+    flex: 1;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #475569;
+  }
+
+  .mob-card {
+
+    background: #fff;
+
+    margin: 10px 12px 0;
+
+    padding: 14px;
+
+    border-radius: 14px;
+
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+
+  .mob-card-title {
+
+    margin-bottom: 10px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: .08em;
+
+    text-transform: uppercase;
+
+    color: #94a3b8;
+  }
+
+  .mob-filter-row {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+  }
+
+  .mob-filter-group {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+  .mob-filter-group label {
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    color: #64748b;
+  }
+
+  .mob-filter-group select,
+  .mob-filter-group input {
+
+    border: 1.5px solid #e2e8f0;
+
+    border-radius: 10px;
+
+    padding: 9px 10px;
+
+    background: #f8fafc;
+
+    font-size: 14px;
+
+    outline: none;
+  }
+
+  .mob-filter-btns {
+
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 12px;
+  }
+
+  .mob-btn-apply,
+  .mob-btn-excel {
+
+    flex: 1;
+
+    border: none;
+
+    border-radius: 10px;
+
+    padding: 10px;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    color: #fff;
+  }
+
+  .mob-btn-apply {
+    background: #2563eb;
+  }
+
+  .mob-btn-excel {
+    background: #059669;
+  }
+
+  .mob-pills {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+  }
+
+  .mob-table-wrap {
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+
+    border-radius: 8px;
+  }
+
+  .mob-table-wrap table {
+
+    min-width: 680px;
+
+    font-size: 12px;
+  }
+
+  #paginationContainer {
+
+    display: flex;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 12px;
+  }
+}
+
