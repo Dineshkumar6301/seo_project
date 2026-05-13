@@ -181,101 +181,29 @@ def dashboard(request):
 
     activities = base_qs.order_by('-created_at')[:10]
 
-
-    activities_qs = base_qs.order_by('-created_at')
-
-    page_number = request.GET.get('page', 1)
-    per_page = request.GET.get('per_page', 10)
-
-    paginator = Paginator(activities_qs, per_page)
-    page_obj = paginator.get_page(page_number)
-
-    activities_paginated = page_obj.object_list
-
+    activities_paginated = base_qs.order_by('-created_at')[:15]
     for a in activities_paginated:
 
         data = a.dynamic_data or {}
 
-        a.keyword = data.get(
-            "keyword",
-            ""
-        )
+        a.keyword = data.get("Keyword", "")
 
         a.submitted_url = (
-
             data.get("submitted_url")
-
-            or
-
-            data.get("Submitted_url")
-
-            or
-
-            data.get("submitted url")
-
-            or
-
-            data.get("url")
-
-            or
-
-            ""
-        )
-        # TOP ACTIVITIES ALSO
-    for a in activities:
-
-        data = a.dynamic_data or {}
-
-        a.keyword = (
-
-            data.get("keyword")
-
-            or
-
-            data.get("Keyword")
-
-            or
-
-            ""
+            or data.get("Submitted_url")
+            or data.get("submitted url")
+            or data.get("url")
+            or ""
         )
 
-        a.submitted_url = (
-
-            data.get("submitted_url")
-
-            or
-
-            data.get("Submitted_url")
-
-            or
-
-            data.get("submitted url")
-
-            or
-
-            data.get("url")
-
-            or
-
-            ""
-        )
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-
-        html = render_to_string(
-            'frontend/partials/activity_table.html',
-            {'activities': activities_paginated},
-            request=request
-        )
-
-        return JsonResponse({
-            'html': html,
-            'page': page_obj.number,
-            'total_pages': paginator.num_pages,
-            'has_next': page_obj.has_next(),
-            'has_prev': page_obj.has_previous(),
-        })
-        
-    
+        a.submitted_urls = [
+            u.strip()
+            for u in a.submitted_url
+              .replace("\\n", "\n")
+                .replace(",", "\n")
+                .splitlines()
+            if u.strip()
+        ]
 
     context = {
 
@@ -303,8 +231,7 @@ def dashboard(request):
         'activities': activities,
 
         'activities_paginated': activities_paginated,
-        'page_obj': page_obj,
-        'paginator': paginator,
+      
     }
 
     return render(request, 'frontend/dashboard.html', context)
