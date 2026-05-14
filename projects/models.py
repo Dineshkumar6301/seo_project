@@ -1,9 +1,5 @@
 from django.db import models
 
-
-# ==========================================
-# SERVICE CATEGORY
-# ==========================================
 class ServiceCategory(models.Model):
     name = models.CharField(max_length=100)
 
@@ -11,9 +7,6 @@ class ServiceCategory(models.Model):
         return self.name
 
 
-# ==========================================
-# PROJECT
-# ==========================================
 class Project(models.Model):
     name = models.CharField(max_length=255)
 

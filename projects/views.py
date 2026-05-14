@@ -4,19 +4,21 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
 from frontend.models import ProjectServiceAssignment
-
-from .models import Project, Service, ServiceCategory
+from .models import Project, Service, ServiceCategory, ProjectService
 from .serializers import ProjectSerializer
 from clients.models import Client
 from accounts.permissions import IsAdminOrManager
 from activities.models import Checklist
-
+from collections import defaultdict
+from accounts.models import User
 import json
+from django.views import View
+from frontend.models import ProjectServiceAssignment
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 class ProjectCreateAPI(APIView):
     permission_classes = [IsAdminOrManager]
@@ -78,34 +80,7 @@ def project_create(request):
     return render(request, 'frontend/projects/create.html', {
         'clients': clients
     })
-from collections import defaultdict
-from accounts.models import User
 
-
-
-from collections import defaultdict
-import json
-
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
-
-from accounts.models import User
-from activities.models import Checklist
-
-from projects.models import (
-    Project,
-    Service,
-    ServiceCategory,
-    ProjectService
-)
-
-
-# =========================================================
-# PROJECT DASHBOARD
-# =========================================================
 @login_required(login_url='home')
 def project_dashboard(request):
 
@@ -120,9 +95,7 @@ def project_dashboard(request):
 
     project_id = request.GET.get('project')
 
-    # =====================================================
-    # SELECTED PROJECT
-    # =====================================================
+
     if project_id:
 
         selected_project = get_object_or_404(
@@ -130,7 +103,7 @@ def project_dashboard(request):
             id=project_id
         )
 
-        # ✅ GET PROJECT SERVICES
+    
         project_services = ProjectService.objects.filter(
             project=selected_project
         ).select_related(
@@ -138,9 +111,6 @@ def project_dashboard(request):
             'service__category'
         )
 
-    # =====================================================
-    # GROUP SERVICES BY CATEGORY
-    # =====================================================
     services_grouped = defaultdict(list)
 
     for ps in project_services:
@@ -155,9 +125,6 @@ def project_dashboard(request):
             ps.service
         )
 
-    # =====================================================
-    # TEAM ASSIGNMENT
-    # =====================================================
     service_team = {}
 
     if selected_project:
@@ -191,9 +158,7 @@ def project_dashboard(request):
                     )
                 })
 
-    # =====================================================
-    # SAVE PROJECT SERVICES
-    # =====================================================
+
     if request.method == "POST":
 
         project_id = request.POST.get('project_id')
@@ -211,18 +176,13 @@ def project_dashboard(request):
 
             with transaction.atomic():
 
-                # =========================================
-                # REMOVE UNCHECKED SERVICES
-                # =========================================
+
                 ProjectService.objects.filter(
                     project=project
                 ).exclude(
                     service_id__in=selected_services
                 ).delete()
 
-                # =========================================
-                # ADD NEW SERVICES
-                # =========================================
                 existing_service_ids = ProjectService.objects.filter(
                     project=project
                 ).values_list(
@@ -247,9 +207,6 @@ def project_dashboard(request):
                     new_services
                 )
 
-                # =========================================
-                # CHECKLIST RESET
-                # =========================================
                 Checklist.objects.filter(
                     project=project
                 ).delete()
@@ -305,9 +262,6 @@ def project_dashboard(request):
     )
 
 
-# =========================================================
-# ADD GLOBAL SERVICE
-# =========================================================
 @login_required(login_url='home')
 @require_POST
 def add_service(request):
@@ -327,7 +281,6 @@ def add_service(request):
         name=category_name
     )
 
-    # ✅ GLOBAL SERVICE
     service, created = Service.objects.get_or_create(
         name=name,
         defaults={
@@ -335,9 +288,6 @@ def add_service(request):
         }
     )
 
-    # =========================================
-    # UPDATE CATEGORY IF NEEDED
-    # =========================================
     if service.category != category:
 
         service.category = category
@@ -358,10 +308,6 @@ def add_service(request):
         )
     })
 
-import json
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from activities.models import Activity
 
 @login_required
 def project_update(request, pk):
@@ -380,23 +326,6 @@ def project_update(request, pk):
 
         return JsonResponse({"success": True})
     
-
-from django.http import JsonResponse
-from django.views import View
-import json
-from frontend.models import ProjectServiceAssignment
-import json
-from django.http import JsonResponse
-from django.views import View
-from frontend.models import ProjectServiceAssignment
-
-
-import json
-from django.http import JsonResponse
-from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
-from frontend.models import ProjectServiceAssignment
-
 
 class RemoveUserFromService(LoginRequiredMixin, View):
 

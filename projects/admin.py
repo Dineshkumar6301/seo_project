@@ -9,18 +9,12 @@ from .models import (
     TaskField
 )
 
-
-# =====================================================
-# TASK FIELD INLINE
-# =====================================================
 class TaskFieldInline(admin.TabularInline):
     model = TaskField
     extra = 1
 
 
-# =====================================================
-# SERVICE TASK ADMIN
-# =====================================================
+
 @admin.register(ServiceTask)
 class ServiceTaskAdmin(admin.ModelAdmin):
 
@@ -47,9 +41,7 @@ class ServiceTaskAdmin(admin.ModelAdmin):
     inlines = [TaskFieldInline]
 
 
-# =====================================================
-# SERVICE CATEGORY ADMIN
-# =====================================================
+
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
 
@@ -63,17 +55,12 @@ class ServiceCategoryAdmin(admin.ModelAdmin):
     )
 
 
-# =====================================================
-# PROJECT SERVICE INLINE
-# =====================================================
+
 class ProjectServiceInline(admin.TabularInline):
     model = ProjectService
     extra = 1
 
 
-# =====================================================
-# PROJECT ADMIN
-# =====================================================
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
 
@@ -97,9 +84,6 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = [ProjectServiceInline]
 
 
-# =====================================================
-# SERVICE ADMIN
-# =====================================================
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
 
@@ -120,9 +104,6 @@ class ServiceAdmin(admin.ModelAdmin):
     )
 
 
-# =====================================================
-# PROJECT SERVICE ADMIN
-# =====================================================
 @admin.register(ProjectService)
 class ProjectServiceAdmin(admin.ModelAdmin):
 
@@ -143,9 +124,7 @@ class ProjectServiceAdmin(admin.ModelAdmin):
     )
 
 
-# =====================================================
-# CHECKLIST TEMPLATE ADMIN
-# =====================================================
+
 @admin.register(ChecklistTemplate)
 class ChecklistTemplateAdmin(admin.ModelAdmin):
 
@@ -173,9 +152,6 @@ class ChecklistTemplateAdmin(admin.ModelAdmin):
     )
 
 
-# =====================================================
-# TASK FIELD ADMIN
-# =====================================================
 @admin.register(TaskField)
 class TaskFieldAdmin(admin.ModelAdmin):
 

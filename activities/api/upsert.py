@@ -150,9 +150,6 @@ class ActivityUpsertAPI(APIView):
 
             })
 
-        # =====================================
-        # RESPONSE
-        # =====================================
         return Response({
 
             "id": obj.id,
