@@ -397,9 +397,7 @@ def client_dashboard(request):
 
     client = request.user.client
 
-    # =====================================
-    # BASE QUERYSET
-    # =====================================
+
 
     activities_qs = (
 
@@ -418,9 +416,6 @@ def client_dashboard(request):
         .order_by('-created_at')
     )
 
-    # =====================================
-    # KPI COUNTS
-    # =====================================
 
     total = activities_qs.count()
 
@@ -442,9 +437,7 @@ def client_dashboard(request):
         .count()
     )
 
-    # =====================================
-    # PAGINATION
-    # =====================================
+ 
 
     paginator = Paginator(
         activities_qs,
@@ -459,10 +452,7 @@ def client_dashboard(request):
         page_number
     )
 
-    # =====================================
-    # CHART DATA
-    # =====================================
-
+ 
     chart_qs = (
 
         activities_qs
