@@ -3,6 +3,17 @@
   --mob-nav-h: 56px;
 }
 
+@media (max-width: 991px) {
+
+  .daily-page-wrapper {
+    display: none !important;
+  }
+
+  #mob-projects-panel,
+  #mob-detail-panel {
+    display: block !important;
+  }
+}
 @media (max-width: 991.98px) {
 
   html,
@@ -13,16 +24,11 @@
     background: #f1f5f9;
   }
 
-  /* =================================================
-     HIDE ONLY DESKTOP DAILY CONTENT
-  ================================================= */
   .daily-page-wrapper > .row {
     display: none !important;
   }
 
-  /* =================================================
-     KEEP BASE.HTML NAVBAR / MOBILE MENU VISIBLE
-  ================================================= */
+
   nav,
   .navbar,
   header,
@@ -39,9 +45,6 @@
     position: fixed !important;
   }
 
-
-@media (max-width: 991.98px) {
-
   .offcanvas,
   .sidebar,
   .main-sidebar {
@@ -55,12 +58,7 @@
     max-width: 80vw !important;
   }
 
-}
 
-
-  /* =================================================
-     MOBILE PANELS
-  ================================================= */
   #mob-projects-panel,
   #mob-detail-panel {
 
@@ -108,9 +106,7 @@
     transform: translateX(0);
   }
 
-  /* =================================================
-     PROJECT HEADER
-  ================================================= */
+
   .mob-panel-header {
 
     position: sticky;
@@ -139,9 +135,7 @@
     color: #1e293b;
   }
 
-  /* =================================================
-     PROJECT LIST
-  ================================================= */
+
   .mob-proj-list {
 
     padding: 14px;
@@ -198,9 +192,7 @@
     font-size: 22px;
   }
 
-  /* =================================================
-     DETAIL TOPBAR
-  ================================================= */
+
   #mob-topbar {
 
     position: sticky;
@@ -262,9 +254,7 @@
     color: #475569;
   }
 
-  /* =================================================
-     CARDS
-  ================================================= */
+
   .mob-card {
 
     background: #fff;
@@ -293,9 +283,7 @@
     color: #94a3b8;
   }
 
-  /* =================================================
-     FILTERS
-  ================================================= */
+
   .mob-filter-row {
 
     display: flex;

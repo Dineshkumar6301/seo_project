@@ -19,12 +19,19 @@ const rowsPerPage = 10;
 async function selectProject(projectId, el){
 
     selectedProject = projectId;
-
     document.querySelectorAll(".project-item")
-        .forEach(e => e.classList.remove("project-active"));
+    .forEach(e => {
 
-    el.classList.add("project-active");
+        e.classList.remove("project-active");
 
+        const onclickAttr = e.getAttribute("onclick") || "";
+
+        if(onclickAttr.includes(`selectProject(${selectedProject}`)){
+            e.classList.add("project-active");
+        }
+    });
+
+   
     resetUI();
 
     try{
@@ -888,8 +895,12 @@ async function editRow(id){
 
         Object.keys(dynamicData).forEach(key => {
 
-            const field = document.querySelector(
-                `[name="${key}"]`
+            const normalizedKey = key.toLowerCase();
+
+            const field = [...document.querySelectorAll(
+                "#dynamicForm input, #dynamicForm textarea, #dynamicForm select"
+            )].find(el =>
+                el.name.toLowerCase() === normalizedKey
             );
 
             if(field){
@@ -897,7 +908,6 @@ async function editRow(id){
                 field.value = dynamicData[key];
             }
         });
-
         const btn = document.querySelector(
             "#dynamicForm button"
         );
@@ -910,12 +920,15 @@ async function editRow(id){
 
             btn.classList.add("btn-primary");
         }
-        document.querySelector(
-            ".table-scroll-wrapper"
-        ).scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+       const tableWrapper = document.querySelector(".table-scroll-wrapper");
+
+        if(tableWrapper){
+
+            tableWrapper.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }
 
 
     }

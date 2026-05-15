@@ -160,3 +160,8 @@ table{
     color:#fff;
     border-color:#dc3545;
 }
+
+#mob-projects-panel,
+#mob-detail-panel {
+  display: none;
+}
