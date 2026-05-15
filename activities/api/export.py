@@ -34,11 +34,15 @@ class ExportExcelAPI(APIView):
             or request.GET.get("type")
         )
 
+        is_client_user = False
+
         try:
 
             client = Client.objects.get(
                 user=request.user
             )
+
+            is_client_user = True
 
             qs = qs.filter(
                 project__client=client
@@ -175,19 +179,35 @@ class ExportExcelAPI(APIView):
 
         ws.title = "SEO Report"
 
-        headers = [
-            "S.No",
-            "Date",
-            "Employee",
-            "Project",
-            "Category",
-            "Service",
-            "Task",
-            "Keyword",
-            "Submitted URLs",
-            "Target URLs",
-            "Proof / Other Data",
-        ]
+
+        if is_client_user:
+
+            headers = [
+                "S.No",
+                "Date",
+                "Service",
+                "Task Type",
+                "Keyword",
+                "Submitted URL",
+                "Target URL",
+                "Other Data",
+            ]
+
+        else:
+
+            headers = [
+                "S.No",
+                "Date",
+                "Employee",
+                "Project",
+                "Category",
+                "Service",
+                "Task",
+                "Keyword",
+                "Submitted URL",
+                "Target URL",
+                "Proof / Other Data",
+            ]
 
         ws.append(headers)
 
@@ -211,6 +231,7 @@ class ExportExcelAPI(APIView):
                 vertical="center",
                 wrap_text=True
             )
+
 
         for i, a in enumerate(qs, start=1):
 
@@ -252,6 +273,19 @@ class ExportExcelAPI(APIView):
                 or ""
             )
 
+
+            submitted_list = [
+                x.strip()
+                for x in str(submitted_urls)
+                    .replace(",", "\n")
+                    .splitlines()
+                if x.strip()
+            ]
+
+            if not submitted_list:
+
+                submitted_list = [""]
+
             other_data_parts = []
 
             for key, value in data.items():
@@ -284,83 +318,106 @@ class ExportExcelAPI(APIView):
                 other_data_parts
             )
 
-            submitted_list = []
-
-            if submitted_urls:
-
-                submitted_list = [
-                    x.strip()
-                    for x in str(submitted_urls)
-                        .replace(",", "\n")
-                        .splitlines()
-                    if x.strip()
-                ]
-
-            if not submitted_list:
-                submitted_list = [""]
-
             start_row = ws.max_row + 1
+
+   
 
             for idx, link in enumerate(submitted_list):
 
-                row = [
+                if is_client_user:
 
-                    i if idx == 0 else "",
+                    row = [
 
-                    str(a.date) if idx == 0 else "",
+                        i if idx == 0 else "",
 
-                    employee if idx == 0 else "",
+                        str(a.date)
+                        if idx == 0 else "",
 
-                    a.project.name
-                    if idx == 0 and a.project
-                    else "",
+                        a.service_name or ""
+                        if idx == 0 else "",
 
-                    getattr(a, "category", "")
-                    if idx == 0 else "",
+                        a.task_type or ""
+                        if idx == 0 else "",
 
-                    a.service_name
-                    if idx == 0 else "",
+                        keyword
+                        if idx == 0 else "",
 
-                    a.task_type
-                    if idx == 0 else "",
+                        link,
 
-                    keyword
-                    if idx == 0 else "",
+                        target_urls
+                        if idx == 0 else "",
 
-                    link,
+                        other_data
+                        if idx == 0 else "",
+                    ]
 
-                    target_urls
-                    if idx == 0 else "",
+                else:
 
-                    other_data
-                    if idx == 0 else "",
-                ]
+                    row = [
+
+                        i if idx == 0 else "",
+
+                        str(a.date)
+                        if idx == 0 else "",
+
+                        employee
+                        if idx == 0 else "",
+
+                        a.project.name
+                        if idx == 0 and a.project
+                        else "",
+
+                        getattr(a, "category", "")
+                        if idx == 0 else "",
+
+                        a.service_name or ""
+                        if idx == 0 else "",
+
+                        a.task_type or ""
+                        if idx == 0 else "",
+
+                        keyword
+                        if idx == 0 else "",
+
+                        link,
+
+                        target_urls
+                        if idx == 0 else "",
+
+                        other_data
+                        if idx == 0 else "",
+                    ]
 
                 ws.append(row)
 
                 current_row = ws.max_row
 
-                link_cell = ws.cell(
+                
+                submitted_col = 6 if is_client_user else 9
+
+                submitted_cell = ws.cell(
                     current_row,
-                    9
+                    submitted_col
                 )
+
                 if link.startswith(
                     ("http://", "https://")
                 ):
 
-                    link_cell.hyperlink = link
+                    submitted_cell.hyperlink = link
 
-                    link_cell.style = "Hyperlink"
+                    submitted_cell.font = Font(
+                        color="0000FF",
+                        underline="single"
+                    )
 
-                link_cell.alignment = Alignment(
-                    wrap_text=False,
-                    vertical="center",
-                    horizontal="left"
-                )
+      
+
+                target_col = 7 if is_client_user else 10
 
                 target_cell = ws.cell(
                     current_row,
-                    10
+                    target_col
                 )
 
                 if (
@@ -372,25 +429,29 @@ class ExportExcelAPI(APIView):
 
                     target_cell.hyperlink = str(target_urls)
 
-                    target_cell.style = "Hyperlink"
+                    target_cell.font = Font(
+                        color="0000FF",
+                        underline="single"
+                    )
 
-                target_cell.alignment = Alignment(
-                    wrap_text=False,
-                    vertical="center",
-                    horizontal="left"
-                )
-
-                                
-
-                
+         
             end_row = ws.max_row
 
             if len(submitted_list) > 1:
 
-                merge_columns = [
-                    1, 2, 3, 4, 5,
-                    6, 7, 8, 10, 11
-                ]
+                if is_client_user:
+
+                    merge_columns = [
+                        1, 2, 3, 4,
+                        5, 7, 8
+                    ]
+
+                else:
+
+                    merge_columns = [
+                        1, 2, 3, 4, 5,
+                        6, 7, 8, 10, 11
+                    ]
 
                 for col in merge_columns:
 
@@ -412,53 +473,153 @@ class ExportExcelAPI(APIView):
                         wrap_text=True
                     )
 
+
         for row in ws.iter_rows():
 
             for cell in row:
 
-                cell.alignment = Alignment(
-                    wrap_text=False,
-                    vertical="top"
-                )
+                # Submitted URL column
 
-        for column_cells in ws.columns:
+                if (
+                    cell.column == 6
+                    and is_client_user
+                ):
 
-            length = 0
-
-            column = column_cells[0].column
-
-            for cell in column_cells:
-
-                try:
-
-                    length = max(
-                        length,
-                        len(str(cell.value))
+                    cell.alignment = Alignment(
+                        wrap_text=False,
+                        vertical="center",
+                        horizontal="left"
                     )
 
-                except:
-                    pass
+                elif (
+                    cell.column == 9
+                    and not is_client_user
+                ):
 
-            adjusted_width = min(
-                length + 5,
-                80
-            )
+                    cell.alignment = Alignment(
+                        wrap_text=False,
+                        vertical="center",
+                        horizontal="left"
+                    )
 
-            ws.column_dimensions[
-                get_column_letter(column)
-            ].width = adjusted_width
+                # Other Data column
 
-        ws.column_dimensions["I"].width = 120
-        ws.column_dimensions["J"].width = 80
+                elif (
+                    cell.column == 8
+                    and is_client_user
+                ):
+
+                    cell.alignment = Alignment(
+                        wrap_text=True,
+                        vertical="top",
+                        horizontal="left"
+                    )
+
+                elif (
+                    cell.column == 11
+                    and not is_client_user
+                ):
+
+                    cell.alignment = Alignment(
+                        wrap_text=True,
+                        vertical="top",
+                        horizontal="left"
+                    )
+
+                else:
+
+                    cell.alignment = Alignment(
+                        wrap_text=False,
+                        vertical="center",
+                        horizontal="left"
+                    )
+
+        if is_client_user:
+
+            widths = {
+                "A": 10,
+                "B": 15,
+                "C": 25,
+                "D": 25,
+                "E": 35,
+                "F": 135,
+                "G": 55,
+                "H": 180,
+            }
+
+        else:
+
+            widths = {
+                "A": 10,
+                "B": 15,
+                "C": 25,
+                "D": 25,
+                "E": 20,
+                "F": 25,
+                "G": 25,
+                "H": 35,
+                "I": 135,
+                "J": 55,
+                "K": 180,
+            }
+
+        for col, width in widths.items():
+
+            ws.column_dimensions[col].width = width   
 
         for row in range(
             2,
             ws.max_row + 1
         ):
 
-            ws.row_dimensions[row].height = 22
+            other_col = 8 if is_client_user else 11
+
+            other_value = ws.cell(
+                row=row,
+                column=other_col
+            ).value
+
+            submitted_col = 6 if is_client_user else 9
+
+            submitted_value = ws.cell(
+                row=row,
+                column=submitted_col
+            ).value
+
+            # Default height
+            current_height = 38
+
+            # Submitted URL rows spacing
+
+            if submitted_value:
+
+                current_height = max(
+                    current_height,
+                    42
+                )
+
+            # Other Data auto height
+
+            if other_value:
+
+                text = str(other_value)
+
+                estimated_lines = (
+                    len(text) // 85
+                ) + text.count("\n") + 1
+
+                current_height = max(
+                    current_height,
+                    min(estimated_lines * 24, 500)
+                )
+
+            ws.row_dimensions[row].height = current_height
+                        
+
+        
 
         ws.freeze_panes = "A2"
+
 
         response = HttpResponse(
             content_type=(
@@ -469,7 +630,6 @@ class ExportExcelAPI(APIView):
 
         parts = ["Report"]
 
-        
         if filter_type == "today":
 
             parts.append(
@@ -512,21 +672,18 @@ class ExportExcelAPI(APIView):
                     f"{start}_to_{end}"
                 )
 
-        
         if service:
 
             parts.append(
                 service.replace(" ", "_")
             )
 
-        
         if task:
 
             parts.append(
                 task.replace(" ", "_")
             )
 
-      
         filename = (
             "_".join(parts)
             + ".xlsx"
