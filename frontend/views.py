@@ -249,8 +249,6 @@ def employee_dashboard(request):
         .select_related("project")
         .order_by("-date")
     )
-
-    # KPI
     total = activities_qs.count()
 
     pending = activities_qs.filter(
@@ -265,7 +263,6 @@ def employee_dashboard(request):
         status='rejected'
     ).count()
 
-    # PAGINATION
     paginator = Paginator(
         activities_qs,
         10
@@ -279,7 +276,6 @@ def employee_dashboard(request):
         page_number
     )
 
-    # CHART
     today = date.today()
 
     last_7_days = [
@@ -314,20 +310,17 @@ def employee_dashboard(request):
         'frontend/employee_dashboard.html',
         {
 
-            # IMPORTANT
             'activities': page_obj,
 
             'page_obj': page_obj,
 
             'paginator': paginator,
 
-            # KPI
             'total': total,
             'pending': pending,
             'approved': approved,
             'rejected': rejected,
 
-            # CHART
             'chart_labels': chart_labels,
             'chart_data': chart_data,
         }
@@ -396,9 +389,6 @@ from activities.models import Activity
 def client_dashboard(request):
 
     client = request.user.client
-
-
-
     activities_qs = (
 
         Activity.objects
@@ -415,44 +405,32 @@ def client_dashboard(request):
 
         .order_by('-created_at')
     )
-
-
     total = activities_qs.count()
-
     approved = (
         activities_qs
         .filter(status='approved')
         .count()
     )
-
     pending = (
         activities_qs
         .filter(status='pending')
         .count()
     )
-
     rejected = (
         activities_qs
         .filter(status='rejected')
         .count()
     )
-
- 
-
     paginator = Paginator(
         activities_qs,
         20
     )
-
     page_number = request.GET.get(
         'page'
     )
-
     activities = paginator.get_page(
         page_number
     )
-
- 
     chart_qs = (
 
         activities_qs
@@ -480,10 +458,6 @@ def client_dashboard(request):
         for x in chart_qs
     ]
 
-    # =====================================
-    # RESPONSE
-    # =====================================
-
     return render(
 
         request,
@@ -497,14 +471,10 @@ def client_dashboard(request):
             'page_obj': activities,
 
             'paginator': paginator,
-
-            # KPI
             'total': total,
             'approved': approved,
             'pending': pending,
             'rejected': rejected,
-
-            # Chart
             'chart_labels': chart_labels,
             'chart_data': chart_data,
         }
