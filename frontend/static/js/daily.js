@@ -16,14 +16,17 @@ let selectedTask = null;
 let currentPage = 1;
 const rowsPerPage = 10;
 
-async function selectProject(projectId, el){
+async function selectProject(projectId, el = null){
 
     selectedProject = projectId;
 
     document.querySelectorAll(".project-item")
         .forEach(e => e.classList.remove("project-active"));
 
-    el.classList.add("project-active");
+    // prevent undefined error
+    if(el){
+        el.classList.add("project-active");
+    }
 
     resetUI();
 
@@ -48,7 +51,6 @@ async function selectProject(projectId, el){
         alert("Error loading services");
     }
 }
-
 async function clearProject(el){
 
     selectedProject = null;
