@@ -19,19 +19,12 @@ const rowsPerPage = 10;
 async function selectProject(projectId, el){
 
     selectedProject = projectId;
+
     document.querySelectorAll(".project-item")
-    .forEach(e => {
+        .forEach(e => e.classList.remove("project-active"));
 
-        e.classList.remove("project-active");
+    el.classList.add("project-active");
 
-        const onclickAttr = e.getAttribute("onclick") || "";
-
-        if(onclickAttr.includes(`selectProject(${selectedProject}`)){
-            e.classList.add("project-active");
-        }
-    });
-
-   
     resetUI();
 
     try{
