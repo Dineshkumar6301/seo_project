@@ -127,6 +127,7 @@ def profile_view(request):
                 'image/jpeg',
                 'image/png',
                 'image/webp'
+                'image/jpg',
             ]
 
             if photo.content_type not in allowed:
