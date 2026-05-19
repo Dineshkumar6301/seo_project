@@ -4,210 +4,184 @@
 {% load static %}
 <!Doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Activities</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Daily Activities</title>
+        <link rel="stylesheet" href="{% static 'css/daily.css' %}">
+    </head>
+    <body>
+        <div class="container-fluid daily-page-wrapper">
+            <div class="row">
+                <div class="col-lg-3">
+                    <div class="card card-soft p-3">
+                        <div class="section-title">
+                            Projects
+                        </div>
+                        <div
+                            class="project-item project-active"
+                            onclick="clearProject(this)">
 
-<link rel="stylesheet" href="{% static 'css/daily.css' %}">
+                            All Projects
 
-</head>
-<body>
-<div class="container-fluid daily-page-wrapper">
-<div class="row">
+                        </div>
 
-<div class="col-lg-3">
+                        {% for p in projects %}
+                            <div
+                                class="project-item"
+                                onclick="selectProject({{p.id}}, this)">
 
-<div class="card card-soft p-3">
+                                {{p.name}}
 
-<div class="section-title">
-Projects
-</div>
-<div
-    class="project-item project-active"
-    onclick="clearProject(this)">
+                            </div>
+                        {% endfor %}
 
-    All Projects
+                    </div>
 
-</div>
+                </div>
 
-{% for p in projects %}
+                <div class="col-lg-9">
+                    <!-- FILTER -->
+                    <div class="card card-soft p-3 mb-3">
+                        <div class="row g-2 align-items-end">
 
+                            <div class="col-md-3">
+                                <label>Filter</label>
 
-<div
-    class="project-item"
-    onclick="selectProject({{p.id}}, this)">
+                                <select
+                                    id="filterType"
+                                    class="form-control"
+                                    onchange="handleFilterChange()">
 
-    {{p.name}}
+                                    <option value="today">Today</option>
+                                    <option value="week">Last Week</option>
+                                    <option value="month">Last Month</option>
+                                    <option value="custom">Custom</option>
 
-</div>
+                                </select>
+                            </div>
 
-{% endfor %}
+                            <div
+                                class="col-md-2"
+                                id="startBox"
+                                style="display:none;">
 
-</div>
+                                <label>Start</label>
 
-</div>
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    class="form-control">
 
-<!-- RIGHT -->
-<div class="col-lg-9">
+                            </div>
 
-<!-- FILTER -->
-<div class="card card-soft p-3 mb-3">
+                            <div
+                              class="col-md-2"
+                                id="endBox"
+                                style="display:none;">
+                                <label>End</label>
 
-<div class="row g-2 align-items-end">
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    class="form-control">
 
-<div class="col-md-3">
-<label>Filter</label>
+                            </div>
 
-<select
-    id="filterType"
-    class="form-control"
-    onchange="handleFilterChange()">
+                            <div class="col-md-2">
 
-    <option value="today">Today</option>
-    <option value="week">Last Week</option>
-    <option value="month">Last Month</option>
-    <option value="custom">Custom</option>
+                                <button
+                                    class="btn btn-primary w-100"
+                                    onclick="loadData()">
 
-</select>
-</div>
+                                    Apply
 
-<div
-    class="col-md-2"
-    id="startBox"
-    style="display:none;">
+                                </button>
 
-<label>Start</label>
+                            </div>
 
-<input
-    type="date"
-    id="startDate"
-    class="form-control">
+                            <div class="col-md-2">
 
-</div>
+                                <button
+                                    class="btn btn-success w-100"
+                                    onclick="downloadExcel()">
 
-<div
-    class="col-md-2"
-    id="endBox"
-    style="display:none;">
+                                    Excel
 
-<label>End</label>
+                                </button>
 
-<input
-    type="date"
-    id="endDate"
-    class="form-control">
+                            </div>
 
-</div>
+                        </div>
+                    </div>
+                    <!-- CATEGORIES -->
+                    <div class="card card-soft p-3 mb-3">
 
-<div class="col-md-2">
+                        <div class="section-title">
+                            Categories
+                        </div>
 
-<button
-    class="btn btn-primary w-100"
-    onclick="loadData()">
+                        <div id="categoriesContainer"></div>
+                    </div>
+                    <div class="card card-soft p-3 mb-3">
 
-    Apply
+                    <div class="section-title">
+                        Services
+                    </div>
 
-</button>
+                    <div id="servicesContainer"></div>
 
-</div>
+                </div>
+                <div class="card card-soft p-3 mb-3">
 
-<div class="col-md-2">
+                    <div class="section-title">
+                        Task Type
+                    </div>
+                    <div id="taskTypes"></div>
+                </div>
+                <!-- FORM -->
+                <div class="card card-soft p-3 mb-3">
 
-<button
-    class="btn btn-success w-100"
-    onclick="downloadExcel()">
+                    <div class="section-title">
+                    Fill Details
+                    </div>
+                    <form id="dynamicForm"></form>
+                </div>
 
-    Excel
+                <!-- TABLE — placed AFTER form -->
+                <div class="card card-soft p-3 mb-3">
 
-</button>
+                    <div class="section-title">
+                        Saved Data
+                    </div>
 
-</div>
+                    <div class="table-scroll-wrapper">
 
-</div>
-</div>
+                        <table class="table table-bordered table-hover mb-0">
 
-<!-- CATEGORIES -->
-<div class="card card-soft p-3 mb-3">
+                            <thead>
+                                <tr id="tableHead"></tr>
+                            </thead>
 
-<div class="section-title">
-Categories
-</div>
+                            <tbody id="tableBody"></tbody>
 
-<div id="categoriesContainer"></div>
+                        </table>
 
-</div>
+                    </div>
+                    <div
+                        id="paginationContainer"
+                        class="d-flex justify-content-center mt-3 flex-wrap gap-1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- SERVICES -->
-<div class="card card-soft p-3 mb-3">
+    <script src="{% static 'js/daily.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/daily_mobile.css' %}">
+    <script src="{% static 'js/daily_mobile.js' %}"></script>
 
-<div class="section-title">
-Services
-</div>
+    {% endblock %}
 
-<div id="servicesContainer"></div>
-
-</div>
-
-<!-- TASK -->
-<div class="card card-soft p-3 mb-3">
-
-<div class="section-title">
-Task Type
-</div>
-
-<div id="taskTypes"></div>
-
-</div>
-
-<!-- FORM -->
-<div class="card card-soft p-3 mb-3">
-
-<div class="section-title">
-Fill Details
-</div>
-
-<form id="dynamicForm"></form>
-
-</div>
-
-<!-- TABLE — placed AFTER form -->
-<div class="card card-soft p-3 mb-3">
-
-<div class="section-title">
-Saved Data
-</div>
-
-<div class="table-scroll-wrapper">
-
-<table class="table table-bordered table-hover mb-0">
-
-<thead>
-<tr id="tableHead"></tr>
-</thead>
-
-<tbody id="tableBody"></tbody>
-
-</table>
-
-</div>
-
-<div
-    id="paginationContainer"
-    class="d-flex justify-content-center mt-3 flex-wrap gap-1">
-</div>
-
-</div>
-
-</div>
-</div>
-</div>
-
-<script src="{% static 'js/daily.js' %}"></script>
-<link rel="stylesheet" href="{% static 'css/daily_mobile.css' %}">
-<script src="{% static 'js/daily_mobile.js' %}"></script>
-
-{% endblock %}
-
-</body>
+    </body>
 </html>

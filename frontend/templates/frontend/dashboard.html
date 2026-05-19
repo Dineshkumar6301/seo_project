@@ -170,318 +170,252 @@
 
 
         <tbody>
-
-        <tbody>
-
-{% for a in activities_paginated %}
-
-<tr>
-
-    <!-- EMPLOYEE -->
-    <td data-label="Employee">
-
-        {{ a.user.first_name }} {{ a.user.last_name }}
-
-    </td>
-
-    <!-- PROJECT -->
-    <td data-label="Project">
-
-        {{ a.project.name }}
-
-    </td>
-
-    <!-- CATEGORY -->
-    <td data-label="Category">
-
-        {{ a.category }}
-
-    </td>
-
-    <!-- SERVICE -->
-    <td data-label="Service">
-
-        {{ a.service_name }}
-
-    </td>
-
-    <!-- TASK -->
-    <td data-label="Task">
-
-        {{ a.task_type }}
-
-    </td>
-
-    <!-- KEYWORD -->
-    <td data-label="Keyword">
-
-       {% if a.dynamic_data.Keyword %}
-
-            {{ a.dynamic_data.Keyword }}
-
-        {% elif a.dynamic_data.keyword %}
-
-            {{ a.dynamic_data.keyword }}
-
-        {% elif a.dynamic_data.KEYWORD %}
-
-            {{ a.dynamic_data.KEYWORD }}
-
-        {% else %}
-
-            -
-
-        {% endif %}
-    </td>
-
-    <td data-label="Submitted URL">
-
-    {% for link in a.submitted_urls %}
-
-        <div style="margin-bottom:6px;">
-
-            <a href="{{ link }}"
-               target="_blank"
-               style="
-                  color:#2563eb;
-                  text-decoration:none;
-                  display:block;
-                  max-width:220px;
-                  white-space:nowrap;
-                  overflow:hidden;
-                  text-overflow:ellipsis;
-               ">
-
-                {{ link }}
-
-            </a>
-
-        </div>
-
-    {% empty %}
-
-        -
-
-    {% endfor %}
-
-</td>
-    <!-- TARGET URL -->
-<td data-label="Target URL">
-
-    {% if a.dynamic_data.Target_url %}
-
-        {% with target=a.dynamic_data.Target_url %}
-
-            {% for link in target.splitlines %}
-
-                {% if link %}
-
-                    <div style="margin-bottom:6px;">
-
-                        <a href="{{ link }}"
-                           target="_blank"
-                           style="
-                              color:#2563eb;
-                              text-decoration:none;
-                              display:block;
-                              max-width:220px;
-                              white-space:nowrap;
-                              overflow:hidden;
-                              text-overflow:ellipsis;
-                           ">
-
-                            {{ link }}
-
-                        </a>
-
-                    </div>
-
-                {% endif %}
-
-            {% endfor %}
-
-        {% endwith %}
-
-    {% elif a.dynamic_data.target_url %}
-
-        {% with target=a.dynamic_data.target_url %}
-
-            {% for link in target.splitlines %}
-
-                {% if link %}
-
-                    <div style="margin-bottom:6px;">
-
-                        <a href="{{ link }}"
-                           target="_blank"
-                           style="
-                              color:#2563eb;
-                              text-decoration:none;
-                              display:block;
-                              max-width:220px;
-                              white-space:nowrap;
-                              overflow:hidden;
-                              text-overflow:ellipsis;
-                           ">
-
-                            {{ link }}
-
-                        </a>
-
-                    </div>
-
-                {% endif %}
-
-            {% endfor %}
-
-        {% endwith %}
-
-    {% else %}
-
-        -
-
-    {% endif %}
-
-</td>
-    <!-- OTHER DATA -->
-    <td data-label="Other Data"
-    style="
-      min-width:420px;
-      max-width:520px;
-      width:520px;
-    ">
-        {% for key, value in a.dynamic_data.items %}
-
-            {% with lower_key=key|lower %}
-
-                {% if lower_key != "keyword" and lower_key != "submitted_url" and lower_key != "submitted_urls" and lower_key != "target_url" and lower_key != "target_urls" %}
-
-                    {% if value %}
-
-                        <div style="
-                            margin-bottom:8px;
-                            padding:6px 8px;
-                            background:#f8fafc;
-                            border:1px solid #e2e8f0;
-                            border-radius:6px;
-                            font-size:12px;
-                        ">
-
-                            <strong style="display:block;color:#334155;">
-
-                                {{ key|title }}
-
-                            </strong>
-
-                            <div style="
-                                color:#0f172a;
-                                word-break:break-word;
-                            ">
-
-                                {{ value }}
-
-                            </div>
-
-                        </div>
-
+            {% for a in activities_paginated %}
+            <tr>
+                <!-- EMPLOYEE -->
+                <td data-label="Employee">
+                    {{ a.user.first_name }} {{ a.user.last_name }}
+                </td>
+                <!-- PROJECT -->
+                <td data-label="Project">
+                    {{ a.project.name }}
+                </td>
+                <!-- CATEGORY -->
+                <td data-label="Category">
+                    {{ a.category }}
+                </td>
+                <!-- SERVICE -->
+                <td data-label="Service">
+                    {{ a.service_name }}
+                </td>
+                <!-- TASK -->
+                <td data-label="Task">
+                    {{ a.task_type }}
+                </td>
+                <!-- KEYWORD -->
+                 <td data-label="Keyword">
+
+                    {% if a.dynamic_data.Keyword %}
+                    {{ a.dynamic_data.Keyword }}
+                    {% elif a.dynamic_data.keyword %}
+                    {{ a.dynamic_data.keyword }}
+                    
+                    {% elif a.dynamic_data.KEYWORD %}
+                    {{ a.dynamic_data.KEYWORD }}
+                    {% else %}
+                    -
                     {% endif %}
+                </td>
+                <td data-label="Submitted URL">
+                    {% for link in a.submitted_urls %}
+                    <div style="margin-bottom:6px;">
+                        <a href="{{ link }}"
+                            target="_blank"
+                            style="
+                            color:#2563eb;
+                            text-decoration:none;
+                            display:block;
+                            max-width:220px;
+                            white-space:nowrap;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                            ">{{ link }}
+                        </a>
+                    </div>
+                    {% empty %}
+                        -
+                    {% endfor %}
+                </td>
+                <!-- TARGET URL -->
+                <td data-label="Target URL">
+                    {% if a.dynamic_data.Target_url %}
 
-                {% endif %}
+                        {% with target=a.dynamic_data.Target_url %}
+                            {% for link in target.splitlines %}
 
-            {% endwith %}
+                                {% if link %}
+                                    <div style="margin-bottom:6px;">
 
-        {% empty %}
+                                        <a href="{{ link }}"
+                                        target="_blank"
+                                        style="
+                                            color:#2563eb;
+                                            text-decoration:none;
+                                            display:block;
+                                            max-width:220px;
+                                            white-space:nowrap;
+                                            overflow:hidden;
+                                            text-overflow:ellipsis;
+                                        ">
 
-            -
+                                            {{ link }}
 
-        {% endfor %}
+                                        </a>
 
-    </td>
+                                    </div>
 
-    <!-- STATUS -->
-    <td data-label="Status">
+                                {% endif %}
 
-        {{ a.status }}
+                            {% endfor %}
 
-    </td>
+                        {% endwith %}
+                        {% elif a.dynamic_data.target_url %}
+                            {% with target=a.dynamic_data.target_url %}
+                                {% for link in target.splitlines %}
+                                    {% if link %}
+                                        <div style="margin-bottom:6px;">
 
-</tr>
+                                            <a href="{{ link }}"
+                                            target="_blank"
+                                            style="
+                                                color:#2563eb;
+                                                text-decoration:none;
+                                                display:block;
+                                                max-width:220px;
+                                                white-space:nowrap;
+                                                overflow:hidden;
+                                                text-overflow:ellipsis;
+                                            ">
 
-{% empty %}
+                                                {{ link }}
 
-<tr>
+                                            </a>
 
-    <td colspan="10"
-        class="text-center p-4">
+                                        </div>
 
-        No activities found
+                                    {% endif %}
 
-    </td>
+                                {% endfor %}
 
-</tr>
+                            {% endwith %}
 
-{% endfor %}
+                        {% else %}
 
-</tbody>
-</table>
-            
+                            -
 
+                        {% endif %}
+                    </td>
+                    <!-- OTHER DATA -->
+                    <td data-label="Other Data"
+                        style="
+                        min-width:420px;
+                        max-width:520px;
+                        width:520px;
+                        ">
+                        {% for key, value in a.dynamic_data.items %}
+                            {% with lower_key=key|lower %}
+
+                                {% if lower_key != "keyword" and lower_key != "submitted_url" and lower_key != "submitted_urls" and lower_key != "target_url" and lower_key != "target_urls" %}
+
+                                    {% if value %}
+
+                                        <div style="
+                                            margin-bottom:8px;
+                                            padding:6px 8px;
+                                            background:#f8fafc;
+                                            border:1px solid #e2e8f0;
+                                            border-radius:6px;
+                                            font-size:12px;
+                                            ">
+
+                                            <strong style="display:block;color:#334155;">
+
+                                                {{ key|title }}
+
+                                            </strong>
+
+                                            <div style="
+                                                color:#0f172a;
+                                                word-break:break-word;
+                                                ">
+
+                                                {{ value }}
+                                            </div>
+                                        </div>
+
+                                    {% endif %}
+
+                                {% endif %}
+
+                            {% endwith %}
+
+                            {% empty %}
+
+                            -
+
+                        {% endfor %}
+
+                    </td>
+                    <!-- STATUS -->
+                    <td data-label="Status">
+                        {{ a.status }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10"
+                        class="text-center p-4">
+                        No activities found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 </div>
 
 <!-- CHART JS -->
 <script>
-Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
-Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.color = '#94a3b8';
+    new Chart(document.getElementById('trendChart'), {
 
-new Chart(document.getElementById('trendChart'), {
-    type: 'line',
-    data: {
-        labels: {{ spark_labels|safe }},
-        datasets: [{
-            label: 'Activities',
-            data: {{ spark_data|safe }},
-            borderWidth: 3,
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99,102,241,0.08)',
-            pointBackgroundColor: '#6366f1',
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { color: '#f1f5f9' } },
-            y: { grid: { color: '#f1f5f9' }, beginAtZero: true }
+        type: 'line',
+        data: {
+            labels: {{ spark_labels|safe }},
+            datasets: [{
+                label: 'Activities',
+                data: {{ spark_data|safe }},
+                borderWidth: 3,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.08)',
+                pointBackgroundColor: '#6366f1',
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: '#f1f5f9' } },
+                y: { grid: { color: '#f1f5f9' }, beginAtZero: true }
+            }
         }
-    }
-});
-
-new Chart(document.getElementById('weekdayChart'), {
-    type: 'bar',
-    data: {
-        labels: {{ weekday_labels|safe }},
-        datasets: [{
-            label: 'Tasks',
-            data: {{ weekday_data|safe }},
-            backgroundColor: 'rgba(14,165,233,0.15)',
-            borderColor: '#0ea5e9',
-            borderWidth: 2,
-            borderRadius: 8
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { display: false } },
-            y: { grid: { color: '#f1f5f9' }, beginAtZero: true }
+    });
+    new Chart(document.getElementById('weekdayChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ weekday_labels|safe }},
+            datasets: [{
+                label: 'Tasks',
+                data: {{ weekday_data|safe }},
+                backgroundColor: 'rgba(14,165,233,0.15)',
+                borderColor: '#0ea5e9',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: '#f1f5f9' }, beginAtZero: true }
+            }
         }
-    }
-});
+    });
 </script>
 
 {% endblock %}
