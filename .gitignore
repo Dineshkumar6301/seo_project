@@ -44,5 +44,5 @@ htmlcov/
 # */migrations/*
 # !*/migrations/__init__.py
 
-data.json
+
 import_excel.py
