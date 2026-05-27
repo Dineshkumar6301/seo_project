@@ -821,63 +821,76 @@ function updateMobileCards(rows) {
 );
 }
 
-function updatePagination(p) {
+function updatePagination(p){
 
     const container =
-        document.getElementById(
-            "pagination"
-        );
+        document.getElementById("pagination");
 
-    if (!container || !p) return;
+    if(!container || !p) return;
 
-    container.innerHTML = "";
+    container.innerHTML="";
 
     const current = p.page;
-
     const total = p.pages;
 
-    if (total <= 1) return;
+    if(total<=1) return;
 
-    if (current > 1) {
+    // Previous
+    if(current>1){
 
         container.innerHTML += `
-            <button
-                onclick="goToPage(${current - 1})"
-                class="pill">
+        <button
+            onclick="goToPage(${current-1})"
+            class="pill">
 
-                ◀
-
-            </button>
+            <
+        </button>
         `;
     }
 
-    for (let i = 1; i <= total; i++) {
+    // show only 3 page numbers
+    let start = Math.max(
+        1,
+        current-1
+    );
+
+    let end = Math.min(
+        total,
+        start+2
+    );
+
+    if(end-start<2){
+        start=Math.max(
+            1,
+            end-2
+        );
+    }
+
+    for(let i=start;i<=end;i++){
 
         container.innerHTML += `
+        <button
+            onclick="goToPage(${i})"
+            class="pill
+            ${i===current ? 'active':''}">
 
-            <button
-                onclick="goToPage(${i})"
-                class="
-                    pill
-                    ${i === current ? 'active' : ''}
-                ">
+            ${i}
 
-                ${i}
-
-            </button>
+        </button>
         `;
     }
 
-    if (current < total) {
+    // Next
+    if(current<total){
 
         container.innerHTML += `
-            <button
-                onclick="goToPage(${current + 1})"
-                class="pill">
+        <button
+            onclick="goToPage(${current+1})"
+            class="pill">
 
-                ▶
+            >
 
-            </button>
+        </button>
         `;
     }
 }
