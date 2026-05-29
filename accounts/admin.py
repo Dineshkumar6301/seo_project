@@ -65,3 +65,56 @@ class ProfileAdmin(admin.ModelAdmin):
             'fields': ('location', 'bio')
         }),
     )
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import (
+    User,
+    Profile,
+    PasswordResetToken,
+    PasswordResetRequestLog
+)
+
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = (
+        'email',
+        'token',
+        'created_at',
+        'is_expired'
+    )
+
+    search_fields = (
+        'email',
+        'token'
+    )
+
+    readonly_fields = (
+        'created_at',
+    )
+
+    list_filter = (
+        'created_at',
+    )
+
+
+@admin.register(PasswordResetRequestLog)
+class PasswordResetRequestLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'email',
+        'created_at'
+    )
+
+    search_fields = (
+        'email',
+    )
+
+    readonly_fields = (
+        'created_at',
+    )
+
+    list_filter = (
+        'created_at',
+    )
