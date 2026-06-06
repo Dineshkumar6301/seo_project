@@ -4,7 +4,6 @@ from accounts.models import User,Profile
 from clients.models import Client
 
 
-
 # 🔹 Log user creation (optional)
 @receiver(post_save, sender=User)
 def create_user_log(sender, instance, created, **kwargs):
@@ -19,14 +18,15 @@ from clients.models import Client
 
 @receiver(post_save, sender=User)
 def create_client_profile(sender, instance, created, **kwargs):
-    if created and instance.role == 'client':
-        Client.objects.create(
-            user=instance,
-            name=instance.first_name or instance.email,
-            contact_email=instance.email,  
-            website="",                    
-            industry=""                    
-        )
+    if created and not kwargs.get("raw", False):
+        if instance.role == 'client':
+            Client.objects.create(
+                user=instance,
+                name=instance.first_name or instance.email,
+                contact_email=instance.email,
+                website="",
+                industry=""
+            )
 
 
 from django.db.models.signals import post_save
@@ -35,7 +35,7 @@ from .models import User, Profile
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    if created:
+    if created and not kwargs.get("raw", False):
         Profile.objects.create(user=instance)
 
 
@@ -43,3 +43,6 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+
+

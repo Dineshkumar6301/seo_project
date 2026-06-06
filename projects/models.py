@@ -21,6 +21,7 @@ class Project(models.Model):
         'accounts.User',
         on_delete=models.CASCADE
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -63,6 +64,7 @@ class ProjectService(models.Model):
         on_delete=models.CASCADE,
         related_name="service_projects"
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('project', 'service')
