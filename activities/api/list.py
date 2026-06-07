@@ -7,7 +7,6 @@ from datetime import timedelta, date
 
 from activities.models import Activity
 
-
 class ActivityListAPI(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -15,41 +14,33 @@ class ActivityListAPI(APIView):
     def get(self, request):
 
         date_str = request.GET.get("date")
-
         filter_type = request.GET.get("filter")
-
         start_date = request.GET.get("start")
-
         end_date = request.GET.get("end")
-
         project = request.GET.get("project")
 
-        qs = Activity.objects.filter(
+        qs = Activity.objects.select_related(
+            "project"
+        ).filter(
             user=request.user
         )
 
         if project and project != "all":
-
             qs = qs.filter(
                 project_id=project
             )
 
         if date_str:
-
             base_date = parse_date(date_str)
-
         else:
-
             base_date = date.today()
 
         if start_date:
-
             qs = qs.filter(
                 date__gte=start_date
             )
 
         if end_date:
-
             qs = qs.filter(
                 date__lte=end_date
             )
@@ -98,10 +89,11 @@ class ActivityListAPI(APIView):
                 date=base_date
             )
 
+        # IMPORTANT OPTIMIZATION
         qs = qs.order_by(
             "-date",
             "-id"
-        )
+        )[:500]
 
         response_data = []
 
