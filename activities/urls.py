@@ -28,7 +28,7 @@ from activities.api.activity_detail import ActivityDetailAPI
 urlpatterns = [
 
 
-    path('daily/', views.activity_daily, name='activity_daily'),
+    #path('daily/', views.activity_daily, name='activity_daily'),
     path('approval/', views.activity_approval, name='activity_approval'),
     path('reports/', views.activity_reports, name='activity_reports'),
 
