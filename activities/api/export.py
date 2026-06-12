@@ -72,7 +72,8 @@ class ExportExcelAPI(APIView):
         task = request.GET.get("task")
 
         filter_type = (
-            request.GET.get("type")
+            request.GET.get("date_filter")
+            or request.GET.get("type")
             or request.GET.get("filter")
         )
 
