@@ -1,3 +1,4 @@
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -15,9 +16,6 @@ def create_project_checklists(
     created,
     **kwargs
 ):
-
-    if kwargs.get("raw", False):
-        return
 
     if not created:
         return
