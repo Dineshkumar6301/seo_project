@@ -1,0 +1,396 @@
+
+{% extends "frontend/base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <div class="card border-0 shadow-sm">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <h2 class="fw-bold mb-1">
+                        SEO Keyword Ranking Dashboard
+                    </h2>
+
+                    <small class="text-muted">
+                        Monitor keyword rankings across all projects
+                    </small>
+
+                </div>
+
+            </div>
+
+            <hr>
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+
+                    <label class="fw-semibold mb-2">
+                        Project
+                    </label>
+
+                    <select
+                        id="project"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            Select Project
+                        </option>
+
+                        {% for project in projects %}
+                        <option value="{{ project.id }}">
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-8">
+
+                    <label class="fw-semibold mb-2">
+                        Website
+                    </label>
+
+                    <input
+                        type="text"
+                        id="website"
+                        class="form-control"
+                        readonly
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="rank-result" class="mt-4">
+
+        <div class="card border-0 shadow-sm">
+
+            <div class="card-body text-center p-5">
+
+                <h5 class="text-muted">
+                    Select a project to view ranking data
+                </h5>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const project =
+            document.getElementById("project");
+
+        const website =
+            document.getElementById("website");
+
+        const result =
+            document.getElementById("rank-result");
+
+        project.addEventListener(
+            "change",
+            async function () {
+
+                const projectId = this.value;
+
+                if (!projectId) {
+
+                    result.innerHTML = `
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center p-5">
+                                Select a project
+                            </div>
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                result.innerHTML = `
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center p-5">
+                            Loading ranking data...
+                        </div>
+                    </div>
+                `;
+
+                try {
+
+                    const projectResponse =
+                        await fetch(
+                            `/api/projects/api/rank/?project_id=${projectId}`
+                        );
+
+                    const projectData =
+                        await projectResponse.json();
+
+                    website.value =
+                        projectData.website || "";
+
+                    const rankResponse =
+                        await fetch(
+                            `/api/projects/api/project-ranks/?project_id=${projectId}`
+                        );
+
+                    const rankData =
+                        await rankResponse.json();
+
+                    if (
+                        !rankData.results ||
+                        rankData.results.length === 0
+                    ) {
+
+                        result.innerHTML = `
+                            <div class="alert alert-warning">
+                                No ranking data available
+                            </div>
+                        `;
+
+                        return;
+                    }
+
+                    const totalKeywords =
+                        rankData.results.length;
+
+                    const rankingKeywords =
+                        rankData.results.filter(
+                            r =>
+                            r.rank !== 999 &&
+                            r.rank !== "Not Ranking"
+                        ).length;
+
+                    const nonRanking =
+                        totalKeywords -
+                        rankingKeywords;
+
+                    let html = `
+
+                    <div class="row g-3 mb-4">
+
+                        <div class="col-md-4">
+
+                            <div class="card border-0 shadow-sm">
+
+                                <div class="card-body">
+
+                                    <h3>
+                                        ${totalKeywords}
+                                    </h3>
+
+                                    <small>
+                                        Total Keywords
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <div class="card border-0 shadow-sm">
+
+                                <div class="card-body">
+
+                                    <h3 class="text-success">
+                                        ${rankingKeywords}
+                                    </h3>
+
+                                    <small>
+                                        Ranking Keywords
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <div class="card border-0 shadow-sm">
+
+                                <div class="card-body">
+
+                                    <h3 class="text-danger">
+                                        ${nonRanking}
+                                    </h3>
+
+                                    <small>
+                                        Not Ranking
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card border-0 shadow-sm">
+
+                        <div class="card-body">
+
+                            <div class="table-responsive">
+
+                                <table
+                                    class="table table-hover align-middle"
+                                >
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Keyword
+                                            </th>
+
+                                            <th>
+                                                Rank
+                                            </th>
+
+                                            <th>
+                                                Ranking URL
+                                            </th>
+
+                                            <th>
+                                                Checked At
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+                    `;
+
+                    rankData.results.forEach(
+                        row => {
+
+                            let badge;
+
+                            if (
+                                row.rank === 999 ||
+                                row.rank === "Not Ranking"
+                            ) {
+
+                                badge = `
+                                    <span class="badge bg-danger">
+                                        Not Ranking
+                                    </span>
+                                `;
+
+                            }
+
+                            else {
+
+                                badge = `
+                                    <span class="badge bg-success">
+                                        #${row.rank}
+                                    </span>
+                                `;
+
+                            }
+
+                            html += `
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        ${row.keyword}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    ${badge}
+                                </td>
+
+                                <td>
+
+                                    ${
+                                        row.url !== "-"
+                                        ?
+                                        `<a
+                                            href="${row.url}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            View URL
+                                        </a>`
+                                        :
+                                        "-"
+                                    }
+
+                                </td>
+
+                                <td>
+                                    ${row.checked_at}
+                                </td>
+
+                            </tr>
+
+                            `;
+
+                        }
+                    );
+
+                    html += `
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    `;
+
+                    result.innerHTML =
+                        html;
+
+                }
+
+                catch(error) {
+
+                    console.error(error);
+
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error loading ranking data
+                        </div>
+                    `;
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
+
+{% endblock %}

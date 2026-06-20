@@ -1,12 +1,12 @@
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import (
     ProjectService,
-    ChecklistTemplate
+    ChecklistTemplate,
+    ProjectChecklist,
 )
-
-from activities.models import Checklist
 
 
 @receiver(post_save, sender=ProjectService)
@@ -20,26 +20,20 @@ def create_project_checklists(
     if not created:
         return
 
-    service = instance.service
     project = instance.project
+    service = instance.service
 
     templates = ChecklistTemplate.objects.filter(
-        service=service,
+        module__service=service,
         is_active=True
     )
 
     for template in templates:
 
-        Checklist.objects.get_or_create(
-
+        ProjectChecklist.objects.get_or_create(
             project=project,
-
-            service=service,
-
-            item=template.item,
-
+            template=template,
             defaults={
-                "order": template.order,
-                "status": "pending"
+                "status": "Approved"
             }
         )

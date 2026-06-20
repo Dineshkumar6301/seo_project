@@ -27,22 +27,51 @@
       <button class="pill" onclick="setDateFilter(event, 'all')">All</button>
     </div>
     <!-- STATUS CARDS -->
+
     <div class="status-row">
-      <div class="stat-card pending {% if current_status == 'pending' %}active-filter{% endif %}" onclick="setStatusFilter('pending')">
-        <div class="stat-icon">⏳</div>
-        <div class="stat-label">Pending</div>
-        <div class="stat-num" id="kpi-pending">{{ pending_count }}</div>
-      </div>
-      <div class="stat-card approved {% if current_status == 'approved' %}active-filter{% endif %}" onclick="setStatusFilter('approved')">
-        <div class="stat-icon">✅</div>
-        <div class="stat-label">Approved</div>
-        <div class="stat-num" id="kpi-approved">{{ approved_count }}</div>
-      </div>
-      <div class="stat-card rejected {% if current_status == 'rejected' %}active-filter{% endif %}" onclick="setStatusFilter('rejected')">
-        <div class="stat-icon">❌</div>
-        <div class="stat-label">Rejected</div>
-        <div class="stat-num" id="kpi-rejected">{{ rejected_count }}</div>
-      </div>
+
+        <div
+            class="stat-card pending"
+            onclick="setStatusFilter('pending')">
+
+            <div class="stat-icon">⏳</div>
+
+            <div class="stat-label">Pending</div>
+
+            <div class="stat-num" id="kpi-pending">
+                {{ pending_count }}
+            </div>
+
+        </div>
+
+        <div
+            class="stat-card approved"
+            onclick="setStatusFilter('approved')">
+
+            <div class="stat-icon">✅</div>
+
+            <div class="stat-label">Approved</div>
+
+            <div class="stat-num" id="kpi-approved">
+                {{ approved_count }}
+            </div>
+
+        </div>
+
+        <div
+            class="stat-card rejected"
+            onclick="setStatusFilter('rejected')">
+
+            <div class="stat-icon">❌</div>
+
+            <div class="stat-label">Rejected</div>
+
+            <div class="stat-num" id="kpi-rejected">
+                {{ rejected_count }}
+            </div>
+
+        </div>
+
     </div>
 
     <div class="toolbar">
@@ -83,6 +112,8 @@
               <th>Task</th>
               <th>Keyword</th>
               <th>Submitted URL</th>
+              <th>Other Data</th>
+              <th>Hours</th>
               <th>Status</th>
               <th>Action</th>
             </tr>

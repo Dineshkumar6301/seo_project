@@ -23,6 +23,149 @@ def activity_daily(request):
         'projects': projects
     })
 
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from activities.models import Activity
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from datetime import date
+
+from activities.models import Activity
+from projects.models import (
+    Service,
+    ServiceModule,
+    ChecklistTemplate
+)
+
+
+from datetime import date
+
+class SaveActivityAPI(APIView):
+
+
+    def post(self, request):
+
+        activity_id = request.data.get(
+            "activity_id"
+        )
+
+        project_id = request.data.get(
+            "project"
+        )
+
+        service_id = request.data.get(
+            "service"
+        )
+
+        module_id = request.data.get(
+            "module"
+        )
+
+        checklist_id = request.data.get(
+            "checklist"
+        )
+
+        dynamic_data = request.data.get(
+            "dynamic_data",
+            {}
+        )
+
+        hours = request.data.get(
+            "hours"
+        )
+
+        dynamic_data["hours"] = hours
+
+        service = Service.objects.get(
+            id=service_id
+        )
+
+        module = ServiceModule.objects.get(
+            id=module_id
+        )
+
+        checklist = ChecklistTemplate.objects.get(
+            id=checklist_id
+        )
+
+        if activity_id:
+
+            activity = Activity.objects.get(
+                id=activity_id,
+                user=request.user
+            )
+
+            activity.project_id = project_id
+
+            activity.service_id_ref = service_id
+
+            activity.module_id_ref = module_id
+
+            activity.checklist_id_ref = checklist_id
+
+            activity.category = (
+                service.category.name
+                if service.category
+                else ""
+            )
+
+            activity.service_name = (
+                service.name
+            )
+
+            activity.task_type = (
+                checklist.item
+            )
+
+            activity.dynamic_data = {
+                "module": module.name,
+                **dynamic_data
+            }
+
+            activity.save()
+
+        else:
+
+            activity = Activity.objects.create(
+
+                user=request.user,
+
+                project_id=project_id,
+
+                service_id_ref=service_id,
+
+                module_id_ref=module_id,
+
+                checklist_id_ref=checklist_id,
+
+                date=date.today(),
+
+                category=(
+                    service.category.name
+                    if service.category
+                    else ""
+                ),
+
+                service_name=service.name,
+
+                task_type=checklist.item,
+
+                dynamic_data={
+                    "module": module.name,
+                    **dynamic_data
+                }
+            )
+
+        return Response({
+
+            "success": True,
+
+            "id": activity.id
+        })
+
+
 from django.db.models import Q
 from django.db.models import Q, Count
 from django.shortcuts import render

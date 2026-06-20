@@ -2,8 +2,10 @@ from django.urls import path
 
 from activities.api.assignedwork import AssignedWorkAPI
 from activities.api.assign_service import AssignServiceAPI
+from activities.api.service_module import ServiceModulesAPI
 
 from . import views
+from .views import SaveActivityAPI
 from activities.api.assignment import DeleteAssignmentAPI   
 
 # API imports (keep only what you need)
@@ -16,14 +18,17 @@ from activities.api.daily_reports import DailyReportAPI
 from activities.api.project_report import ProjectReportAPI
 from activities.api.dashboard import ClientDashboardAPI
 # activities/urls.py
+from activities.api.checklist import ChecklistItemsAPI
 from django.urls import path
 from activities.api.today import TodayActivityAPI
 from activities.api.upsert import ActivityUpsertAPI
 from activities.api.export import ExportExcelAPI
-from activities.api.project_services import ProjectServiceAPI
+from activities.api.project_services import ProjectServicesAPI
 from activities.api.forget_password import ForgotPasswordAPI
 from activities.api.reset_password import ResetPasswordAPI
 from activities.api.activity_detail import ActivityDetailAPI
+from activities.api.service_module import ServiceModulesAPI
+from activities.api.taskfiled import TaskFieldsAPI
 
 urlpatterns = [
 
@@ -43,10 +48,14 @@ urlpatterns = [
     path('api/report/project/<int:project_id>/', ProjectReportAPI.as_view()),
     path('api/today/', TodayActivityAPI.as_view()),
     path('api/upsert/', ActivityUpsertAPI.as_view()),
-    path('api/project-services/<int:project_id>/', ProjectServiceAPI.as_view()),
+    path('api/project-services/<int:project_id>/', ProjectServicesAPI.as_view()),
     path('api/export/', ExportExcelAPI.as_view()),
     path('api/dashboard/', ClientDashboardAPI.as_view()),
     path('api/assignment/delete/<int:id>/', DeleteAssignmentAPI.as_view()),
+    path('api/service-modules/<int:service_id>/', ServiceModulesAPI.as_view()),
+    path('api/checklist-items/<int:module_id>/', ChecklistItemsAPI.as_view()),
+    path('api/task-fields/<int:checklist_id>/', TaskFieldsAPI.as_view(), name='task_fields'),
+    path('api/save-activity/',SaveActivityAPI.as_view()),
     
 
     path('forget_password/', ForgotPasswordAPI.as_view()),

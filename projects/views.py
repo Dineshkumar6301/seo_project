@@ -11,13 +11,21 @@ from .models import Project, Service, ServiceCategory, ProjectService
 from .serializers import ProjectSerializer
 from clients.models import Client
 from accounts.permissions import IsAdminOrManager
-from activities.models import Checklist
+from .models import (
+    Project,
+    Service,
+    ServiceCategory,
+    ProjectService,
+    ProjectChecklist,
+    ChecklistTemplate,
+)
 from collections import defaultdict
 from accounts.models import User
 import json
 from django.views import View
 from frontend.models import ProjectServiceAssignment
 from django.contrib.auth.mixins import LoginRequiredMixin
+from clients.models import ClientOnboarding
 
 
 class ProjectCreateAPI(APIView):
@@ -88,13 +96,14 @@ def project_dashboard(request):
         is_active=True
     ).exclude(role='client')
 
-    projects = Project.objects.select_related('client').order_by('name')
+    projects = Project.objects.select_related(
+        'client'
+    ).order_by('name')
 
     selected_project = None
     project_services = []
 
     project_id = request.GET.get('project')
-
 
     if project_id:
 
@@ -103,12 +112,13 @@ def project_dashboard(request):
             id=project_id
         )
 
-    
-        project_services = ProjectService.objects.filter(
-            project=selected_project
-        ).select_related(
-            'service',
-            'service__category'
+        project_services = (
+            ProjectService.objects
+            .filter(project=selected_project)
+            .select_related(
+                'service',
+                'service__category'
+            )
         )
 
     services_grouped = defaultdict(list)
@@ -129,19 +139,19 @@ def project_dashboard(request):
 
     if selected_project:
 
-        assignments = ProjectServiceAssignment.objects.filter(
-            project=selected_project
-        ).select_related(
-            'user',
-            'service'
+        assignments = (
+            ProjectServiceAssignment.objects
+            .filter(project=selected_project)
+            .select_related(
+                'user',
+                'service'
+            )
         )
 
         for ps in project_services:
 
-            service = ps.service
-
-            service_team[service.id] = {
-                "name": service.name,
+            service_team[ps.service.id] = {
+                "name": ps.service.name,
                 "users": []
             }
 
@@ -158,13 +168,15 @@ def project_dashboard(request):
                     )
                 })
 
-
+    # SAVE SERVICES
     if request.method == "POST":
 
-        project_id = request.POST.get('project_id')
+        project_id = request.POST.get(
+            "project_id"
+        )
 
         selected_services = request.POST.getlist(
-            'services'
+            "services"
         )
 
         project = get_object_or_404(
@@ -176,38 +188,34 @@ def project_dashboard(request):
 
             with transaction.atomic():
 
-
+                # Remove unselected services
                 ProjectService.objects.filter(
                     project=project
                 ).exclude(
                     service_id__in=selected_services
                 ).delete()
 
-                existing_service_ids = ProjectService.objects.filter(
-                    project=project
-                ).values_list(
-                    'service_id',
-                    flat=True
+                existing_service_ids = set(
+                    ProjectService.objects.filter(
+                        project=project
+                    ).values_list(
+                        "service_id",
+                        flat=True
+                    )
                 )
 
-                new_services = []
-
+                # Add newly selected services
                 for sid in selected_services:
 
                     if int(sid) not in existing_service_ids:
 
-                        new_services.append(
-                            ProjectService(
-                                project=project,
-                                service_id=sid
-                            )
+                        ProjectService.objects.create(
+                            project=project,
+                            service_id=sid
                         )
 
-                ProjectService.objects.bulk_create(
-                    new_services
-                )
-
-                Checklist.objects.filter(
+                # Rebuild project checklist
+                ProjectChecklist.objects.filter(
                     project=project
                 ).delete()
 
@@ -215,20 +223,32 @@ def project_dashboard(request):
                     id__in=selected_services
                 )
 
-                checklist_items = [
+                project_checklists = []
 
-                    Checklist(
-                        project=project,
-                        service=service,
-                        item=f"{service.name} - Task",
-                        status='Approved'
+                for service in services:
+
+                    templates = ChecklistTemplate.objects.filter(
+                        module__service=service,
+                        is_active=True
+                    ).select_related(
+                        "module"
                     )
 
-                    for service in services
-                ]
+                    for template in templates:
 
-                Checklist.objects.bulk_create(
-                    checklist_items
+                        project_checklists.append(
+
+                            ProjectChecklist(
+                                project=project,
+                                template=template,
+                                status="Approved"
+                            )
+
+                        )
+
+                ProjectChecklist.objects.bulk_create(
+                    project_checklists,
+                    ignore_conflicts=True
                 )
 
         except Exception as e:
@@ -238,28 +258,93 @@ def project_dashboard(request):
             )
 
         return redirect(
-            f'/projects/project-dashboard/?project={project_id}'
+            f"/projects/project-dashboard/?project={project_id}"
         )
 
-    all_services = Service.objects.select_related(
-        'category'
-    ).order_by(
-        'category__name',
-        'name'
+    all_services = (
+        Service.objects
+        .select_related("category")
+        .order_by(
+            "category__name",
+            "name"
+        )
     )
 
+    project_checklists = []
+
+    if selected_project:
+
+        project_checklists = (
+            ProjectChecklist.objects
+            .filter(
+                project=selected_project
+            )
+            .select_related(
+                "template",
+                "template__module",
+                "template__module__service"
+            )
+            .order_by(
+                "template__module__service__name",
+                "template__module__order",
+                "template__order"
+            )
+        )
+    onboarding = None
+
+    progress = 0
+
+    if selected_project:
+
+        onboarding = ClientOnboarding.objects.filter(
+            client=selected_project.client
+        ).first()
+
+        if onboarding:
+
+            completed = sum([
+
+                onboarding.hosting_access,
+                onboarding.domain_access,
+                onboarding.ga_access,
+                onboarding.gsc_access,
+               
+                onboarding.google_ads_access,
+                onboarding.meta_access,
+                onboarding.youtube_access,
+                onboarding.social_media_access,
+                onboarding.team_assigned,
+                onboarding.kpi_defined,
+                onboarding.deliverables_defined,
+                onboarding.reporting_setup,
+            ])
+
+            progress = int(
+                (completed / 12) * 100
+            )
+
+    
     return render(
         request,
-        'frontend/projects/dashboard.html',
+        "frontend/projects/dashboard.html",
         {
-            'projects': projects,
-            'all_services': all_services,
-            'services_grouped': dict(services_grouped),
-            'selected_project': selected_project,
-            'service_team': service_team,
-            'users': users
+            "projects": projects,
+            "all_services": all_services,
+            "services_grouped": dict(
+                services_grouped
+            ),
+            "selected_project": selected_project,
+            "service_team": service_team,
+            "users": users,
+            "project_checklists": project_checklists,
+            "onboarding": onboarding,
+            "onboarding_progress": progress,
         }
     )
+
+
+
+
 
 
 @login_required(login_url='home')
@@ -365,3 +450,177 @@ class RemoveUserFromService(LoginRequiredMixin, View):
                 'status': 'error',
                 'message': str(e)
             }, status=500)
+        
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from projects.models import Project
+from activities.models import Activity
+
+import requests
+from urllib.parse import urlparse
+
+
+def rank_page(request):
+
+    projects = Project.objects.all().order_by("name")
+
+    return render(
+        request,
+        "frontend/rank.html",
+        {
+            "projects": projects
+        }
+    )
+
+
+def get_project_rank_data(request):
+
+    project_id = request.GET.get("project_id")
+
+    if not project_id:
+
+        return JsonResponse({
+            "success": False
+        })
+
+    project = Project.objects.select_related(
+        "client"
+    ).get(id=project_id)
+
+    activities = Activity.objects.filter(
+        project_id=project_id,
+        status="approved"
+    )
+
+    keywords = set()
+    website = project.client.website
+
+    for activity in activities:
+
+        data = activity.dynamic_data or {}
+
+        keyword = data.get("Keyword")
+
+        if keyword:
+            keywords.add(keyword)
+
+    return JsonResponse({
+        "success": True,
+        "website": website,
+        "keywords": sorted(list(keywords))
+    })
+
+
+def check_keyword_rank(request):
+
+    keyword = request.GET.get("keyword")
+    website = request.GET.get("website")
+
+    if not keyword or not website:
+
+        return JsonResponse({
+            "success": False,
+            "message": "Keyword and website are required"
+        })
+
+    try:
+
+        response = requests.post(
+            "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
+            headers={
+                "apy-token": "APY0bkk9F6VgGb2oBgEQGKQTLnG0KL8MRwHb4NMzMoBhSonvORBfaPdRxtIcx4MRM",
+                "Content-Type": "application/json"
+            },
+            json={
+                "keyword": keyword
+            },
+            timeout=60
+        )
+
+        api_data = response.json()
+
+        domain = (
+            urlparse(website)
+            .netloc
+            .replace("www.", "")
+            .lower()
+        )
+
+        rank_found = None
+        matched_url = None
+
+        for item in api_data.get("data", []):
+
+            result_url = item.get("url", "")
+
+            if not result_url:
+                continue
+
+            result_domain = (
+                urlparse(result_url)
+                .netloc
+                .replace("www.", "")
+                .lower()
+            )
+
+            if domain == result_domain:
+
+                rank_found = item.get("rank")
+                matched_url = result_url
+
+                break
+
+        if rank_found is None:
+
+            return JsonResponse({
+                "success": True,
+                "keyword": keyword,
+                "website": website,
+                "position": "Not Found (Top Results)",
+                "url": "-"
+            })
+
+        return JsonResponse({
+            "success": True,
+            "keyword": keyword,
+            "website": website,
+            "position": rank_found,
+            "url": matched_url
+        })
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        })
+
+
+from django.http import JsonResponse
+from projects.models import KeywordRank
+
+
+def project_rank_results(request):
+
+    project_id = request.GET.get("project_id")
+
+    data = KeywordRank.objects.filter(
+        project_id=project_id
+    ).order_by("-checked_at")
+
+    results = []
+
+    for item in data:
+
+        results.append({
+            "keyword": item.keyword,
+            "rank": item.rank if item.rank else "Not Ranking",
+            "url": item.ranking_url or "-",
+            "checked_at": item.checked_at.strftime("%d-%m-%Y %H:%M")
+        })
+
+    return JsonResponse({
+        "success": True,
+        "results": results
+    })

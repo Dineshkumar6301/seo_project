@@ -143,7 +143,46 @@ def profile_view(request):
             profile.photo = new_photo
 
         profile.save()
-        return redirect('profile_view')
+
+        from clients.models import Client
+
+        if user.role == "client":
+
+            client, created = Client.objects.get_or_create(
+                user=user
+            )
+
+            client.name = (
+                profile.company_name
+                or f"{user.first_name} {user.last_name}"
+            )
+
+            client.website = (
+                profile.website or ""
+            )
+
+            client.industry = (
+                profile.industry or ""
+            )
+
+            client.contact_email = (
+                user.email
+            )
+
+            client.phone = (
+                profile.phone or ""
+            )
+
+            client.contact_person = (
+                f"{user.first_name} "
+                f"{user.last_name}"
+            ).strip()
+
+            client.save()
+
+        return redirect(
+            'profile_view'
+        )
 
     return render(request, 'frontend/profile.html', {
         'user': user,

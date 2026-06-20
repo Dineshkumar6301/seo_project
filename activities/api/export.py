@@ -180,18 +180,19 @@ class ExportExcelAPI(APIView):
 
         ws.title = "SEO Report"
 
-
         if is_client_user:
 
             headers = [
                 "S.No",
                 "Date",
                 "Service",
-                "Task Type",
+                "Module",
+                "Task",
                 "Keyword",
-                "Submitted URL",
                 "Target URL",
+                "Submitted URL",
                 "Other Data",
+                "Hours",
             ]
 
         else:
@@ -203,11 +204,14 @@ class ExportExcelAPI(APIView):
                 "Project",
                 "Category",
                 "Service",
+                "Module",
                 "Task",
                 "Keyword",
-                "Submitted URL",
                 "Target URL",
-                "Proof / Other Data",
+                "Submitted URL",
+                "Other Data",
+                "Hours",
+                "Status",
             ]
 
         ws.append(headers)
@@ -233,12 +237,23 @@ class ExportExcelAPI(APIView):
                 wrap_text=True
             )
 
-
         for i, a in enumerate(qs, start=1):
 
             data = a.dynamic_data or {}
 
             employee = ""
+
+            module_name = (
+                data.get("module")
+                or data.get("Module")
+                or ""
+            )
+
+            hours = (
+                data.get("hours")
+                or data.get("Hours")
+                or ""
+            )
 
             if a.user:
 
@@ -274,7 +289,6 @@ class ExportExcelAPI(APIView):
                 or ""
             )
 
-
             submitted_list = [
                 x.strip()
                 for x in str(submitted_urls)
@@ -298,7 +312,9 @@ class ExportExcelAPI(APIView):
                     "submitted_url",
                     "submitted_urls",
                     "target_url",
-                    "target_urls"
+                    "target_urls",
+                    "module",
+                    "hours"
                 ]:
                     continue
 
@@ -312,7 +328,7 @@ class ExportExcelAPI(APIView):
                     )
 
                 other_data_parts.append(
-                    f"{key}: {value}"
+                    f"{str(key).replace('_', ' ').title()}: {value}"
                 )
 
             other_data = "\n".join(
@@ -321,12 +337,13 @@ class ExportExcelAPI(APIView):
 
             start_row = ws.max_row + 1
 
-   
-
             for idx, link in enumerate(submitted_list):
 
                 if is_client_user:
 
+                    # Columns: S.No | Date | Service | Module | Task |
+                    #          Keyword | Target URL | Submitted URL |
+                    #          Other Data | Hours
                     row = [
 
                         i if idx == 0 else "",
@@ -337,23 +354,32 @@ class ExportExcelAPI(APIView):
                         a.service_name or ""
                         if idx == 0 else "",
 
+                        module_name
+                        if idx == 0 else "",
+
                         a.task_type or ""
                         if idx == 0 else "",
 
                         keyword
                         if idx == 0 else "",
 
-                        link,
-
                         target_urls
                         if idx == 0 else "",
 
+                        link,
+
                         other_data
+                        if idx == 0 else "",
+
+                        hours
                         if idx == 0 else "",
                     ]
 
                 else:
 
+                    # Columns: S.No | Date | Employee | Project | Category |
+                    #          Service | Module | Task | Keyword | Target URL |
+                    #          Submitted URL | Other Data | Hours | Status
                     row = [
 
                         i if idx == 0 else "",
@@ -364,14 +390,17 @@ class ExportExcelAPI(APIView):
                         employee
                         if idx == 0 else "",
 
-                        a.project.name
-                        if idx == 0 and a.project
-                        else "",
+                        
+                        getattr(a.project, "name", "")
+                        if idx == 0 else "",
 
                         getattr(a, "category", "")
                         if idx == 0 else "",
 
                         a.service_name or ""
+                        if idx == 0 else "",
+
+                        module_name
                         if idx == 0 else "",
 
                         a.task_type or ""
@@ -380,21 +409,30 @@ class ExportExcelAPI(APIView):
                         keyword
                         if idx == 0 else "",
 
-                        link,
-
                         target_urls
                         if idx == 0 else "",
 
+                        link,
+
                         other_data
                         if idx == 0 else "",
+
+                        hours
+                        if idx == 0 else "",
+
+                        a.status.title()
+                        if idx == 0 and a.status
+                        else "",
                     ]
 
                 ws.append(row)
 
                 current_row = ws.max_row
 
-                
-                submitted_col = 6 if is_client_user else 9
+                # Submitted URL column
+                # Client:  col 8 (Submitted URL is 8th column)
+                # Admin:   col 11 (Submitted URL is 11th column)
+                submitted_col = 8 if is_client_user else 11
 
                 submitted_cell = ws.cell(
                     current_row,
@@ -412,8 +450,9 @@ class ExportExcelAPI(APIView):
                         underline="single"
                     )
 
-      
-
+                # Target URL column
+                # Client:  col 7 (Target URL is 7th column)
+                # Admin:   col 10 (Target URL is 10th column)
                 target_col = 7 if is_client_user else 10
 
                 target_cell = ws.cell(
@@ -435,23 +474,25 @@ class ExportExcelAPI(APIView):
                         underline="single"
                     )
 
-         
             end_row = ws.max_row
 
             if len(submitted_list) > 1:
 
                 if is_client_user:
 
+                    # Merge all columns except Submitted URL (col 8)
                     merge_columns = [
-                        1, 2, 3, 4,
-                        5, 7, 8
+                        1, 2, 3, 4, 5,
+                        6, 7, 9, 10
                     ]
 
                 else:
 
+                    # Merge all columns except Submitted URL (col 11)
                     merge_columns = [
                         1, 2, 3, 4, 5,
-                        6, 7, 8, 10, 11
+                        6, 7, 8, 9, 10,
+                        12, 13, 14
                     ]
 
                 for col in merge_columns:
@@ -474,15 +515,13 @@ class ExportExcelAPI(APIView):
                         wrap_text=True
                     )
 
-
         for row in ws.iter_rows():
 
             for cell in row:
 
-                # Submitted URL column
-
+                # Submitted URL column alignment
                 if (
-                    cell.column == 6
+                    cell.column == 8
                     and is_client_user
                 ):
 
@@ -493,7 +532,7 @@ class ExportExcelAPI(APIView):
                     )
 
                 elif (
-                    cell.column == 9
+                    cell.column == 11
                     and not is_client_user
                 ):
 
@@ -503,10 +542,9 @@ class ExportExcelAPI(APIView):
                         horizontal="left"
                     )
 
-                # Other Data column
-
+                # Other Data column alignment
                 elif (
-                    cell.column == 8
+                    cell.column == 9
                     and is_client_user
                 ):
 
@@ -517,7 +555,7 @@ class ExportExcelAPI(APIView):
                     )
 
                 elif (
-                    cell.column == 11
+                    cell.column == 12
                     and not is_client_user
                 ):
 
@@ -537,19 +575,27 @@ class ExportExcelAPI(APIView):
 
         if is_client_user:
 
+            # A=S.No, B=Date, C=Service, D=Module, E=Task,
+            # F=Keyword, G=Target URL, H=Submitted URL,
+            # I=Other Data, J=Hours
             widths = {
                 "A": 10,
                 "B": 15,
                 "C": 25,
-                "D": 25,
-                "E": 35,
-                "F": 135,
+                "D": 20,
+                "E": 25,
+                "F": 35,
                 "G": 55,
-                "H": 180,
+                "H": 135,
+                "I": 180,
+                "J": 12,
             }
 
         else:
 
+            # A=S.No, B=Date, C=Employee, D=Project, E=Category,
+            # F=Service, G=Module, H=Task, I=Keyword, J=Target URL,
+            # K=Submitted URL, L=Other Data, M=Hours, N=Status
             widths = {
                 "A": 10,
                 "B": 15,
@@ -557,30 +603,33 @@ class ExportExcelAPI(APIView):
                 "D": 25,
                 "E": 20,
                 "F": 25,
-                "G": 25,
-                "H": 35,
-                "I": 135,
+                "G": 20,
+                "H": 30,
+                "I": 35,
                 "J": 55,
-                "K": 180,
+                "K": 135,
+                "L": 180,
+                "M": 12,
+                "N": 15,
             }
 
         for col, width in widths.items():
 
-            ws.column_dimensions[col].width = width   
+            ws.column_dimensions[col].width = width
 
         for row in range(
             2,
             ws.max_row + 1
         ):
 
-            other_col = 8 if is_client_user else 11
+            other_col = 9 if is_client_user else 12
 
             other_value = ws.cell(
                 row=row,
                 column=other_col
             ).value
 
-            submitted_col = 6 if is_client_user else 9
+            submitted_col = 8 if is_client_user else 11
 
             submitted_value = ws.cell(
                 row=row,
@@ -591,7 +640,6 @@ class ExportExcelAPI(APIView):
             current_height = 38
 
             # Submitted URL rows spacing
-
             if submitted_value:
 
                 current_height = max(
@@ -600,14 +648,14 @@ class ExportExcelAPI(APIView):
                 )
 
             # Other Data auto height
-
             if other_value:
 
                 text = str(other_value)
 
-                estimated_lines = (
-                    len(text) // 85
-                ) + text.count("\n") + 1
+                estimated_lines = max(
+                    text.count("\n") + 1,
+                    len(text) // 85 + 1
+                )
 
                 current_height = max(
                     current_height,
@@ -615,12 +663,8 @@ class ExportExcelAPI(APIView):
                 )
 
             ws.row_dimensions[row].height = current_height
-                        
-
-        
 
         ws.freeze_panes = "A2"
-
 
         response = HttpResponse(
             content_type=(

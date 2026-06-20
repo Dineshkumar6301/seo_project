@@ -52,6 +52,32 @@ class Activity(models.Model):
         default='pending'
     )
 
+    service_id_ref = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    module_id_ref = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    checklist_id_ref = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+
+    rank_checked = models.BooleanField(default=False)
+    last_rank = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    rank_checked_at = models.DateTimeField(
+    null=True,
+    blank=True
+)
 
     created_at = models.DateTimeField(
         auto_now_add=True
@@ -96,7 +122,7 @@ class Checklist(models.Model):
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
-        related_name='checklists'
+        related_name='activity_checklists'
     )
 
     service = models.ForeignKey(

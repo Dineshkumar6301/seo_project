@@ -101,39 +101,25 @@ class ActivityListAPI(APIView):
 
             response_data.append({
 
-                "id": a.id,
+            "id": a.id,
 
-                "date": str(a.date),
+            "date": str(a.date),
 
-                "project": (
-                    a.project.name
-                    if a.project else ""
-                ),
+            "project_name": (
+                a.project.name
+                if a.project else ""
+            ),
 
-                "project_name": (
-                    a.project.name
-                    if a.project else ""
-                ),
+            "category": a.category or "",
 
-                "category": (
-                    a.category or ""
-                ),
+            "service_name": a.service_name or "",
 
-                "service": (
-                    a.service_name or ""
-                ),
+            "task_type": a.task_type or "",
 
-                "task": (
-                    a.task_type or ""
-                ),
+            "status": a.status or "",
 
-                "status": (
-                    a.status or ""
-                ),
-
-                "data": (
-                    a.dynamic_data or {}
-                )
-            })
+            "dynamic_data": a.dynamic_data or {}
+        })
+        
 
         return Response(response_data)

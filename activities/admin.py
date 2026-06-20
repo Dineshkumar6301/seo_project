@@ -9,79 +9,37 @@ class ActivityAdmin(admin.ModelAdmin):
         'id',
         'user',
         'project',
-        'category',
         'service_name',
         'task_type',
         'status',
         'date',
-        'created_at'
-    )
-
-    list_filter = (
-        'category',
-        'service_name',
-        'task_type',
-        'status',
-        'date'
+        'rank_checked',
+        'last_rank',
+        'rank_checked_at'
     )
 
     search_fields = (
-        'user__first_name',
-        'user__last_name',
         'project__name',
+        'user__email',
         'service_name',
-        'task_type'
+        'task_type',
     )
 
-    readonly_fields = (
-        'created_at',
-        'updated_at'
+    list_filter = (
+        'status',
+        'date',
+    )
+
+    autocomplete_fields = (
+        'project',
+        'user',
     )
 
     ordering = (
         '-date',
-        '-created_at'
+        '-created_at',
     )
 
-    list_per_page = 50
-
-    fieldsets = (
-
-        ("Basic Information", {
-            "fields": (
-                'user',
-                'project',
-                'date'
-            )
-        }),
-
-        ("Dynamic Structure", {
-            "fields": (
-                'category',
-                'service_name',
-                'task_type'
-            )
-        }),
-
-        ("Dynamic Form Data", {
-            "fields": (
-                'dynamic_data',
-            )
-        }),
-
-        ("Status", {
-            "fields": (
-                'status',
-            )
-        }),
-
-        ("Timestamps", {
-            "fields": (
-                'created_at',
-                'updated_at'
-            )
-        }),
-    )
 
 @admin.register(Checklist)
 class ChecklistAdmin(admin.ModelAdmin):
@@ -92,57 +50,23 @@ class ChecklistAdmin(admin.ModelAdmin):
         'service',
         'item',
         'status',
-        'order',
-        'completed_by',
-        'created_at'
-    )
-
-    list_filter = (
-        'status',
-        'service',
-        'project'
     )
 
     search_fields = (
         'project__name',
         'service__name',
-        'item'
+        'item',
+    )
+
+    list_filter = (
+        'status',
+    )
+
+    autocomplete_fields = (
+        'project',
+        'service',
     )
 
     ordering = (
         'order',
-        'id'
-    )
-
-    list_per_page = 50
-
-    readonly_fields = (
-        'created_at',
-        'completed_at'
-    )
-
-    fieldsets = (
-
-        ("Checklist Information", {
-            "fields": (
-                'project',
-                'service',
-                'item',
-                'order'
-            )
-        }),
-
-        ("Status", {
-            "fields": (
-                'status',
-                'completed_by',
-                'completed_at'
-            )
-        }),
-
-        ("Created", {
-            "fields": (
-                'created_at',
-            )
-        }),
     )

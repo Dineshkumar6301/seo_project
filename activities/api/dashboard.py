@@ -183,34 +183,26 @@ class ClientDashboardAPI(APIView):
         ).count()
 
 
-        chart_qs = (
+        from collections import Counter
 
-            base_qs
+        chart_counter = Counter()
 
-            .annotate(
-                day=TruncDate("date")
-            )
+        for activity in base_qs:
 
-            .values("day")
+            chart_counter[
+                str(activity.date)
+            ] += 1
 
-            .annotate(
-                count=Count("id")
-            )
-
-            .order_by("day")
+        chart_labels = sorted(
+            chart_counter.keys()
         )
 
-        chart_labels = [
-            str(row["day"])
-            for row in chart_qs
-        ]
-
         chart_data = [
-            row["count"]
-            for row in chart_qs
+
+            chart_counter[label]
+
+            for label in chart_labels
         ]
-
-
         if status:
 
             qs = qs.filter(

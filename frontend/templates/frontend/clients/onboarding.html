@@ -1,0 +1,755 @@
+{% extends "frontend/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="row mb-4">
+
+        <div class="col-md-8">
+
+            <h2 class="fw-bold">
+                Client Onboarding
+            </h2>
+
+            <p class="text-muted">
+                Manage client onboarding information and required accesses.
+            </p>
+
+        </div>
+
+        <div class="col-md-4 text-end">
+
+            {% if not is_client %}
+
+            <button
+                type="submit"
+                form="onboardingForm"
+                class="btn btn-primary">
+
+                Save Onboarding
+
+            </button>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+     <div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-4">
+
+                <strong>Client</strong><br>
+
+                {{ client.user.profile.company_name }}
+
+            </div>
+
+            <div class="col-md-4">
+
+                <strong>Website</strong><br>
+
+                {% if client.user.profile.website %}
+
+                    <a
+                        href="{{ client.user.profile.website }}"
+                        target="_blank"
+                        class="text-primary text-decoration-none">
+
+                        {{ client.user.profile.website }}
+
+                    </a>
+
+                {% else %}
+
+                    -
+
+                {% endif %}
+
+            </div>
+
+            <div class="col-md-4">
+
+                <strong>Industry</strong><br>
+
+                {{ client.user.profile.industry }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    <!-- Progress -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between">
+
+                <strong>
+                    Onboarding Progress
+                </strong>
+
+                <strong>
+                    {{ progress }}%
+                </strong>
+
+            </div>
+
+            <div class="progress mt-2">
+
+                <div
+                    class="progress-bar bg-success"
+                    role="progressbar"
+                    style="width: {{ progress }}%;">
+
+                    {{ progress }}%
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <form
+        method="post"
+        id="onboardingForm">
+
+        {% csrf_token %}
+        <!-- BUSINESS INFORMATION -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+                <h5 class="mb-0">
+                    Business Information
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label>
+                            Business Name
+                        </label>
+
+                       <input
+                            type="text"
+                            name="business_name"
+                            value="{{ onboarding.business_name }}"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label>
+                            Website
+                        </label>
+
+                        <input
+                            type="url"
+                            name="website"
+                            value="{{ onboarding.website }}"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label>
+                            Business Category
+                        </label>
+
+                        <input
+                            type="text"
+                            name="business_category"
+                            value="{{ onboarding.business_category }}"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label>
+                            Service Areas
+                        </label>
+
+                       <input
+                            type="text"
+                            name="service_areas"
+                            value="{{ onboarding.service_areas }}"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>
+
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+
+                        <label>
+                            Target Audience
+                        </label>
+
+                        <textarea
+                            name="target_audience"
+                            rows="3"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>{{ onboarding.target_audience }}</textarea>
+
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+
+                        <label>
+                            Competitors
+                        </label>
+
+                        <textarea
+                            name="competitors"
+                            rows="3"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>{{ onboarding.competitors }}
+                        </textarea>
+
+                    </div>
+
+                    <div class="col-md-12">
+
+                        <label>
+                            Business Description
+                        </label>
+
+                        <textarea
+                            name="business_description"
+                            rows="4"
+                            class="form-control"
+                            {% if is_client %}readonly{% endif %}>{{ onboarding.business_description }}</textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+       <div class="card shadow-sm mb-4">
+
+
+        <div class="card-header">
+            <h5 class="mb-0">
+                Access Collection
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <!-- HOSTING -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Hosting Access
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="hosting_access"
+                            class="form-check-input"
+                            {% if onboarding.hosting_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="hosting_provider"
+                        class="form-control mb-2"
+                        placeholder="Hosting Provider"
+                        value="{{ onboarding.hosting_provider }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="hosting_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.hosting_notes }}</textarea>
+
+                </div>
+
+                <!-- DOMAIN -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Domain Access
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="domain_access"
+                            class="form-check-input"
+                            {% if onboarding.domain_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="domain_provider"
+                        class="form-control mb-2"
+                        placeholder="Domain Provider"
+                        value="{{ onboarding.domain_provider }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="domain_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.domain_notes }}</textarea>
+
+                </div>
+
+                <!-- GOOGLE ANALYTICS -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Google Analytics
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="ga_access"
+                            class="form-check-input"
+                            {% if onboarding.ga_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="ga_property_id"
+                        class="form-control mb-2"
+                        placeholder="GA4 Property ID"
+                        value="{{ onboarding.ga_property_id }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="ga_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.ga_notes }}</textarea>
+
+                </div>
+
+                <!-- SEARCH CONSOLE -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Search Console
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="gsc_access"
+                            class="form-check-input"
+                            {% if onboarding.gsc_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="gsc_property"
+                        class="form-control mb-2"
+                        placeholder="Search Console Property"
+                        value="{{ onboarding.gsc_property }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="gsc_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.gsc_notes }}</textarea>
+
+                </div>
+
+                <!-- GOOGLE ADS -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Google Ads
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="google_ads_access"
+                            class="form-check-input"
+                            {% if onboarding.google_ads_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="google_ads_customer_id"
+                        class="form-control mb-2"
+                        placeholder="Customer ID"
+                        value="{{ onboarding.google_ads_customer_id }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="google_ads_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.google_ads_notes }}</textarea>
+
+                </div>
+
+                <!-- META -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Meta Access
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="meta_access"
+                            class="form-check-input"
+                            {% if onboarding.meta_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="meta_business_id"
+                        class="form-control mb-2"
+                        placeholder="Meta Business ID"
+                        value="{{ onboarding.meta_business_id }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="meta_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.meta_notes }}</textarea>
+
+                </div>
+
+                <!-- YOUTUBE -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        YouTube Access
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="youtube_access"
+                            class="form-check-input"
+                            {% if onboarding.youtube_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="youtube_channel_name"
+                        class="form-control mb-2"
+                        placeholder="Channel Name"
+                        value="{{ onboarding.youtube_channel_name }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <input
+                        type="email"
+                        name="youtube_access_email"
+                        class="form-control mb-2"
+                        placeholder="Access Email"
+                        value="{{ onboarding.youtube_access_email }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="youtube_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.youtube_notes }}</textarea>
+
+                </div>
+
+                <!-- SOCIAL MEDIA -->
+
+                <div class="col-md-6 mb-4">
+
+                    <h6 class="fw-bold">
+                        Social Media Access
+                    </h6>
+
+                    <div class="form-check mb-2">
+
+                        <input
+                            type="checkbox"
+                            name="social_media_access"
+                            class="form-check-input"
+                            {% if onboarding.social_media_access %}checked{% endif %}
+                            {% if is_client %}disabled{% endif %}>
+
+                        <label class="form-check-label">
+                            Access Received
+                        </label>
+
+                    </div>
+
+                    <input
+                        type="text"
+                        name="facebook_page"
+                        class="form-control mb-2"
+                        placeholder="Facebook Page"
+                        value="{{ onboarding.facebook_page }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <input
+                        type="text"
+                        name="instagram_handle"
+                        class="form-control mb-2"
+                        placeholder="Instagram Handle"
+                        value="{{ onboarding.instagram_handle }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <input
+                        type="text"
+                        name="linkedin_page"
+                        class="form-control mb-2"
+                        placeholder="LinkedIn Page"
+                        value="{{ onboarding.linkedin_page }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <input
+                        type="text"
+                        name="twitter_handle"
+                        class="form-control mb-2"
+                        placeholder="Twitter Handle"
+                        value="{{ onboarding.twitter_handle }}"
+                        {% if is_client %}readonly{% endif %}>
+
+                    <textarea
+                        name="social_notes"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Notes"
+                        {% if is_client %}readonly{% endif %}>{{ onboarding.social_notes }}</textarea>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        </div>
+
+        <!-- PROJECT SETUP -->
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+                    Project Setup
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input
+                                type="checkbox"
+                                name="team_assigned"
+                                class="form-check-input"
+                                {% if onboarding.team_assigned %}checked{% endif %}
+                                {% if is_client %}disabled{% endif %}>
+
+
+                            <label class="form-check-label">
+                                Team Assigned
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input
+                                type="checkbox"
+                                name="kpi_defined"
+                                class="form-check-input"
+                                {% if onboarding.kpi_defined %}checked{% endif %}
+                                {% if is_client %}disabled{% endif %}>
+
+
+                            <label class="form-check-label">
+                                KPI Defined
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input
+                                type="checkbox"
+                                name="deliverables_defined"
+                                class="form-check-input"
+                                {% if onboarding.deliverables_defined %}checked{% endif %}
+                                {% if is_client %}disabled{% endif %}>
+                                
+
+                            <label class="form-check-label">
+                                Deliverables Defined
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input
+                                type="checkbox"
+                                name="reporting_setup"
+                                class="form-check-input"
+                                {% if onboarding.reporting_setup %}checked{% endif %}
+                                {% if is_client %}disabled{% endif %}>
+
+                            <label class="form-check-label">
+                                Reporting Setup
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- NOTES -->
+
+        <div class="card shadow-sm mt-4">
+
+            <div class="card-header">
+
+                <h5 class="mb-0">
+                    Notes
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <textarea
+                    name="notes"
+                    rows="5"
+                    class="form-control"
+                    {% if is_client %}readonly{% endif %}>{{ onboarding.notes }}</textarea>
+
+            </div>
+
+        </div>
+        
+
+    </form>
+
+</div>
+
+{% endblock %}

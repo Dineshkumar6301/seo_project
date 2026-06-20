@@ -1,9 +1,21 @@
-
-let currentPage = 1;
-let dateFilter = "{{ date_filter|default:'all' }}";
-let statusFilter = "{{ current_status|default:'' }}";
 let searchTimer = null;
 
+let currentPage =
+    parseInt(
+        localStorage.getItem(
+            "approval_page"
+        )
+    ) || 1;
+
+let dateFilter =
+    localStorage.getItem(
+        "approval_date_filter"
+    ) || "all";
+
+let statusFilter =
+    localStorage.getItem(
+        "approval_status_filter"
+    ) || "";
 
 function getFilters() {
 
@@ -106,16 +118,23 @@ function setStatusFilter(val) {
 
     currentPage = 1;
 
-    document
-        .querySelectorAll(".stat-card")
-        .forEach(c => {
+    localStorage.setItem(
+        "approval_status_filter",
+        statusFilter
+    );
 
-            c.classList.remove(
+    document
+        .querySelectorAll(
+            ".stat-card"
+        )
+        .forEach(card => {
+
+            card.classList.remove(
                 "active-filter"
             );
         });
 
-    if (statusFilter) {
+    if(statusFilter){
 
         document
             .querySelector(
@@ -128,13 +147,16 @@ function setStatusFilter(val) {
 
     loadDashboard();
 }
-
-
 function setDateFilter(e, val) {
 
     dateFilter = val;
 
     currentPage = 1;
+
+    localStorage.setItem(
+        "approval_date_filter",
+        dateFilter
+    );
 
     document.getElementById(
         "startDate"
@@ -144,13 +166,21 @@ function setDateFilter(e, val) {
         "endDate"
     ).value = "";
 
+    localStorage.removeItem(
+        "approval_start_date"
+    );
+
+    localStorage.removeItem(
+        "approval_end_date"
+    );
+
     document
         .querySelectorAll(
             ".filter-group .pill"
         )
-        .forEach(p => {
+        .forEach(btn => {
 
-            p.classList.remove(
+            btn.classList.remove(
                 "active"
             );
         });
@@ -161,8 +191,6 @@ function setDateFilter(e, val) {
 
     loadDashboard();
 }
-
-
 function loadDashboard() {
 
     const filters = getFilters();
@@ -302,10 +330,10 @@ function updateTable(rows) {
         <th>Target URL</th>
 
         <th style="
-            min-width:420px;
-        ">
+            min-width:420px;">
             Other Data
         </th>
+        <th>Hours</th>
 
         <th>Status</th>
 
@@ -383,44 +411,43 @@ function updateTable(rows) {
             data.Submitted_url
             ||
             "";
+            let submittedHTML = "-";
 
-        let submittedHTML = "-";
+            if (submitted) {
 
-        if(submitted){
+                submittedHTML = String(submitted)
 
-            submittedHTML = String(submitted)
+                    .split(/[\n,]+/)
+                    .filter(x => x.trim())
 
-            .split(/[\n,]+/)
+                    .map(link => `
 
-            .filter(x => x.trim())
+                        <div style="margin-bottom:6px;">
 
-            .map(link => `
+                            <a href="${link.trim()}"
+                            target="_blank"
+                            style="
+                                    color:#2563eb;
+                                    text-decoration:none;
+                                    display:inline-block;
+                                    max-width:250px;
+                                    overflow:hidden;
+                                    text-overflow:ellipsis;
+                                    white-space:nowrap;
+                            ">
 
-                <div style="
-                    margin-bottom:6px;
-                ">
+                                ${link.trim()}
 
-                    <a href="${link.trim()}"
-                       target="_blank"
-                       class="proof-link"
-                       style="
-                          display:block;
-                          max-width:220px;
-                          white-space:nowrap;
-                          overflow:hidden;
-                          text-overflow:ellipsis;
-                       ">
+                            </a>
 
-                        ${link.trim()}
+                        </div>
 
-                    </a>
+                    `)
 
-                </div>
+                    .join("");
+            }
 
-            `).join("");
-        }
-
- 
+        
         const target =
 
             data.Target_url
@@ -429,43 +456,42 @@ function updateTable(rows) {
             ||
             "";
 
+        
         let targetHTML = "-";
 
-        if(target){
+        if (target) {
 
             targetHTML = String(target)
 
-            .split(/[\n,]+/)
+                .split(/[\n,]+/)
+                .filter(x => x.trim())
 
-            .filter(x => x.trim())
+                .map(link => `
 
-            .map(link => `
+                    <div style="margin-bottom:6px;">
 
-                <div style="
-                    margin-bottom:6px;
-                ">
+                        <a href="${link.trim()}"
+                        target="_blank"
+                        style="
+                                color:#2563eb;
+                                text-decoration:none;
+                                display:inline-block;
+                                max-width:250px;
+                                overflow:hidden;
+                                text-overflow:ellipsis;
+                                white-space:nowrap;
+                        ">
 
-                    <a href="${link.trim()}"
-                       target="_blank"
-                       class="proof-link"
-                       style="
-                          display:block;
-                          max-width:220px;
-                          white-space:nowrap;
-                          overflow:hidden;
-                          text-overflow:ellipsis;
-                       ">
+                            ${link.trim()}
 
-                        ${link.trim()}
+                        </a>
 
-                    </a>
+                    </div>
 
-                </div>
+                `)
 
-            `).join("");
+                .join("");
         }
-
-
         let otherHTML = "";
 
         Object.entries(data)
@@ -484,6 +510,8 @@ function updateTable(rows) {
                 lower === "submitted_url"
                 ||
                 lower === "target_url"
+                ||
+                lower === "hours"
 
             ){
                 return;
@@ -590,29 +618,32 @@ function updateTable(rows) {
             </td>
 
             <td style="
-                min-width:220px;
-                max-width:260px;
+                min-width:280px;
+                max-width:280px;
+                vertical-align:top;
             ">
-
                 ${submittedHTML}
-
             </td>
 
             <td style="
-                min-width:220px;
-                max-width:260px;
+                min-width:280px;
+                max-width:280px;
+                vertical-align:top;
             ">
-
                 ${targetHTML}
-
             </td>
-
             <td style="
                 min-width:420px;
                 max-width:520px;
             ">
 
                 ${otherHTML}
+
+            </td>
+
+            <td>
+
+                ${data.hours || "-"}
 
             </td>
 
@@ -627,6 +658,8 @@ function updateTable(rows) {
                 ${actions}
 
             </td>
+
+                        
 
         </tr>
         `;
@@ -731,7 +764,31 @@ function updateMobileCards(rows) {
                     max-width:60%;
                     word-break:break-word;
                 ">
-                    ${value || "-"}
+                    ${["submitted_url","target_url"]
+                        .includes(
+                            key.toLowerCase()
+                        )
+
+                ? String(value)
+                    .split(/[\n,]+/)
+                    .filter(x => x.trim())
+                    .map(link => `
+
+                        <div style="margin-bottom:8px">
+
+                            <a href="${link.trim()}"
+                            target="_blank"
+                            class="proof-link">
+
+                                ${link.trim()}
+
+                            </a>
+
+                        </div>
+
+                    `)
+
+                : value || "-"}
                 </div>
 
             </div>
@@ -895,9 +952,14 @@ function updatePagination(p){
     }
 }
 
-function goToPage(p) {
+function goToPage(p){
 
     currentPage = p;
+
+    localStorage.setItem(
+        "approval_page",
+        p
+    );
 
     loadDashboard();
 
@@ -906,8 +968,164 @@ function goToPage(p) {
         behavior: "smooth"
     });
 }
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
+        document.getElementById(
+            "projectFilter"
+        ).value =
+            localStorage.getItem(
+                "approval_project"
+            ) || "";
 
+        document.getElementById(
+            "searchInput"
+        ).value =
+            localStorage.getItem(
+                "approval_search"
+            ) || "";
+
+        document.getElementById(
+            "startDate"
+        ).value =
+            localStorage.getItem(
+                "approval_start_date"
+            ) || "";
+
+        document.getElementById(
+            "endDate"
+        ).value =
+            localStorage.getItem(
+                "approval_end_date"
+            ) || "";
+
+        document
+            .querySelectorAll(
+                ".filter-group .pill"
+            )
+            .forEach(btn => {
+
+                if(
+                    btn.dataset.filter ===
+                    dateFilter
+                ){
+
+                    btn.classList.add(
+                        "active"
+                    );
+                }
+            });
+
+        document
+            .querySelectorAll(
+                ".stat-card"
+            )
+            .forEach(card => {
+
+                card.classList.remove(
+                    "active-filter"
+                );
+            });
+
+        if(statusFilter){
+
+            document
+                .querySelector(
+                    `.stat-card.${statusFilter}`
+                )
+                ?.classList.add(
+                    "active-filter"
+                );
+        }
+        document
+            .getElementById(
+                "searchInput"
+            )
+            ?.addEventListener(
+                "input",
+                function(){
+
+                    localStorage.setItem(
+                        "approval_search",
+                        this.value
+                    );
+
+                    clearTimeout(
+                        searchTimer
+                    );
+
+                    searchTimer =
+                        setTimeout(() => {
+
+                            currentPage = 1;
+
+                            loadDashboard();
+
+                        }, 400);
+                }
+            );
+
+        document
+            .getElementById(
+                "projectFilter"
+            )
+            ?.addEventListener(
+                "change",
+                function(){
+
+                    localStorage.setItem(
+                        "approval_project",
+                        this.value
+                    );
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        document
+            .getElementById(
+                "startDate"
+            )
+            ?.addEventListener(
+                "change",
+                function(){
+
+                    localStorage.setItem(
+                        "approval_start_date",
+                        this.value
+                    );
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        document
+            .getElementById(
+                "endDate"
+            )
+            ?.addEventListener(
+                "change",
+                function(){
+
+                    localStorage.setItem(
+                        "approval_end_date",
+                        this.value
+                    );
+
+                    currentPage = 1;
+
+                    loadDashboard();
+                }
+            );
+
+        loadDashboard();
+    }
+);
 function exportExcel() {
 
     const f = getFilters();
@@ -1004,84 +1222,6 @@ function getCookie(name) {
 
     return value;
 }
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        document
-            .getElementById(
-                "searchInput"
-            )
-
-            ?.addEventListener(
-                "input",
-                () => {
-
-                    clearTimeout(
-                        searchTimer
-                    );
-
-                    searchTimer =
-                        setTimeout(() => {
-
-                            currentPage = 1;
-
-                            loadDashboard();
-
-                        }, 400);
-                }
-            );
-
-        document
-            .getElementById(
-                "projectFilter"
-            )
-
-            ?.addEventListener(
-                "change",
-                () => {
-
-                    currentPage = 1;
-
-                    loadDashboard();
-                }
-            );
-
-        document
-            .getElementById(
-                "startDate"
-            )
-
-            ?.addEventListener(
-                "change",
-                () => {
-
-                    currentPage = 1;
-
-                    loadDashboard();
-                }
-            );
-
-        document
-            .getElementById(
-                "endDate"
-            )
-
-            ?.addEventListener(
-                "change",
-                () => {
-
-                    currentPage = 1;
-
-                    loadDashboard();
-                }
-            );
-
-        loadDashboard();
-    }
-);
-
 
 
 function formatLabel(text){
