@@ -323,7 +323,15 @@ def project_dashboard(request):
                 (completed / 12) * 100
             )
 
-    
+    selected_service_ids = []
+
+    if selected_project:
+        selected_service_ids = list(
+            selected_project.project_services.values_list(
+                "service_id",
+                flat=True
+            )
+        )    
     return render(
         request,
         "frontend/projects/dashboard.html",
@@ -339,6 +347,7 @@ def project_dashboard(request):
             "project_checklists": project_checklists,
             "onboarding": onboarding,
             "onboarding_progress": progress,
+            "selected_service_ids": selected_service_ids,
         }
     )
 

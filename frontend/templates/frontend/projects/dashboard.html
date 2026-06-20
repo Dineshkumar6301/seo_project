@@ -1,25 +1,7 @@
 {% extends "frontend/base.html" %}
-{% block content %}
+
 {% load static %}
-<!Doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Dashboard</title>
-    <style>
-        .card-soft{
-        border-radius:14px;
-        box-shadow:0 8px 24px rgba(0,0,0,.06);
-        border:none;
-        background:#fff;
-        }
-        .category-block{ margin-bottom:16px; }
-        .service-list li{ padding:4px 0; }
-        .service-list li:hover{ background:#f8fafc; border-radius:6px; padding-left:6px; }
-        .cursor-pointer{ cursor:pointer; }
-    </style>
-</head>
+{% block content %}
 <body>
 
 <div class="container-fluid">
@@ -83,7 +65,7 @@
 
                 <div>
 
-                    {% if selected_project.client.clientonboarding.onboarding_completed %}
+                    {% if onboarding and onboarding.onboarding_completed %}
 
                         <span class="badge bg-success">
                             Completed
@@ -206,12 +188,9 @@
                                 type="checkbox"
                                 name="services"
                                 value="{{ service.id }}"
-
-                                {% for ps in selected_project.project_services.all %}
-                                    {% if ps.service.id == service.id %}
-                                        checked
-                                    {% endif %}
-                                {% endfor %}
+                                {% if service.id in selected_service_ids %}
+                                    checked
+                                {% endif %}
                             >
 
                             {{ service.name }}
@@ -257,111 +236,84 @@
         </div>
       </div>
 
-      <!-- CHECKLIST -->
-        <div class="card card-soft">
-            <div class="card-body">
+      <div class="card card-soft">
+    <div class="card-body">
 
-                <h5 class="fw-bold mb-4">
-                    Project Checklist
+        <h5 class="fw-bold mb-4">
+            Project Checklist
+        </h5>
+
+        {% regroup project_checklists by template.module.service.name as service_groups %}
+
+        {% for service in service_groups %}
+
+        <div class="mb-4">
+
+            <div class="bg-light rounded p-2 mb-3">
+                <h5 class="mb-0 text-primary fw-bold">
+                    {{ service.grouper }}
                 </h5>
+            </div>
 
-                {% regroup project_checklists by template.module.service.name as service_groups %}
+            {% regroup service.list by template.module.name as module_groups %}
 
-                {% for service in service_groups %}
+            {% for module in module_groups %}
 
-                <div class="mb-4">
+            <div class="ms-3 mb-4">
 
-                    <div class="bg-light rounded p-2 mb-3">
-                        <h5 class="mb-0 text-primary fw-bold">
-                            {{ service.grouper }}
-                        </h5>
+                <h6 class="fw-bold text-dark border-start border-4 border-primary ps-2">
+                    {{ module.grouper }}
+                </h6>
+
+                {% for item in module.list %}
+
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+
+                    <div>
+                        <i class="bi bi-check2-square text-success me-2"></i>
+                        {{ item.template.item }}
                     </div>
 
-                    {% regroup service.list by template.module.name as module_groups %}
+                    {% if item.status == "Approved" %}
+                        <span class="badge bg-success">Approved</span>
 
-                    {% for module in module_groups %}
+                    {% elif item.status == "Completed" %}
+                        <span class="badge bg-primary">Completed</span>
 
-                    <div class="ms-3 mb-3">
+                    {% elif item.status == "In Progress" %}
+                        <span class="badge bg-warning text-dark">In Progress</span>
 
-                        <h6 class="fw-bold text-dark">
-                            {{ module.grouper }}
-                        </h6>
+                    {% elif item.status == "Blocked" %}
+                        <span class="badge bg-danger">Blocked</span>
 
-                        {% for item in module.list %}
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            {{ item.status }}
+                        </span>
+                    {% endif %}
 
-                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-
-                            <div>
-                                <i class="bi bi-check2-square text-success me-2"></i>
-
-                                {{ item.template.item }}
-                            </div>
-
-                            {% if item.status == "Approved" %}
-
-                            <span class="badge bg-success">
-                                Approved
-                            </span>
-
-                        {% elif item.status == "Completed" %}
-
-                            <span class="badge bg-primary">
-                                Completed
-                            </span>
-
-                        {% elif item.status == "In Progress" %}
-
-                            <span class="badge bg-warning text-dark">
-                                In Progress
-                            </span>
-
-                        {% elif item.status == "Blocked" %}
-
-                            <span class="badge bg-danger">
-                                Blocked
-                            </span>
-
-                        {% else %}
-
-                            <span class="badge bg-secondary">
-                                {{ item.status }}
-                            </span>
-
-                        {% endif %}
-
-                        </div>
-
-                        {% endfor %}
-
-                    </div>
-
-                    {% endfor %}
-
-                </div>
-
-                {% empty %}
-
-                <div class="alert alert-info">
-                    No checklist available for this project.
                 </div>
 
                 {% endfor %}
 
             </div>
-        </div>
-      {% else %}
-      <div class="alert alert-info text-center mt-4">
-        Select a project
-      </div>
-      {% endif %}
+
+            {% endfor %}
 
         </div>
-    </div>
-    </div>
 
+        {% empty %}
+
+        <div class="alert alert-info">
+            No checklist available for this project.
+        </div>
+
+        {% endfor %}
+
+    </div>
+</div>
+{% endif %}
     <script src="{% static 'js/dashboard.js' %}"></script>
 
     {% endblock %}  
 
-</body>
-</html>
