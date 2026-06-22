@@ -28,4 +28,9 @@ path(
     views.project_rank_results,
     name='project_rank_results'
 ),
+# urls.py
+path(
+    "api/run-rank-check/",
+    views.run_rank_check,
+)
 ]

@@ -633,3 +633,18 @@ def project_rank_results(request):
         "success": True,
         "results": results
     })
+
+
+# views.py
+from django.core.management import call_command
+from django.http import JsonResponse
+
+def run_rank_check(request):
+
+    call_command(
+        "check_daily_ranks"
+    )
+
+    return JsonResponse({
+        "success": True
+    })
