@@ -975,30 +975,8 @@ async function editActivity(id){
             }
         });
 
-        setTimeout(() => {
-
-            document
-                .querySelectorAll(
-                    ".category-btn"
-                )
-                .forEach(btn => {
-
-                    if(
-                        btn.textContent.trim()
-                        === selectedCategory
-                    ){
-
-                        btn.classList.remove(
-                            "btn-outline-dark"
-                        );
-
-                        btn.classList.add(
-                            "btn-dark"
-                        );
-                    }
-                });
-
-        }, 100);
+        
+        
         if(selectedCategory){
 
             renderServices(
