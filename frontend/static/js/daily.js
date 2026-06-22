@@ -2,6 +2,7 @@ let selectedProject = null;
 let selectedService = null;
 let selectedModule = null;
 let selectedChecklist = null;
+let selectedCategory = null;
 
 /* ==========================
 PROJECT
@@ -71,6 +72,8 @@ function renderCategories(services){
 
 function selectCategory(category, el){
 
+    selectedCategory = category;
+
     document.querySelectorAll(".category-btn")
         .forEach(btn => {
 
@@ -78,19 +81,13 @@ function selectCategory(category, el){
             btn.classList.add("btn-outline-dark");
         });
 
-    el.classList.remove(
-        "btn-outline-dark"
-    );
-
-    el.classList.add(
-        "btn-dark"
-    );
+    el.classList.remove("btn-outline-dark");
+    el.classList.add("btn-dark");
 
     renderServices(
         categoryServices[category]
     );
 }
-
 function renderServices(services){
 
     let html = "";
@@ -492,7 +489,17 @@ async function saveActivity(){
                 : "Activity Saved Successfully"
             );
 
-            location.reload();
+           editActivityId = null;
+
+            clearFormFields();
+
+            loadData();
+
+            setTimeout(() => {
+
+                restoreCategoryActive();
+
+            }, 100);
 
         }else{
 
@@ -510,6 +517,59 @@ async function saveActivity(){
             "Something went wrong."
         );
     }
+}
+
+console.log(
+    "Selected Category:",
+    selectedCategory
+);
+function restoreCategoryActive() {
+
+    document
+        .querySelectorAll(".category-btn")
+        .forEach(btn => {
+
+            if (
+                btn.textContent.trim() === selectedCategory
+            ) {
+
+                btn.classList.remove(
+                    "btn-outline-dark"
+                );
+
+                btn.classList.add(
+                    "btn-dark"
+                );
+            }
+        });
+}
+
+function clearFormFields(){
+
+    (window.currentFields || []).forEach(field => {
+
+        const element =
+            document.getElementById(
+                `field_${field.id}`
+            );
+
+        if(element){
+
+            element.value = "";
+        }
+
+    });
+
+    const hours =
+        document.getElementById(
+            "hours"
+        );
+
+    if(hours){
+
+        hours.value = "";
+    }
+
 }
 
 async function loadSavedActivities(){
@@ -900,6 +960,21 @@ async function editActivity(id){
         renderCategories(
             services
         );
+        selectedCategory =
+            null;
+
+        services.forEach(service => {
+
+            if(
+                service.id ==
+                data.service_id
+            ){
+
+                selectedCategory =
+                    service.category_name;
+            }
+        });
+
         setTimeout(() => {
 
             document
@@ -924,22 +999,6 @@ async function editActivity(id){
                 });
 
         }, 100);
-
-        let selectedCategory =
-            null;
-
-        services.forEach(service => {
-
-            if(
-                service.id ==
-                data.service_id
-            ){
-
-                selectedCategory =
-                    service.category_name;
-            }
-        });
-
         if(selectedCategory){
 
             renderServices(
