@@ -2,7 +2,7 @@ name: Daily Rank Check
 
 on:
   schedule:
-    - cron: '0 5 * * *'   # 10:30 AM IST
+    - cron: '0 5 * * *'
 
   workflow_dispatch:
 
@@ -11,21 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+      - run: pip install -r requirements.txt
 
-      - name: Run Rank Check
-        env:
+      - env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        run: |
-          python manage.py check_daily_ranks
+        run: python manage.py check_daily_ranks
