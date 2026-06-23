@@ -15,6 +15,6 @@ urlpatterns = [
     path('activities/', include('activities.urls')),
     path('api/clients/', include('clients.urls')), 
     path('api/projects/', include('projects.urls')),  
-    path("api/run-rank-check/", views.run_rank_check),
+   
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

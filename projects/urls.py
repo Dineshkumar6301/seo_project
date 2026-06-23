@@ -34,4 +34,5 @@ path(
         views.run_rank_check,
         name="run_rank_check"
     ),
+    
 ]
