@@ -188,13 +188,14 @@ def project_dashboard(request):
 
             with transaction.atomic():
 
-                # Remove unselected services
+                # Remove unchecked services
                 ProjectService.objects.filter(
                     project=project
                 ).exclude(
                     service_id__in=selected_services
                 ).delete()
 
+                # Existing services
                 existing_service_ids = set(
                     ProjectService.objects.filter(
                         project=project
@@ -214,7 +215,7 @@ def project_dashboard(request):
                             service_id=sid
                         )
 
-                # Rebuild project checklist
+                # Rebuild checklist
                 ProjectChecklist.objects.filter(
                     project=project
                 ).delete()
@@ -230,26 +231,24 @@ def project_dashboard(request):
                     templates = ChecklistTemplate.objects.filter(
                         module__service=service,
                         is_active=True
-                    ).select_related(
-                        "module"
                     )
 
                     for template in templates:
 
                         project_checklists.append(
-
                             ProjectChecklist(
                                 project=project,
                                 template=template,
                                 status="Approved"
                             )
-
                         )
 
-                ProjectChecklist.objects.bulk_create(
-                    project_checklists,
-                    ignore_conflicts=True
-                )
+                if project_checklists:
+
+                    ProjectChecklist.objects.bulk_create(
+                        project_checklists,
+                        batch_size=100
+                    )
 
         except Exception as e:
 
@@ -258,7 +257,7 @@ def project_dashboard(request):
             )
 
         return redirect(
-            f"/projects/project-dashboard/?project={project_id}"
+            f"/api/projects/project-dashboard/?project={project_id}"
         )
 
     all_services = (
