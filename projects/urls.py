@@ -30,7 +30,8 @@ path(
 ),
 # urls.py
 path(
-    "api/run-rank-check/",
-    views.run_rank_check,
-)
+        "api/run-rank-check/",
+        views.run_rank_check,
+        name="run_rank_check"
+    ),
 ]

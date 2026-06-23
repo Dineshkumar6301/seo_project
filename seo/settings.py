@@ -212,3 +212,4 @@ CLOUDINARY_STORAGE = {
         ""
     ),
 }
+

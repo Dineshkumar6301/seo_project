@@ -635,16 +635,22 @@ def project_rank_results(request):
     })
 
 
-# views.py
+from django.conf import settings
 from django.core.management import call_command
 from django.http import JsonResponse
 
+
 def run_rank_check(request):
+    try:
+        call_command("check_daily_ranks")
 
-    call_command(
-        "check_daily_ranks"
-    )
+        return JsonResponse({
+            "success": True,
+            "message": "Rank check completed"
+        })
 
-    return JsonResponse({
-        "success": True
-    })
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        }, status=500)
