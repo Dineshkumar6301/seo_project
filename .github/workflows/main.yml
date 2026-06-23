@@ -2,7 +2,7 @@ name: Daily Rank Check
 
 on:
   schedule:
-    - cron: '0 5 * * *'   # 10:30 AM IST daily
+    - cron: '0 5 * * *'   # 10:30 AM IST
   workflow_dispatch:
 
 jobs:
@@ -10,11 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Rank Check 5 Times
+      - name: Trigger Rank Check
         run: |
-          for i in {1..5}
-          do
-            echo "API Hit $i"
-            curl -L https://digital-marketing-q6hei.ondigitalocean.app/api/run-rank-check/
-            sleep 5
-          done
+          curl -L https://digital-marketing-q6hei.ondigitalocean.app/api/projects/api/run-rank-check/
