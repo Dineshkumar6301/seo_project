@@ -119,14 +119,16 @@ class Command(BaseCommand):
                 response = requests.post(
                     "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
                     headers={
-                        "apy-token": "APY0bkk9F6VgGb2oBgEQGKQTLnG0KL8MRwHb4NMzMoBhSonvORBfaPdRxtIcx4MRM",
+                        "apy-token": "APY0HUNGOT3ez8IreD4bGsGKvZd4FHFKaT0NWBp9rEQFtorT7Zz4pGm4uMbx1j1z",
                         "Content-Type": "application/json"
                     },
-                    json={
-                        "keyword": keyword
-                    },
-                    timeout=10
+                    json={"keyword": keyword},
+                    timeout=60
                 )
+
+                print("STATUS:", response.status_code)
+                print("BODY:", response.text)
+
 
                 response.raise_for_status()
 
