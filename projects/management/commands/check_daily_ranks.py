@@ -1,20 +1,29 @@
-
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from activities.models import Activity
 from projects.models import (
-    KeywordRank,
-    KeywordRankResult
+KeywordRank,
+KeywordRankResult
 )
 
 import requests
 from urllib.parse import urlparse
 
-class Command(BaseCommand): 
-    help = "Check 5 keyword ranks daily" 
-    def handle(self, *args, **kwargs): 
-        oldest_activity = Activity.objects.filter( status="approved", rank_checked=False ).order_by( "date", "id" ).first()
+class Command(BaseCommand):
 
+
+    help = "Check 5 keyword ranks daily"
+
+    def handle(self, *args, **kwargs):
+
+        oldest_activity = (
+            Activity.objects.filter(
+                status="approved",
+                rank_checked=False
+            )
+            .order_by("date", "id")
+            .first()
+        )
 
         if not oldest_activity:
 
@@ -27,11 +36,14 @@ class Command(BaseCommand):
 
         target_date = oldest_activity.date
 
-        all_activities = Activity.objects.filter(
-            status="approved",
-            rank_checked=False,
-            date=target_date
-        ).order_by("id")
+        all_activities = (
+            Activity.objects.filter(
+                status="approved",
+                rank_checked=False,
+                date=target_date
+            )
+            .order_by("id")
+        )
 
         selected_activities = []
 
@@ -42,11 +54,20 @@ class Command(BaseCommand):
             keyword = data.get("Keyword")
 
             if not keyword:
+
+                activity.rank_checked = True
+
+                activity.save(
+                    update_fields=[
+                        "rank_checked"
+                    ]
+                )
+
                 continue
 
             selected_activities.append(activity)
 
-            if len(selected_activities) >= 5:
+            if len(selected_activities) == 5:
                 break
 
         if not selected_activities:
@@ -77,26 +98,23 @@ class Command(BaseCommand):
 
             try:
 
-                if KeywordRank.objects.filter(
+                existing_rank = KeywordRank.objects.filter(
                     activity=activity
-                ).exists():
+                ).exists()
 
-                   if KeywordRank.objects.filter(
-                        activity=activity
-                    ).exists():
+                if existing_rank:
 
-                        activity.rank_checked = True
-                        activity.rank_checked_at = timezone.now()
+                    activity.rank_checked = True
+                    activity.rank_checked_at = timezone.now()
 
-                        activity.save(
-                            update_fields=[
-                                "rank_checked",
-                                "rank_checked_at"
-                            ]
-                        )
+                    activity.save(
+                        update_fields=[
+                            "rank_checked",
+                            "rank_checked_at"
+                        ]
+                    )
 
-                        continue
-                    
+                    continue
 
                 response = requests.post(
                     "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
@@ -109,9 +127,8 @@ class Command(BaseCommand):
                     },
                     timeout=10
                 )
-                response.raise_for_status()
 
-            
+                response.raise_for_status()
 
                 api_data = response.json()
 
@@ -124,6 +141,7 @@ class Command(BaseCommand):
                     print(
                         f"{keyword} -> Invalid API Response"
                     )
+
                     continue
 
                 domain = (
@@ -160,10 +178,7 @@ class Command(BaseCommand):
                         breadcrumb=item.get("breadcrumb", "")
                     )
 
-                    result_url = item.get(
-                        "url",
-                        ""
-                    )
+                    result_url = item.get("url", "")
 
                     if not result_url:
                         continue
@@ -179,12 +194,11 @@ class Command(BaseCommand):
 
                         rank_found = item.get("rank")
                         ranking_url = result_url
-
                         break
 
                 keyword_rank.rank = (
                     rank_found
-                    if rank_found
+                    if rank_found is not None
                     else 999
                 )
 
@@ -200,7 +214,7 @@ class Command(BaseCommand):
                 activity.rank_checked_at = timezone.now()
                 activity.last_rank = (
                     rank_found
-                    if rank_found
+                    if rank_found is not None
                     else 999
                 )
 
@@ -215,7 +229,7 @@ class Command(BaseCommand):
                 print(
                     f"{activity.project.name} | "
                     f"{keyword} -> "
-                    f"{rank_found if rank_found else 'Not Ranking'}"
+                    f"{rank_found if rank_found is not None else 'Not Ranking'}"
                 )
 
             except requests.exceptions.Timeout:
