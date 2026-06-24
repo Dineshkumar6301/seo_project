@@ -538,7 +538,7 @@ def check_keyword_rank(request):
         response = requests.post(
             "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
             headers={
-                "apy-token": "APY0bkk9F6VgGb2oBgEQGKQTLnG0KL8MRwHb4NMzMoBhSonvORBfaPdRxtIcx4MRM",
+                "apy-token": settings.APYHUB_API_KEY,
                 "Content-Type": "application/json"
             },
             json={

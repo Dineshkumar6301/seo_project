@@ -151,11 +151,12 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+
+APYHUB_API_KEY = os.getenv(
+    "APYHUB_API_KEY",
+    ""
+)
 import os
-
-
-
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 

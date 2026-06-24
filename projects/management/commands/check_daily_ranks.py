@@ -6,8 +6,11 @@ KeywordRank,
 KeywordRankResult
 )
 
+
 import requests
 from urllib.parse import urlparse
+
+from seo import settings
 
 class Command(BaseCommand):
 
@@ -119,7 +122,7 @@ class Command(BaseCommand):
                 response = requests.post(
                     "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
                     headers={
-                        "apy-token": "APY0HUNGOT3ez8IreD4bGsGKvZd4FHFKaT0NWBp9rEQFtorT7Zz4pGm4uMbx1j1z",
+                        "apy-token": settings.APYHUB_API_KEY,
                         "Content-Type": "application/json"
                     },
                     json={"keyword": keyword},
