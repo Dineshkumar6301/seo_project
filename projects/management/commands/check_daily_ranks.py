@@ -81,10 +81,22 @@ class Command(BaseCommand):
                     activity=activity
                 ).exists():
 
-                    print(
-                        f"{keyword} -> Already Processed"
-                    )
-                    continue
+                   if KeywordRank.objects.filter(
+                        activity=activity
+                    ).exists():
+
+                        activity.rank_checked = True
+                        activity.rank_checked_at = timezone.now()
+
+                        activity.save(
+                            update_fields=[
+                                "rank_checked",
+                                "rank_checked_at"
+                            ]
+                        )
+
+                        continue
+                    
 
                 response = requests.post(
                     "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
