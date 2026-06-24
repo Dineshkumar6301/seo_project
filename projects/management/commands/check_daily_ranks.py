@@ -95,15 +95,11 @@ class Command(BaseCommand):
                     json={
                         "keyword": keyword
                     },
-                    timeout=60
+                    timeout=10
                 )
+                response.raise_for_status()
 
-                if response.status_code != 200:
-
-                    print(
-                        f"{keyword} -> API Status {response.status_code}"
-                    )
-                    continue
+            
 
                 api_data = response.json()
 
@@ -210,11 +206,29 @@ class Command(BaseCommand):
                     f"{rank_found if rank_found else 'Not Ranking'}"
                 )
 
+            except requests.exceptions.Timeout:
+
+                print(
+                    f"{keyword} -> API Timeout"
+                )
+
+                continue
+
+            except requests.exceptions.RequestException as e:
+
+                print(
+                    f"{keyword} -> API Error: {str(e)}"
+                )
+
+                continue
+
             except Exception as e:
 
                 print(
                     f"{keyword} -> Error: {str(e)}"
                 )
+
+                continue
 
         self.stdout.write(
             self.style.SUCCESS(
