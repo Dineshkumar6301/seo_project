@@ -2,7 +2,7 @@ name: Daily Rank Check
 
 on:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '30 4 * * *'
   workflow_dispatch:
 
 jobs:
