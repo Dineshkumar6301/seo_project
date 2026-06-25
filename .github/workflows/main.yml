@@ -2,7 +2,7 @@ name: Daily Rank Check
 
 on:
   schedule:
-    - cron: '45 5 * * *'   # 11:15 AM IST
+    - cron: '30 6 * * *'   # 12:00 PM IST
   workflow_dispatch:
 
 jobs:
