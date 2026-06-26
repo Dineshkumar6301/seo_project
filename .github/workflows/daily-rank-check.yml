@@ -13,4 +13,4 @@ jobs:
       - name: Trigger Rank Check
         run: |
           curl --fail --show-error --location \
-            https://digital-marketing-q6hei.ondigitalcean.app/api/projects/api/run-rank-check/
+            https://digital-marketing-q6hei.ondigitalocean.app/api/projects/api/run-rank-check/
