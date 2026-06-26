@@ -1,0 +1,16 @@
+name: Daily Rank Check
+
+on:
+  schedule:
+    - cron: '00 6 * * *'   # 11:30 AM IST
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Rank Check
+        run: |
+          curl --fail --show-error --location \
+            https://digital-marketing-q6hei.ondigitalcean.app/api/projects/api/run-rank-check/
