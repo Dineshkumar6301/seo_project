@@ -5,13 +5,22 @@ from django.db import models
 
 class ServiceCategory(models.Model):
     name = models.CharField(max_length=100)
-
     class Meta:
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name'],
+                name='unique_service_category_name'
+            )
+        ]
+
 
     def __str__(self):
         return self.name
+    
 
+
+  
 
 
 
@@ -37,10 +46,18 @@ class Project(models.Model):
 
     class Meta:
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['client', 'name'],
+                name='unique_project_per_client'
+            )
+        ]
 
     def __str__(self):
         return self.name
 
+
+    
 
 
 class Service(models.Model):
@@ -61,7 +78,7 @@ class Service(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -86,8 +103,12 @@ class ProjectService(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('project', 'service')
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'service'],
+                name='unique_project_service'
+            )
+        ]
     def __str__(self):
         return f"{self.project.name} - {self.service.name}"
 
@@ -109,6 +130,12 @@ class ServiceModule(models.Model):
 
     class Meta:
         ordering = ['order', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['service', 'name'],
+                name='unique_module_per_service'
+            )
+        ]
 
     def __str__(self):
         return f"{self.service.name} - {self.name}"
@@ -132,6 +159,12 @@ class ChecklistTemplate(models.Model):
 
     class Meta:
         ordering = ['order', 'item']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['module', 'item'],
+                name='unique_checklist_per_module'
+            )
+        ]
 
     def __str__(self):
         return self.item
@@ -174,6 +207,8 @@ class ProjectChecklist(models.Model):
         blank=True
     )
 
+    
+
 
 
 class TaskField(models.Model):
@@ -214,6 +249,12 @@ class TaskField(models.Model):
 
     class Meta:
         ordering = ['order']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['checklist_template', 'field_name'],
+                name='unique_field_per_template'
+            )
+        ]
 
     def __str__(self):
         return self.label
@@ -245,6 +286,13 @@ class ActivityLog(models.Model):
         auto_now_add=True
     )
 
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["employee"]),
+            models.Index(fields=["project_checklist"]),
+            models.Index(fields=["created_at"]),
+        ]
     def __str__(self):
         return f"{self.employee} - {self.project_checklist}"
 
@@ -267,6 +315,14 @@ class ActivityFieldValue(models.Model):
         blank=True,
         null=True
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['activity', 'field'],
+                name='unique_activity_field'
+            )
+        ]
 
     def __str__(self):
         return f"{self.field.label}"
@@ -321,6 +377,20 @@ class KeywordRank(models.Model):
         blank=True
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["project"]),
+            models.Index(fields=["activity"]),
+            models.Index(fields=["checked_at"]),
+            models.Index(fields=["found"]),
+            models.Index(fields=["keyword"]),
+            models.Index(fields=["rank"]),
+            models.Index(fields=["project", "checked_at"]),
+            models.Index(fields=["project", "keyword"]),
+            models.Index(fields=["found", "checked_at"]),
+        ]
+        
+
     def __str__(self):
         return f"{self.keyword} - {self.rank}"
     
@@ -361,3 +431,11 @@ class KeywordRankResult(models.Model):
     breadcrumb = models.TextField(
         blank=True
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['keyword_rank']),
+            models.Index(fields=['serp_rank']),
+            models.Index(fields=['result_type']),
+            models.Index(fields=['domain']),
+        ]
