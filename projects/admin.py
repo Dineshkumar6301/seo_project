@@ -226,6 +226,16 @@ class KeywordRankAdmin(admin.ModelAdmin):
         "checked_at",
     )
 
+    list_select_related = (
+        "project",
+        "activity",
+    )
+
+    autocomplete_fields = (
+        "project",
+        "activity",
+    )
+
     search_fields = (
         "keyword",
         "website",
@@ -239,8 +249,13 @@ class KeywordRankAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "checked_at",
-        "api_response",
     )
+
+    ordering = ("-id",)
+
+    list_per_page = 50
+
+    show_full_result_count = False
 
 
 @admin.register(KeywordRankResult)
@@ -254,6 +269,10 @@ class KeywordRankResultAdmin(admin.ModelAdmin):
         "domain",
     )
 
+    autocomplete_fields = (
+        "keyword_rank",
+    )
+
     search_fields = (
         "domain",
         "title",
@@ -263,3 +282,9 @@ class KeywordRankResultAdmin(admin.ModelAdmin):
     list_filter = (
         "result_type",
     )
+
+    ordering = ("-id",)
+
+    list_per_page = 50
+
+    show_full_result_count = False
