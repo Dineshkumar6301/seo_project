@@ -1,33 +1,41 @@
 from rest_framework import serializers
-from .models import Project, Service
+from .models import Project, Service, ProjectService
 
 
 class ProjectSerializer(serializers.ModelSerializer):
 
-    services = serializers.PrimaryKeyRelatedField(
-        queryset=Service.objects.all(),
-        many=True
-    )
+    services = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
         fields = [
-            'id',
-            'name',
-            'client',
-            'services',
-            'start_date',
-            'status',
-            'created_at'
+            "id",
+            "name",
+            "client",
+            "services",
+            "start_date",
+            "created_at",
         ]
 
+    def get_services(self, obj):
+        return list(
+            obj.project_services.values_list("service_id", flat=True)
+        )
+
     def validate(self, data):
-        if not data.get('client'):
+        if not data.get("client"):
             raise serializers.ValidationError("Client is required")
         return data
 
     def create(self, validated_data):
-        services = validated_data.pop('services')
+        services = self.initial_data.get("services", [])
+
         project = Project.objects.create(**validated_data)
-        project.services.set(services)
+
+        for service_id in services:
+            ProjectService.objects.create(
+                project=project,
+                service_id=service_id
+            )
+
         return project
