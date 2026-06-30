@@ -1,40 +1,28 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from activities.models import Activity
-from projects.models import (
-KeywordRank,
-KeywordRankResult
-)
-
-
+from projects.models import KeywordRank, KeywordRankResult
+import time
 import requests
 from urllib.parse import urlparse
 
 from seo import settings
 
-class Command(BaseCommand):
 
+class Command(BaseCommand):
 
     help = "Check 5 keyword ranks daily"
 
     def handle(self, *args, **kwargs):
 
         oldest_activity = (
-            Activity.objects.filter(
-                status="approved",
-                rank_checked=False
-            )
+            Activity.objects.filter(status="approved", rank_checked=False)
             .order_by("date", "id")
             .first()
         )
 
         if not oldest_activity:
-
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "No pending keywords found"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS("No pending keywords found"))
             return
 
         target_date = oldest_activity.date
@@ -43,7 +31,7 @@ class Command(BaseCommand):
             Activity.objects.filter(
                 status="approved",
                 rank_checked=False,
-                date=target_date
+                date=target_date,
             )
             .order_by("id")
         )
@@ -51,21 +39,12 @@ class Command(BaseCommand):
         selected_activities = []
 
         for activity in all_activities:
-
             data = activity.dynamic_data or {}
-
             keyword = data.get("Keyword")
 
             if not keyword:
-
                 activity.rank_checked = True
-
-                activity.save(
-                    update_fields=[
-                        "rank_checked"
-                    ]
-                )
-
+                activity.save(update_fields=["rank_checked"])
                 continue
 
             selected_activities.append(activity)
@@ -74,87 +53,59 @@ class Command(BaseCommand):
                 break
 
         if not selected_activities:
-
-            self.stdout.write(
-                self.style.SUCCESS(
-                    "No valid keywords found"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS("No valid keywords found"))
             return
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Checking Date: {target_date}"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"Checking Date: {target_date}"))
 
         for activity in selected_activities:
-
             data = activity.dynamic_data or {}
-
             keyword = data.get("Keyword")
-
-            website = (
-                data.get("Target_url")
-                or activity.project.client.website
-            )
+            website = data.get("Target_url") or activity.project.client.website
 
             try:
-
-                existing_rank = KeywordRank.objects.filter(
-                    activity=activity
-                ).exists()
+                existing_rank = KeywordRank.objects.filter(activity=activity).exists()
 
                 if existing_rank:
-
                     activity.rank_checked = True
                     activity.rank_checked_at = timezone.now()
-
-                    activity.save(
-                        update_fields=[
-                            "rank_checked",
-                            "rank_checked_at"
-                        ]
-                    )
-
+                    activity.save(update_fields=["rank_checked", "rank_checked_at"])
                     continue
 
-                response = requests.post(
-                    "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
-                    headers={
-                        "apy-token": settings.APYHUB_API_KEY,
-                        "Content-Type": "application/json"
-                    },
-                    json={"keyword": keyword},
-                    timeout=60
-                )
+                response = None
+
+                for attempt in range(2):
+                    try:
+                        response = requests.post(
+                            "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
+                            headers={
+                                "apy-token": settings.APYHUB_API_KEY,
+                                "Content-Type": "application/json",
+                            },
+                            json={"keyword": keyword},
+                            timeout=60,
+                        )
+                        response.raise_for_status()
+                        break
+
+                    except requests.exceptions.Timeout:
+                        print(f"{keyword} -> Timeout (Attempt {attempt + 1})")
+                        if attempt == 0:
+                            time.sleep(2)
+                            continue
+                        else:
+                            raise
 
                 print("STATUS:", response.status_code)
                 print("BODY:", response.text)
 
-
-                response.raise_for_status()
-
                 api_data = response.json()
 
-                if (
-                    not api_data
-                    or "error" in api_data
-                    or not api_data.get("data")
-                ):
-
-                    print(
-                        f"{keyword} -> Invalid API Response"
-                    )
-
+                if not api_data or "error" in api_data or not api_data.get("data"):
+                    print(f"{keyword} -> Invalid API Response")
                     continue
 
-                domain = (
-                    urlparse(website)
-                    .netloc
-                    .replace("www.", "")
-                    .lower()
-                )
+                domain = urlparse(website).netloc.replace("www.", "").lower()
 
                 rank_found = None
                 ranking_url = None
@@ -164,105 +115,67 @@ class Command(BaseCommand):
                     activity=activity,
                     keyword=keyword,
                     website=website,
-                    api_response=api_data
+                    api_response=api_data,
                 )
 
-                for item in api_data.get(
-                    "data",
-                    []
-                ):
+                # Build all result rows first, save once at the end
+                result_objs = []
 
-                    KeywordRankResult.objects.create(
-                        keyword_rank=keyword_rank,
-                        serp_rank=item.get("rank"),
-                        result_type=item.get("type", ""),
-                        title=item.get("title", ""),
-                        description=item.get("description", ""),
-                        domain=item.get("domain", ""),
-                        url=item.get("url", ""),
-                        breadcrumb=item.get("breadcrumb", "")
+                for item in api_data.get("data", []):
+                    result_objs.append(
+                        KeywordRankResult(
+                            keyword_rank=keyword_rank,
+                            serp_rank=item.get("rank"),
+                            result_type=item.get("type", ""),
+                            title=item.get("title", ""),
+                            description=item.get("description", ""),
+                            domain=item.get("domain", ""),
+                            url=item.get("url", ""),
+                            breadcrumb=item.get("breadcrumb", ""),
+                        )
                     )
 
-                    result_url = item.get("url", "")
+                    if rank_found is None:
+                        result_url = item.get("url", "")
+                        if result_url:
+                            result_domain = (
+                                urlparse(result_url).netloc.replace("www.", "").lower()
+                            )
+                            if result_domain == domain:
+                                rank_found = item.get("rank")
+                                ranking_url = result_url
 
-                    if not result_url:
-                        continue
+                # Single bulk_create, after the loop, with ALL results
+                if result_objs:
+                    KeywordRankResult.objects.bulk_create(result_objs)
 
-                    result_domain = (
-                        urlparse(result_url)
-                        .netloc
-                        .replace("www.", "")
-                        .lower()
-                    )
-
-                    if result_domain == domain:
-
-                        rank_found = item.get("rank")
-                        ranking_url = result_url
-                        break
-
-                keyword_rank.rank = (
-                    rank_found
-                    if rank_found is not None
-                    else 999
-                )
-
-                keyword_rank.found = (
-                    rank_found is not None
-                )
-
+                keyword_rank.rank = rank_found if rank_found is not None else 999
+                keyword_rank.found = rank_found is not None
                 keyword_rank.ranking_url = ranking_url
-
                 keyword_rank.save()
 
                 activity.rank_checked = True
                 activity.rank_checked_at = timezone.now()
-                activity.last_rank = (
-                    rank_found
-                    if rank_found is not None
-                    else 999
-                )
-
+                activity.last_rank = rank_found if rank_found is not None else 999
                 activity.save(
-                    update_fields=[
-                        "rank_checked",
-                        "rank_checked_at",
-                        "last_rank"
-                    ]
+                    update_fields=["rank_checked", "rank_checked_at", "last_rank"]
                 )
 
                 print(
-                    f"{activity.project.name} | "
-                    f"{keyword} -> "
+                    f"{activity.project.name} | {keyword} -> "
                     f"{rank_found if rank_found is not None else 'Not Ranking'}"
                 )
 
             except requests.exceptions.Timeout:
-
-                print(
-                    f"{keyword} -> API Timeout"
-                )
-
+                print(f"{keyword} -> API Timeout")
                 continue
 
             except requests.exceptions.RequestException as e:
-
-                print(
-                    f"{keyword} -> API Error: {str(e)}"
-                )
-
+                print(f"{keyword} -> API Error: {str(e)}")
                 continue
 
             except Exception as e:
-
-                print(
-                    f"{keyword} -> Error: {str(e)}"
-                )
-
+                print(f"{keyword} -> Error: {str(e)}")
                 continue
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "Daily rank check completed"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS("Daily rank check completed"))
