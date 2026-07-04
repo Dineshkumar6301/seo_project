@@ -640,16 +640,21 @@ from django.http import JsonResponse
 import traceback
 
 
-def run_rank_check(request):
+from threading import Thread
+from django.core.management import call_command
+from django.http import JsonResponse
+import traceback
+
+def background_rank_check():
     try:
         call_command("check_daily_ranks")
-        return JsonResponse({
-            "success": True,
-            "message": "Rank check completed"
-        })
     except Exception:
         print(traceback.format_exc())
-        return JsonResponse({
-            "success": False,
-            "error": traceback.format_exc()
-        }, status=500)
+
+def run_rank_check(request):
+    Thread(target=background_rank_check, daemon=True).start()
+
+    return JsonResponse({
+        "success": True,
+        "message": "Rank check started"
+    })
