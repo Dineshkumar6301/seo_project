@@ -461,13 +461,38 @@ class RemoveUserFromService(LoginRequiredMixin, View):
         
 
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from projects.models import Project
-from activities.models import Activity
+from threading import Thread
+import traceback
+from urllib.parse import urlparse
 
 import requests
-from urllib.parse import urlparse
+
+from django.conf import settings
+from django.core.management import call_command
+from django.http import JsonResponse
+from django.shortcuts import render
+
+from activities.models import Activity
+from projects.models import Project, KeywordRank
+
+
+def normalize_domain(value):
+
+    value = (value or "").strip()
+
+    if not value:
+        return ""
+
+    if not value.startswith(("http://", "https://")):
+        value = "https://" + value
+
+    return (
+        urlparse(value)
+        .netloc
+        .replace("www.", "")
+        .lower()
+        .strip()
+    )
 
 
 def rank_page(request):
@@ -478,8 +503,8 @@ def rank_page(request):
         request,
         "frontend/rank.html",
         {
-            "projects": projects
-        }
+            "projects": projects,
+        },
     )
 
 
@@ -489,20 +514,37 @@ def get_project_rank_data(request):
 
     if not project_id:
 
-        return JsonResponse({
-            "success": False
-        })
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Project ID required",
+            }
+        )
 
-    project = Project.objects.select_related(
-        "client"
-    ).get(id=project_id)
+    try:
+
+        project = Project.objects.select_related(
+            "client"
+        ).get(
+            id=project_id
+        )
+
+    except Project.DoesNotExist:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Project not found",
+            }
+        )
 
     activities = Activity.objects.filter(
         project_id=project_id,
-        status="approved"
+        status="approved",
     )
 
     keywords = set()
+
     website = project.client.website
 
     for activity in activities:
@@ -512,149 +554,267 @@ def get_project_rank_data(request):
         keyword = data.get("Keyword")
 
         if keyword:
-            keywords.add(keyword)
 
-    return JsonResponse({
-        "success": True,
-        "website": website,
-        "keywords": sorted(list(keywords))
-    })
+            keywords.add(
+                keyword.strip()
+            )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "website": website,
+            "keywords": sorted(
+                list(keywords)
+            ),
+        }
+    )
 
 
 def check_keyword_rank(request):
 
     keyword = request.GET.get("keyword")
+
     website = request.GET.get("website")
 
     if not keyword or not website:
 
-        return JsonResponse({
-            "success": False,
-            "message": "Keyword and website are required"
-        })
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    "Keyword and website "
+                    "are required"
+                ),
+            }
+        )
 
     try:
 
-        response = requests.post(
-            "https://api.apyhub.com/extract/serp/rank?location=in&language=en",
-            headers={
-                "apy-token": settings.APYHUB_API_KEY,
-                "Content-Type": "application/json"
+        response = requests.get(
+            "https://serpapi.com/search.json",
+            params={
+                "engine": "google",
+                "q": keyword,
+                "gl": "in",
+                "hl": "en",
+                "num": 100,
+                "api_key": settings.SERPAPI_API_KEY,
             },
-            json={
-                "keyword": keyword
-            },
-            timeout=60
+            timeout=60,
         )
+
+        print(
+            "STATUS:",
+            response.status_code,
+        )
+
+        print(
+            "BODY:",
+            response.text,
+        )
+
+        response.raise_for_status()
 
         api_data = response.json()
 
-        domain = (
-            urlparse(website)
-            .netloc
-            .replace("www.", "")
-            .lower()
+        if api_data.get("error"):
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": api_data.get(
+                        "error"
+                    ),
+                }
+            )
+
+        domain = normalize_domain(
+            website
         )
 
         rank_found = None
+
         matched_url = None
 
-        for item in api_data.get("data", []):
+        organic_results = api_data.get(
+            "organic_results",
+            [],
+        )
 
-            result_url = item.get("url", "")
+        for item in organic_results:
 
-            if not result_url:
-                continue
-
-            result_domain = (
-                urlparse(result_url)
-                .netloc
-                .replace("www.", "")
-                .lower()
+            result_url = item.get(
+                "link",
+                "",
             )
 
-            if domain == result_domain:
+            if not result_url:
 
-                rank_found = item.get("rank")
+                continue
+
+            result_domain = normalize_domain(
+                result_url
+            )
+
+            if result_domain == domain:
+
+                rank_found = item.get(
+                    "position"
+                )
+
                 matched_url = result_url
 
                 break
 
         if rank_found is None:
 
-            return JsonResponse({
+            return JsonResponse(
+                {
+                    "success": True,
+                    "keyword": keyword,
+                    "website": website,
+                    "position": 999,
+                    "found": False,
+                    "url": "-",
+                    "api_response": api_data,
+                }
+            )
+
+        return JsonResponse(
+            {
                 "success": True,
                 "keyword": keyword,
                 "website": website,
-                "position": "Not Found (Top Results)",
-                "url": "-"
-            })
+                "position": rank_found,
+                "found": True,
+                "url": matched_url,
+                "api_response": api_data,
+            }
+        )
 
-        return JsonResponse({
-            "success": True,
-            "keyword": keyword,
-            "website": website,
-            "position": rank_found,
-            "url": matched_url
-        })
+    except requests.exceptions.Timeout:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "SerpApi timeout",
+            }
+        )
+
+    except requests.exceptions.RequestException as e:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    f"SerpApi Error: {str(e)}"
+                ),
+            }
+        )
+
     except Exception as e:
 
-        return JsonResponse({
-            "success": False,
-            "message": str(e)
-        })
-
-
-from django.http import JsonResponse
-from projects.models import KeywordRank
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    f"{type(e).__name__}: "
+                    f"{str(e)}"
+                ),
+            }
+        )
 
 
 def project_rank_results(request):
 
-    project_id = request.GET.get("project_id")
+    project_id = request.GET.get(
+        "project_id"
+    )
 
-    data = KeywordRank.objects.filter(
-        project_id=project_id
-    ).order_by("-checked_at")
+    if not project_id:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Project ID required",
+            }
+        )
+
+    data = (
+        KeywordRank.objects
+        .filter(
+            project_id=project_id
+        )
+        .order_by(
+            "-checked_at"
+        )
+    )
 
     results = []
 
     for item in data:
 
-        results.append({
-            "keyword": item.keyword,
-            "rank": item.rank if item.rank else "Not Ranking",
-            "url": item.ranking_url or "-",
-            "checked_at": item.checked_at.strftime("%d-%m-%Y %H:%M")
-        })
+        results.append(
+            {
+                "id": item.id,
+                "keyword": item.keyword,
+                "rank": (
+                    item.rank
+                    if item.rank is not None
+                    else "Not Ranking"
+                ),
+                "found": item.found,
+                "url": (
+                    item.ranking_url
+                    or "-"
+                ),
+                "api_response": (
+                    item.api_response
+                    or {}
+                ),
+                "checked_at": (
+                    item.checked_at.strftime(
+                        "%d-%m-%Y %H:%M"
+                    )
+                ),
+            }
+        )
 
-    return JsonResponse({
-        "success": True,
-        "results": results
-    })
+    return JsonResponse(
+        {
+            "success": True,
+            "results": results,
+        }
+    )
 
-
-from django.conf import settings
-from django.core.management import call_command
-from django.http import JsonResponse
-import traceback
-
-
-from threading import Thread
-from django.core.management import call_command
-from django.http import JsonResponse
-import traceback
 
 def background_rank_check():
+
     try:
-        call_command("check_daily_ranks")
+
+        call_command(
+            "check_daily_ranks"
+        )
+
     except Exception:
-        print(traceback.format_exc())
+
+        print(
+            traceback.format_exc()
+        )
+
 
 def run_rank_check(request):
-    Thread(target=background_rank_check, daemon=True).start()
 
-    return JsonResponse({
-        "success": True,
-        "message": "Rank check started"
-    })
+    Thread(
+        target=background_rank_check,
+        daemon=True,
+    ).start()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": (
+                "Rank check started"
+            ),
+        }
+    )

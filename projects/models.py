@@ -373,7 +373,7 @@ class KeywordRank(models.Model):
     )
 
     api_response = models.JSONField(
-        null=True,
+        default=dict,
         blank=True
     )
 
