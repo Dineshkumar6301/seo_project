@@ -157,7 +157,7 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
-APYHUB_API_KEY = os.getenv(
+SERPAPI_API_KEY = os.getenv(
     "APYHUB_API_KEY",
     ""
 )
