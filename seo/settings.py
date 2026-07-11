@@ -1,17 +1,22 @@
-
 from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", ".onrender.com").split(",")
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "127.0.0.1,localhost,digipradesh.com,www.digipradesh.com"
+    ).split(",")
+]
 
 
 INSTALLED_APPS = [
@@ -143,7 +148,7 @@ USE_TZ = True
 
 
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/static",
